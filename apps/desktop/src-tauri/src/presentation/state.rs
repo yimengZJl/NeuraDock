@@ -26,11 +26,12 @@ impl AppState {
         std::fs::create_dir_all(&app_data_dir)
             .map_err(|e| format!("Failed to create app data directory: {}", e))?;
         
-        let db_filename = if cfg!(debug_assertions) {
-            "neuradock_dev.db"
-        } else {
-            "neuradock.db"
-        };
+        // let db_filename = if cfg!(debug_assertions) {
+        //     "neuradock.db"
+        // } else {
+        //     "neuradock.db"
+        // };
+        let db_filename = "neuradock.db";
         
         let db_path = app_data_dir.join(db_filename);
         let db_path_str = db_path.to_str()
@@ -38,32 +39,44 @@ impl AppState {
 
         eprintln!("Database path: {}", db_path_str);
 
+        eprintln!("🔌 Connecting to database...");
         let database = Database::new(db_path_str).await?;
+        eprintln!("✓ Database connection established");
+
+        eprintln!("🔄 Running migrations...");
         database.run_migrations().await?;
+        eprintln!("✓ Migrations completed");
 
         let pool = Arc::new(database.pool().clone());
         let db = Arc::new(database);
         let account_repo = Arc::new(SqliteAccountRepository::new(pool.clone())) as Arc<dyn AccountRepository>;
 
+        eprintln!("📊 Initializing scheduler...");
         // Initialize scheduler
         let scheduler = Arc::new(AutoCheckInScheduler::new(
             account_repo.clone(),
         ).await?);
-        
+        eprintln!("✓ Scheduler initialized");
+
+        eprintln!("▶️  Starting scheduler...");
         scheduler.start().await?;
-        
+        eprintln!("✓ Scheduler started");
+
         // Load existing schedules from database
-        eprintln!("Loading auto check-in schedules...");
+        eprintln!("📋 Loading auto check-in schedules...");
         use crate::presentation::commands::get_builtin_providers;
         let providers = get_builtin_providers();
+        eprintln!("📦 Got {} providers", providers.len());
+
+        eprintln!("🔍 Calling reload_schedules...");
         if let Err(e) = scheduler.reload_schedules(
             providers,
             account_repo.clone(),
             app_handle.clone(),
         ).await {
-            eprintln!("Failed to load schedules: {}", e);
+            eprintln!("⚠️  Failed to load schedules: {}", e);
         } else {
-            eprintln!("Auto check-in schedules loaded successfully");
+            eprintln!("✓ Auto check-in schedules loaded successfully");
         }
 
         Ok(Self {

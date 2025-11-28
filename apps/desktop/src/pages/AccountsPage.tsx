@@ -110,17 +110,17 @@ export function AccountsPage() {
               <div className="flex items-center justify-around text-center">
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-muted-foreground">{t('dashboard.stats.totalIncome')}</span>
-                  <span className="font-bold text-2xl text-blue-600">${(statistics.total_quota + statistics.total_used).toFixed(2)}</span>
+                  <span className="font-bold text-2xl text-blue-600">${statistics.total_income.toFixed(2)}</span>
                 </div>
                 <div className="h-12 w-px bg-border" />
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-muted-foreground">{t('dashboard.stats.historicalConsumption')}</span>
-                  <span className="font-bold text-2xl text-orange-600">${statistics.total_used.toFixed(2)}</span>
+                  <span className="font-bold text-2xl text-orange-600">${statistics.total_consumed.toFixed(2)}</span>
                 </div>
                 <div className="h-12 w-px bg-border" />
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-muted-foreground">{t('dashboard.stats.currentBalance')}</span>
-                  <span className="font-bold text-2xl text-green-600">${statistics.total_quota.toFixed(2)}</span>
+                  <span className="font-bold text-2xl text-green-600">${statistics.total_current_balance.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>
@@ -187,15 +187,15 @@ export function AccountsPage() {
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-blue-600" />
                           <span className="text-muted-foreground">{t('dashboard.stats.totalIncome')}:</span>
-                          <span className="font-semibold text-blue-600">${(providerStats.quota + providerStats.used).toFixed(2)}</span>
+                          <span className="font-semibold text-blue-600">${providerStats.total_income.toFixed(2)}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground">{t('dashboard.stats.historicalConsumption')}:</span>
-                          <span className="font-semibold text-orange-600">${providerStats.used.toFixed(2)}</span>
+                          <span className="font-semibold text-orange-600">${providerStats.total_consumed.toFixed(2)}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground">{t('dashboard.stats.currentBalance')}:</span>
-                          <span className="font-semibold text-green-600">${providerStats.quota.toFixed(2)}</span>
+                          <span className="font-semibold text-green-600">${providerStats.current_balance.toFixed(2)}</span>
                         </div>
                       </div>
                     )}

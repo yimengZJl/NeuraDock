@@ -6,9 +6,9 @@ export interface CheckInResult {
   job_id: string;
   success: boolean;
   balance?: {
-    quota: number;
-    used: number;
-    remaining: number;
+    current_balance: number;
+    total_consumed: number;
+    total_income: number;
   };
   error?: string;
 }
@@ -47,7 +47,7 @@ export function useCheckIn() {
       
       if (data.success) {
         const balanceInfo = data.balance
-          ? ` Balance: $${data.balance.quota.toFixed(2)}`
+          ? ` Balance: $${data.balance.current_balance.toFixed(2)}`
           : '';
         toast.success(`Check-in successful!${balanceInfo}`);
       } else {

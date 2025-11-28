@@ -22,9 +22,9 @@ pub struct Account {
     session_token: Option<String>,
     session_expires_at: Option<DateTime<Utc>>,
     last_balance_check_at: Option<DateTime<Utc>>,
-    quota: Option<f64>,
-    used_quota: Option<f64>,
-    remaining: Option<f64>,
+    current_balance: Option<f64>,
+    total_consumed: Option<f64>,
+    total_income: Option<f64>,
 }
 
 impl Account {
@@ -56,9 +56,9 @@ impl Account {
             session_token: None,
             session_expires_at: None,
             last_balance_check_at: None,
-            quota: None,
-            used_quota: None,
-            remaining: None,
+            current_balance: None,
+            total_consumed: None,
+            total_income: None,
         })
     }
 
@@ -77,9 +77,9 @@ impl Account {
         session_token: Option<String>,
         session_expires_at: Option<DateTime<Utc>>,
         last_balance_check_at: Option<DateTime<Utc>>,
-        quota: Option<f64>,
-        used_quota: Option<f64>,
-        remaining: Option<f64>,
+        current_balance: Option<f64>,
+        total_consumed: Option<f64>,
+        total_income: Option<f64>,
     ) -> Self {
         Self {
             id,
@@ -96,9 +96,9 @@ impl Account {
             session_token,
             session_expires_at,
             last_balance_check_at,
-            quota,
-            used_quota,
-            remaining,
+            current_balance,
+            total_consumed,
+            total_income,
         }
     }
 
@@ -195,16 +195,16 @@ impl Account {
         self.last_balance_check_at
     }
 
-    pub fn quota(&self) -> Option<f64> {
-        self.quota
+    pub fn current_balance(&self) -> Option<f64> {
+        self.current_balance
     }
 
-    pub fn used_quota(&self) -> Option<f64> {
-        self.used_quota
+    pub fn total_consumed(&self) -> Option<f64> {
+        self.total_consumed
     }
 
-    pub fn remaining(&self) -> Option<f64> {
-        self.remaining
+    pub fn total_income(&self) -> Option<f64> {
+        self.total_income
     }
 
     pub fn update_session(&mut self, token: String, expires_at: DateTime<Utc>) {
@@ -225,10 +225,10 @@ impl Account {
         }
     }
 
-    pub fn update_balance(&mut self, quota: f64, used: f64, remaining: f64) {
-        self.quota = Some(quota);
-        self.used_quota = Some(used);
-        self.remaining = Some(remaining);
+    pub fn update_balance(&mut self, current_balance: f64, total_consumed: f64, total_income: f64) {
+        self.current_balance = Some(current_balance);
+        self.total_consumed = Some(total_consumed);
+        self.total_income = Some(total_income);
         self.last_balance_check_at = Some(Utc::now());
     }
 

@@ -17,6 +17,9 @@
     "description": "Manage and monitor all your relay accounts",
     "welcome": "Welcome to NeuraDock",
     "welcomeDescription": "Your automated check-in manager is ready. Get started by adding your first account.",
+    "current_balance": "Current Balance",
+    "consumed": "Consumed",
+    "total_income": "Total Income",
     "manageAccounts": "Manage Accounts",
     "stats": {
       "totalIncome": "Total Income",
@@ -252,5 +255,19 @@
     "filter": "Filter",
     "sort": "Sort",
     "refresh": "Refresh"
+  },
+  "disclaimer": {
+    "title": "Important Notices",
+    "liability": {
+      "title": "Liability Disclaimer",
+      "description": "This application only provides automated check-in tool services and has made every effort to simulate real browser behavior to minimize risks.",
+      "warning": "We do not guarantee that service providers will not ban accounts. Use of this tool is entirely voluntary, and users assume all responsibility for any consequences including account bans resulting from use of this tool."
+    },
+    "license": {
+      "title": "Open Source & Commercial License",
+      "description": "This project is released under the GNU General Public License v3.0. All redistributed or modified versions must remain GPL-compliant.",
+      "commercial": "Closed-source distribution, SaaS, or commercial deployments require purchasing an official NeuraDock commercial license.",
+      "footer": "Contact the NeuraDock team via official channels to buy a commercial license or confirm permitted use cases."
+    }
   }
 }

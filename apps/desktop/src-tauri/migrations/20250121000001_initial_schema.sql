@@ -19,11 +19,11 @@ CREATE TABLE IF NOT EXISTS accounts (
     last_login_at TIMESTAMP,
     session_token TEXT,
     session_expires_at TIMESTAMP,
-    -- Balance caching
+    -- Balance caching (from /api/user/self: quota=current_balance, used_quota=total_consumed, total_income=current_balance+total_consumed)
     last_balance_check_at TIMESTAMP,
-    quota REAL,
-    used_quota REAL,
-    remaining REAL,
+    current_balance REAL,
+    total_consumed REAL,
+    total_income REAL,
     -- Timestamps
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -62,9 +62,9 @@ CREATE TABLE IF NOT EXISTS check_in_jobs (
 CREATE TABLE IF NOT EXISTS balance_history (
     id TEXT PRIMARY KEY,
     account_id TEXT NOT NULL,
-    quota REAL NOT NULL,
-    used_quota REAL NOT NULL,
-    remaining REAL NOT NULL,
+    current_balance REAL NOT NULL,
+    total_consumed REAL NOT NULL,
+    total_income REAL NOT NULL,
     recorded_at TIMESTAMP NOT NULL,
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 );

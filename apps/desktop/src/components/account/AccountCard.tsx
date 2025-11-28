@@ -42,14 +42,14 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
   
   // Only fetch fresh balance if account is enabled AND balance is stale/missing
   const shouldFetchBalance = account.enabled && (
-    !account.quota || !account.used_quota || account.remaining == null ||
-    !account.last_balance_check_at || 
+    !account.current_balance || !account.total_consumed || account.total_income == null ||
+    !account.last_balance_check_at ||
     (new Date().getTime() - new Date(account.last_balance_check_at).getTime()) > maxCacheAgeMs
   );
 
   // Fetch fresh balance in background (with smart caching)
   const { data: freshBalance, isLoading: balanceLoading, error: balanceError } = useFetchAccountBalance(
-    account.id, 
+    account.id,
     shouldFetchBalance
   );
 
@@ -60,10 +60,10 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
 
   // Use cached balance from account or fresh balance from fetch
   const balance = freshBalance || (
-    account.quota != null && account.used_quota != null && account.remaining != null ? {
-      quota: account.quota,
-      used: account.used_quota,
-      remaining: account.remaining,
+    account.current_balance != null && account.total_consumed != null && account.total_income != null ? {
+      current_balance: account.current_balance,
+      total_consumed: account.total_consumed,
+      total_income: account.total_income,
     } : null
   );
 
@@ -160,15 +160,15 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
               <>
                 <div className="text-center">
                   <p className="text-muted-foreground mb-0.5">{t('accountCard.totalIncome')}</p>
-                  <p className="font-semibold text-blue-600">${(balance.quota + balance.used).toFixed(2)}</p>
+                  <p className="font-semibold text-blue-600">${balance.total_income.toFixed(2)}</p>
                 </div>
                 <div className="text-center border-x">
                   <p className="text-muted-foreground mb-0.5">{t('accountCard.historicalConsumption')}</p>
-                  <p className="font-semibold text-orange-600">${balance.used.toFixed(2)}</p>
+                  <p className="font-semibold text-orange-600">${balance.total_consumed.toFixed(2)}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-muted-foreground mb-0.5">{t('accountCard.currentBalance')}</p>
-                  <p className="font-semibold text-green-600">${balance.quota.toFixed(2)}</p>
+                  <p className="font-semibold text-green-600">${balance.current_balance.toFixed(2)}</p>
                 </div>
               </>
             ) : balanceLoading ? (

@@ -492,17 +492,21 @@ pub async fn execute_check_in(
             log::error!("Check-in execution failed: {}", e);
             e.to_string()
         })?;
-    
+
     log::info!("Check-in execution completed: success={}, message={}", result.success, result.message);
-    
+
     // Convert to DTO and store balance history
-    // Note: info.quota is the remaining balance from API, not total quota
-    let balance_dto = result.user_info.as_ref().map(|info| BalanceDto {
-        quota: info.quota,
-        used: info.used_quota,
-        remaining: info.quota, // remaining is same as quota since API returns remaining balance
+    // Note: API returns quota (current balance) and used_quota (total consumed)
+    let balance_dto = result.user_info.as_ref().map(|info| {
+        let current_balance = info.quota;
+        let total_consumed = info.used_quota;
+        BalanceDto {
+            current_balance,
+            total_consumed,
+            total_income: current_balance + total_consumed,  // Total income = current balance + consumed
+        }
     });
-    
+
     // Update account with balance cache and session info
     if let Some(ref balance) = balance_dto {
         let mut account = state.account_repo
@@ -510,16 +514,16 @@ pub async fn execute_check_in(
             .await
             .map_err(|e| e.to_string())?
             .ok_or("Account not found")?;
-        
+
         // Update balance cache
-        account.update_balance(balance.quota, balance.used, balance.remaining);
-        
+        account.update_balance(balance.current_balance, balance.total_consumed, balance.total_income);
+
         // Mark check-in time
         account.record_check_in();
-        
+
         // Save updated account
         state.account_repo.save(&account).await.map_err(|e| e.to_string())?;
-        
+
         // Store balance history
         save_balance_history(&account_id, balance, &state).await?;
     }
@@ -551,27 +555,31 @@ pub async fn execute_batch_check_in(
     
     // Convert results to DTOs and store balance history
     let mut results_dto: Vec<ExecuteCheckInResult> = Vec::new();
-    
+
     for r in result.results.iter() {
-        // Note: info.quota is the remaining balance from API, not total quota
-        let balance_dto = r.user_info.as_ref().map(|info| BalanceDto {
-            quota: info.quota,
-            used: info.used_quota,
-            remaining: info.quota, // remaining is same as quota since API returns remaining balance
+        // Note: API returns quota (current balance) and used_quota (total consumed)
+        let balance_dto = r.user_info.as_ref().map(|info| {
+            let current_balance = info.quota;
+            let total_consumed = info.used_quota;
+            BalanceDto {
+                current_balance,
+                total_consumed,
+                total_income: current_balance + total_consumed,  // Total income = current balance + consumed
+            }
         });
-        
+
         // Update account cache and store balance history if available
         if let Some(ref balance) = balance_dto {
             let acc_id = AccountId::from_string(&r.account_id);
             if let Ok(Some(mut account)) = state.account_repo.find_by_id(&acc_id).await {
                 // Update balance cache
-                account.update_balance(balance.quota, balance.used, balance.remaining);
+                account.update_balance(balance.current_balance, balance.total_consumed, balance.total_income);
                 account.record_check_in();
-                
+
                 // Save updated account
                 let _ = state.account_repo.save(&account).await;
             }
-            
+
             // Store balance history
             let _ = save_balance_history(&r.account_id, balance, &state).await;
         }
@@ -695,9 +703,9 @@ pub async fn get_all_accounts(
             auto_checkin_hour: acc.auto_checkin_hour(),
             auto_checkin_minute: acc.auto_checkin_minute(),
             last_balance_check_at: acc.last_balance_check_at().map(|dt| dt.to_rfc3339()),
-            quota: acc.quota(),
-            used_quota: acc.used_quota(),
-            remaining: acc.remaining(),
+            current_balance: acc.current_balance(),
+            total_consumed: acc.total_consumed(),
+            total_income: acc.total_income(),
             is_balance_stale,
             is_online,
         }
@@ -794,44 +802,46 @@ pub async fn fetch_account_balance(
     // Check if we have valid cached balance
     if !account.is_balance_stale(MAX_CACHE_AGE_HOURS) {
         // Use cached balance
-        if let (Some(quota), Some(used), Some(remaining)) = 
-            (account.quota(), account.used_quota(), account.remaining()) {
+        if let (Some(current_balance), Some(total_consumed), Some(total_income)) =
+            (account.current_balance(), account.total_consumed(), account.total_income()) {
             return Ok(BalanceDto {
-                quota,
-                used,
-                remaining,
+                current_balance,
+                total_consumed,
+                total_income,
             });
         }
     }
-    
+
     // Cache is stale or doesn't exist, fetch fresh balance
     let provider_id = account.provider_id().as_str();
     let provider = providers.get(provider_id)
         .ok_or(format!("Provider {} not found", provider_id))?;
-    
+
     // Create executor
     let executor = CheckInExecutor::new(state.account_repo.clone(), true)
         .map_err(|e| e.to_string())?;
-    
+
     // Execute check-in (which fetches balance)
     let result = executor.execute_check_in(&account_id, provider)
         .await
         .map_err(|e| e.to_string())?;
-    
+
     let balance = result.user_info
         .ok_or("Failed to fetch balance")?;
-    
-    // Note: balance.quota is the remaining balance from API, not total quota
+
+    // Note: API returns quota (current balance) and used_quota (total consumed)
+    let current_balance = balance.quota;
+    let total_consumed = balance.used_quota;
     let balance_dto = BalanceDto {
-        quota: balance.quota,
-        used: balance.used_quota,
-        remaining: balance.quota, // remaining is same as quota since API returns remaining balance
+        current_balance,
+        total_consumed,
+        total_income: current_balance + total_consumed,  // Total income = current balance + consumed
     };
-    
+
     // Update account cache
-    account.update_balance(balance_dto.quota, balance_dto.used, balance_dto.remaining);
+    account.update_balance(balance_dto.current_balance, balance_dto.total_consumed, balance_dto.total_income);
     state.account_repo.save(&account).await.map_err(|e| e.to_string())?;
-    
+
     // Store balance history (only if significantly changed or first time)
     save_balance_history(&account_id, &balance_dto, &state).await?;
     
@@ -874,19 +884,19 @@ pub async fn get_balance_statistics(
     let providers = get_builtin_providers();
     
     let mut provider_stats: HashMap<String, ProviderBalanceDto> = HashMap::new();
-    let mut total_quota = 0.0;
-    let mut total_used = 0.0;
-    let mut total_remaining = 0.0;
-    
+    let mut total_current_balance = 0.0;
+    let mut total_consumed = 0.0;
+    let mut total_income = 0.0;
+
     for account in accounts {
         // Use cached balance from account directly (faster than querying balance_history)
-        let balance_opt = match (account.quota(), account.used_quota(), account.remaining()) {
-            (Some(q), Some(u), Some(r)) => Some((q, u, r)),
+        let balance_opt = match (account.current_balance(), account.total_consumed(), account.total_income()) {
+            (Some(cb), Some(tc), Some(ti)) => Some((cb, tc, ti)),
             _ => {
                 // Fallback to balance_history if account cache is empty
                 let account_id = account.id().as_str();
                 sqlx::query_as::<_, (f64, f64, f64)>(
-                    "SELECT quota, used_quota, remaining FROM balance_history 
+                    "SELECT current_balance, total_consumed, total_income FROM balance_history
                      WHERE account_id = ? ORDER BY recorded_at DESC LIMIT 1"
                 )
                 .bind(account_id)
@@ -895,38 +905,38 @@ pub async fn get_balance_statistics(
                 .map_err(|e| e.to_string())?
             }
         };
-        
-        if let Some((quota, used, remaining)) = balance_opt {
+
+        if let Some((current_balance, consumed, income)) = balance_opt {
             let provider_id = account.provider_id().as_str();
             let provider_name = providers.get(provider_id)
                 .map(|p| p.name().to_string())
                 .unwrap_or_else(|| "Unknown".to_string());
-            
+
             let stat = provider_stats.entry(provider_id.to_string()).or_insert(ProviderBalanceDto {
                 provider_id: provider_id.to_string(),
                 provider_name,
-                quota: 0.0,
-                used: 0.0,
-                remaining: 0.0,
+                current_balance: 0.0,
+                total_consumed: 0.0,
+                total_income: 0.0,
                 account_count: 0,
             });
-            
-            stat.quota += quota;
-            stat.used += used;
-            stat.remaining += remaining;
+
+            stat.current_balance += current_balance;
+            stat.total_consumed += consumed;
+            stat.total_income += income;
             stat.account_count += 1;
-            
-            total_quota += quota;
-            total_used += used;
-            total_remaining += remaining;
+
+            total_current_balance += current_balance;
+            total_consumed += consumed;
+            total_income += income;
         }
     }
-    
+
     Ok(BalanceStatisticsDto {
         providers: provider_stats.into_iter().map(|(_, v)| v).collect(),
-        total_quota,
-        total_used,
-        total_remaining,
+        total_current_balance,
+        total_consumed,
+        total_income,
     })
 }
 
@@ -956,14 +966,14 @@ async fn save_balance_history(
     // Only insert if no record exists for today or if values changed significantly
     if existing.is_none() {
         sqlx::query(
-            "INSERT INTO balance_history (id, account_id, quota, used_quota, remaining, recorded_at) 
+            "INSERT INTO balance_history (id, account_id, current_balance, total_consumed, total_income, recorded_at)
              VALUES (?, ?, ?, ?, ?, ?)"
         )
         .bind(&id)
         .bind(account_id)
-        .bind(balance.quota)
-        .bind(balance.used)
-        .bind(balance.remaining)
+        .bind(balance.current_balance)
+        .bind(balance.total_consumed)
+        .bind(balance.total_income)
         .bind(now.to_rfc3339())
         .execute(pool)
         .await

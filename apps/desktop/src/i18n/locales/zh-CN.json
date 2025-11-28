@@ -17,6 +17,9 @@
     "description": "管理和监控您的所有中转站账号",
     "welcome": "欢迎使用 NeuraDock",
     "welcomeDescription": "您的自动签到管理器已准备就绪。开始添加您的第一个账号。",
+    "current_balance": "当前余额",
+    "consumed": "已消耗",
+    "total_income": "总收益",
     "manageAccounts": "管理账号",
     "stats": {
       "totalIncome": "总收益",
@@ -252,5 +255,19 @@
     "filter": "筛选",
     "sort": "排序",
     "refresh": "刷新"
+  },
+  "disclaimer": {
+    "title": "重要声明",
+    "liability": {
+      "title": "免责声明",
+      "description": "本应用仅提供自动签到工具服务，已尽可能模拟真实浏览器行为以降低风险。",
+      "warning": "不保证服务提供商是否会封禁账号，使用本工具完全自愿，因使用本工具导致的账号封禁等后果由用户自行承担。"
+    },
+    "license": {
+      "title": "GPL 开源与商业许可",
+      "description": "本项目以 GNU General Public License v3.0（GPLv3）发布，所有修改或再发布的版本必须继续遵循 GPLv3 的强制开源条款。",
+      "commercial": "如需闭源发行、SaaS 或商业部署，必须购买 NeuraDock 官方商业许可以获得合法授权。",
+      "footer": "请通过官方渠道联系我们以购买商业许可或确认可用的授权范围。"
+    }
   }
 }

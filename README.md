@@ -15,7 +15,7 @@
 
 <!-- 项目信息 -->
 [![Version](https://img.shields.io/badge/version-0.1.0-brightgreen?style=flat-square)](https://github.com/neuradock/neuradock/releases)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square)](LICENSE)
+[![License: GPLv3 + Commercial](https://img.shields.io/badge/License-GPLv3%20%2B%20Commercial-blue?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-lightgrey?style=flat-square)](https://github.com/neuradock/neuradock/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](docs/contributing.md)
 
@@ -214,9 +214,12 @@ NeuraDock 采用 **DDD 四层架构**：
 
 ---
 
-## 📄 许可证
+## 📄 许可证（GPL 开源 + 售卖商业许可）
 
-本项目采用 [Apache License 2.0](LICENSE) 许可证。
+- **开源使用（GPLv3）**：代码以 [GNU General Public License v3.0](LICENSE) 形式发布，任何修改或再发布都必须继续遵循 GPLv3 的强制开源条款。
+- **商业许可（付费）**：若需闭源发行、商业部署或获取额外授权，请购买 NeuraDock 官方商业许可，以获得合法合规的使用授权及可选支持服务。
+
+购买商业许可或获取授权方案，请通过 Issues、Discussions 或我们的官方联系方式与团队沟通。
 
 ---
 

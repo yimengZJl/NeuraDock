@@ -91,21 +91,21 @@ export function CheckInButton({
                       <h4 className="text-sm font-medium">{t('checkIn.balance')}</h4>
                       <div className="grid grid-cols-3 gap-4 rounded-lg bg-muted p-4">
                         <div>
-                          <p className="text-xs text-muted-foreground">{t('dashboard.quota')}</p>
+                          <p className="text-xs text-muted-foreground">{t('dashboard.current_balance')}</p>
                           <p className="text-lg font-semibold">
-                            ${result.balance.quota.toFixed(2)}
+                            ${result.balance.current_balance.toFixed(2)}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">{t('dashboard.used')}</p>
+                          <p className="text-xs text-muted-foreground">{t('dashboard.consumed')}</p>
                           <p className="text-lg font-semibold">
-                            ${result.balance.used.toFixed(2)}
+                            ${result.balance.total_consumed.toFixed(2)}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">{t('dashboard.remaining')}</p>
+                          <p className="text-xs text-muted-foreground">{t('dashboard.total_income')}</p>
                           <p className="text-lg font-semibold text-green-600 dark:text-green-400">
-                            ${result.balance.remaining.toFixed(2)}
+                            ${result.balance.total_income.toFixed(2)}
                           </p>
                         </div>
                       </div>

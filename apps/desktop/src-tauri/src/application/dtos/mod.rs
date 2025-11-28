@@ -18,9 +18,9 @@ pub struct AccountDto {
     pub auto_checkin_hour: u8,
     pub auto_checkin_minute: u8,
     pub last_balance_check_at: Option<String>,
-    pub quota: Option<f64>,
-    pub used_quota: Option<f64>,
-    pub remaining: Option<f64>,
+    pub current_balance: Option<f64>,
+    pub total_consumed: Option<f64>,
+    pub total_income: Option<f64>,
     pub is_balance_stale: bool,
     pub is_online: bool,
 }
@@ -45,17 +45,17 @@ pub struct AccountDetailDto {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct BalanceDto {
-    pub quota: f64,
-    pub used: f64,
-    pub remaining: f64,
+    pub current_balance: f64,
+    pub total_consumed: f64,
+    pub total_income: f64,
 }
 
 impl From<Balance> for BalanceDto {
     fn from(b: Balance) -> Self {
         Self {
-            quota: b.quota,
-            used: b.used,
-            remaining: b.remaining,
+            current_balance: b.current_balance,
+            total_consumed: b.total_consumed,
+            total_income: b.total_income,
         }
     }
 }
@@ -202,18 +202,18 @@ pub struct AddProviderInput {
 pub struct ProviderBalanceDto {
     pub provider_id: String,
     pub provider_name: String,
-    pub quota: f64,
-    pub used: f64,
-    pub remaining: f64,
+    pub current_balance: f64,
+    pub total_consumed: f64,
+    pub total_income: f64,
     pub account_count: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct BalanceStatisticsDto {
     pub providers: Vec<ProviderBalanceDto>,
-    pub total_quota: f64,
-    pub total_used: f64,
-    pub total_remaining: f64,
+    pub total_current_balance: f64,
+    pub total_consumed: f64,
+    pub total_income: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]

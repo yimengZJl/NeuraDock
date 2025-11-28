@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBalanceStatistics } from '@/hooks/useBalance';
 import { useTranslation } from 'react-i18next';
+import { DisclaimerBanner } from '@/components/layout/DisclaimerBanner';
 
 export function DashboardPage() {
   const { data: accounts, isLoading } = useAccounts();
@@ -21,6 +22,8 @@ export function DashboardPage() {
         </p>
       </div>
 
+      <DisclaimerBanner />
+
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -30,7 +33,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {statsLoading ? '...' : statistics ? `$${(statistics.total_quota + statistics.total_used).toFixed(2)}` : '$0.00'}
+              {statsLoading ? '...' : statistics ? `$${statistics.total_income.toFixed(2)}` : '$0.00'}
             </div>
             <p className="text-xs text-muted-foreground">
               {t('dashboard.stats.acrossAllProviders')}
@@ -45,7 +48,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
-              {statsLoading ? '...' : statistics ? `$${statistics.total_used.toFixed(2)}` : '$0.00'}
+              {statsLoading ? '...' : statistics ? `$${statistics.total_consumed.toFixed(2)}` : '$0.00'}
             </div>
             <p className="text-xs text-muted-foreground">
               {t('dashboard.stats.totalConsumption')}
@@ -60,7 +63,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {statsLoading ? '...' : statistics ? `$${statistics.total_quota.toFixed(2)}` : '$0.00'}
+              {statsLoading ? '...' : statistics ? `$${statistics.total_current_balance.toFixed(2)}` : '$0.00'}
             </div>
             <p className="text-xs text-muted-foreground">
               {t('dashboard.stats.availableBalance')}
@@ -101,15 +104,15 @@ export function DashboardPage() {
                   <div className="flex gap-6 text-sm">
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">{t('dashboard.stats.totalIncome')}</p>
-                      <p className="font-semibold text-blue-600">${(provider.quota + provider.used).toFixed(2)}</p>
+                      <p className="font-semibold text-blue-600">${provider.total_income.toFixed(2)}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">{t('dashboard.stats.historicalConsumption')}</p>
-                      <p className="font-semibold text-orange-600">${provider.used.toFixed(2)}</p>
+                      <p className="font-semibold text-orange-600">${provider.total_consumed.toFixed(2)}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">{t('dashboard.stats.currentBalance')}</p>
-                      <p className="font-semibold text-green-600">${provider.quota.toFixed(2)}</p>
+                      <p className="font-semibold text-green-600">${provider.current_balance.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>

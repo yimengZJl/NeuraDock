@@ -19,17 +19,17 @@ pub struct CheckInResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct Balance {
-    pub quota: f64,      // Current balance (当前余额)
-    pub used: f64,       // Historical consumption (历史消耗)
-    pub remaining: f64,  // Total income (总收益) = quota + used
+    pub current_balance: f64,  // Current balance from API (来自API的当前余额)
+    pub total_consumed: f64,   // Total historical consumption from API (来自API的历史消耗)
+    pub total_income: f64,     // Total income (总收益) = current_balance + total_consumed
 }
 
 impl Balance {
-    pub fn new(quota: f64, used: f64) -> Self {
+    pub fn new(current_balance: f64, total_consumed: f64) -> Self {
         Self {
-            quota,
-            used,
-            remaining: quota + used,  // Total income = current balance + historical consumption
+            current_balance,
+            total_consumed,
+            total_income: current_balance + total_consumed,  // Total income = current balance + historical consumption
         }
     }
 }

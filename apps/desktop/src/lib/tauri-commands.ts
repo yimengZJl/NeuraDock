@@ -33,9 +33,9 @@ export interface Account {
   auto_checkin_hour: number;
   auto_checkin_minute: number;
   last_check_in?: string;
-  quota?: number;
-  used_quota?: number;
-  remaining?: number;
+  current_balance?: number;
+  total_consumed?: number;
+  total_income?: number;
   last_balance_check_at?: string;
 }
 

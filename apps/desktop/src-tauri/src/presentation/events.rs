@@ -12,7 +12,7 @@ pub struct CheckInProgress {
 #[derive(Serialize, Type, Event, Clone)]
 pub struct BalanceUpdated {
     pub account_id: String,
-    pub quota: f64,
-    pub used: f64,
-    pub remaining: f64,
+    pub current_balance: f64,
+    pub total_consumed: f64,
+    pub total_income: f64,
 }

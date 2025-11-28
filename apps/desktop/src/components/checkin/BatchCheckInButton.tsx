@@ -129,10 +129,10 @@ export function BatchCheckInButton({
                           
                           {item.balance && (
                             <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                              <span>{t('dashboard.quota')}: ${item.balance.quota.toFixed(2)}</span>
-                              <span>{t('dashboard.used')}: ${item.balance.used.toFixed(2)}</span>
+                              <span>{t('dashboard.current_balance')}: ${item.balance.current_balance.toFixed(2)}</span>
+                              <span>{t('dashboard.consumed')}: ${item.balance.total_consumed.toFixed(2)}</span>
                               <span className="text-green-600 dark:text-green-400">
-                                {t('dashboard.remaining')}: ${item.balance.remaining.toFixed(2)}
+                                {t('dashboard.total_income')}: ${item.balance.total_income.toFixed(2)}
                               </span>
                             </div>
                           )}

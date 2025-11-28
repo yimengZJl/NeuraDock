@@ -15,7 +15,7 @@
 
 <!-- Project Info -->
 [![Version](https://img.shields.io/badge/version-0.1.0-brightgreen?style=flat-square)](https://github.com/neuradock/neuradock/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![License: GPLv3 + Commercial](https://img.shields.io/badge/License-GPLv3%20%2B%20Commercial-blue?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-lightgrey?style=flat-square)](https://github.com/neuradock/neuradock/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](docs/en/contributing.md)
 
@@ -214,9 +214,12 @@ Please read the [Contributing Guide](docs/en/contributing.md) to learn how to pa
 
 ---
 
-## 📄 License
+## 📄 License (GPL Open Source + Commercial License Sales)
 
-This project is licensed under the [MIT License](LICENSE).
+- **Open Source (GPLv3):** Released under the [GNU General Public License v3.0](LICENSE). Any modifications or redistribution must remain GPL-compliant and inherit the copyleft obligations.
+- **Commercial License (Paid):** Proprietary, closed-source, or large-scale commercial deployments require purchasing an official NeuraDock commercial license to obtain compliant usage rights and optional support.
+
+To purchase or inquire about commercial licensing, please contact us via Issues, Discussions, or our official communication channels.
 
 ---
 

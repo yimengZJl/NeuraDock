@@ -2,25 +2,25 @@ import { useQuery } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
 
 export interface BalanceDto {
-  quota: number;
-  used: number;
-  remaining: number;
+  current_balance: number;
+  total_consumed: number;
+  total_income: number;
 }
 
 export interface ProviderBalanceDto {
   provider_id: string;
   provider_name: string;
-  quota: number;
-  used: number;
-  remaining: number;
+  current_balance: number;
+  total_consumed: number;
+  total_income: number;
   account_count: number;
 }
 
 export interface BalanceStatisticsDto {
   providers: ProviderBalanceDto[];
-  total_quota: number;
-  total_used: number;
-  total_remaining: number;
+  total_current_balance: number;
+  total_consumed: number;
+  total_income: number;
 }
 
 // Query: Fetch account balance
