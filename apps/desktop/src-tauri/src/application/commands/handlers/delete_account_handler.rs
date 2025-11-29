@@ -1,27 +1,29 @@
 use async_trait::async_trait;
+use chrono::Utc;
 use log::info;
 use std::sync::Arc;
 
 use crate::application::commands::account_commands::*;
 use crate::application::commands::command_handler::CommandHandler;
-use crate::application::services::AutoCheckInScheduler;
 use crate::domain::account::AccountRepository;
+use crate::domain::events::account_events::AccountDeleted;
+use crate::domain::events::EventBus;
 use crate::domain::shared::{AccountId, DomainError};
 
 /// Delete account command handler
 pub struct DeleteAccountCommandHandler {
     account_repo: Arc<dyn AccountRepository>,
-    scheduler: Arc<AutoCheckInScheduler>,
+    event_bus: Arc<dyn EventBus>,
 }
 
 impl DeleteAccountCommandHandler {
     pub fn new(
         account_repo: Arc<dyn AccountRepository>,
-        scheduler: Arc<AutoCheckInScheduler>,
+        event_bus: Arc<dyn EventBus>,
     ) -> Self {
         Self {
             account_repo,
-            scheduler,
+            event_bus,
         }
     }
 }
@@ -42,25 +44,23 @@ impl CommandHandler<DeleteAccountCommand> for DeleteAccountCommandHandler {
             .await?
             .ok_or_else(|| DomainError::AccountNotFound(cmd.account_id.clone()))?;
 
-        info!("Deleting account: {}", account.name());
+        let name = account.name().to_string();
+        info!("Deleting account: {}", name);
 
         // 2. Delete account
         self.account_repo.delete(&account_id).await?;
 
-        info!("Account deleted successfully: {}", account.name());
+        info!("Account deleted successfully: {}", name);
 
-        // 3. Reload scheduler (will be replaced by event in future)
-        if let Err(e) = self.reload_scheduler_safely().await {
-            log::warn!("Failed to reload scheduler after account deletion: {}", e);
-        }
+        // 3. Publish domain event
+        let event = AccountDeleted {
+            account_id,
+            name,
+            occurred_at: Utc::now(),
+        };
+        
+        self.event_bus.publish(Box::new(event)).await?;
 
         Ok(DeleteAccountResult { success: true })
-    }
-}
-
-impl DeleteAccountCommandHandler {
-    async fn reload_scheduler_safely(&self) -> Result<(), Box<dyn std::error::Error>> {
-        // TODO: Replace with domain event
-        Ok(())
     }
 }

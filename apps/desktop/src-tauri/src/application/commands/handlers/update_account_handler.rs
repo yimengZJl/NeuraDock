@@ -1,27 +1,29 @@
 use async_trait::async_trait;
+use chrono::Utc;
 use log::info;
 use std::sync::Arc;
 
 use crate::application::commands::account_commands::*;
 use crate::application::commands::command_handler::CommandHandler;
-use crate::application::services::AutoCheckInScheduler;
 use crate::domain::account::{AccountRepository, Credentials};
+use crate::domain::events::account_events::AccountUpdated;
+use crate::domain::events::EventBus;
 use crate::domain::shared::{AccountId, DomainError};
 
 /// Update account command handler
 pub struct UpdateAccountCommandHandler {
     account_repo: Arc<dyn AccountRepository>,
-    scheduler: Arc<AutoCheckInScheduler>,
+    event_bus: Arc<dyn EventBus>,
 }
 
 impl UpdateAccountCommandHandler {
     pub fn new(
         account_repo: Arc<dyn AccountRepository>,
-        scheduler: Arc<AutoCheckInScheduler>,
+        event_bus: Arc<dyn EventBus>,
     ) -> Self {
         Self {
             account_repo,
-            scheduler,
+            event_bus,
         }
     }
 }
@@ -42,9 +44,14 @@ impl CommandHandler<UpdateAccountCommand> for UpdateAccountCommandHandler {
             .await?
             .ok_or_else(|| DomainError::AccountNotFound(cmd.account_id.clone()))?;
 
+        let mut name_updated = None;
+        let mut credentials_updated = false;
+        let mut auto_checkin_config_updated = false;
+
         // 2. Update name if provided
         if let Some(name) = cmd.name {
-            account.update_name(name)?;
+            account.update_name(name.clone())?;
+            name_updated = Some(name);
         }
 
         // 3. Update credentials if provided
@@ -54,6 +61,7 @@ impl CommandHandler<UpdateAccountCommand> for UpdateAccountCommandHandler {
             });
             let credentials = Credentials::new(cookies, api_user);
             account.update_credentials(credentials)?;
+            credentials_updated = true;
         }
 
         // 4. Update auto check-in configuration if provided
@@ -61,6 +69,7 @@ impl CommandHandler<UpdateAccountCommand> for UpdateAccountCommandHandler {
             let hour = cmd.auto_checkin_hour.unwrap_or(account.auto_checkin_hour());
             let minute = cmd.auto_checkin_minute.unwrap_or(account.auto_checkin_minute());
             account.update_auto_checkin(enabled, hour, minute)?;
+            auto_checkin_config_updated = true;
         }
 
         // 5. Save updated account
@@ -68,18 +77,17 @@ impl CommandHandler<UpdateAccountCommand> for UpdateAccountCommandHandler {
 
         info!("Account updated successfully: {}", account.name());
 
-        // 6. Reload scheduler (will be replaced by event in future)
-        if let Err(e) = self.reload_scheduler_safely().await {
-            log::warn!("Failed to reload scheduler after account update: {}", e);
-        }
+        // 6. Publish domain event
+        let event = AccountUpdated {
+            account_id,
+            name: name_updated,
+            credentials_updated,
+            auto_checkin_config_updated,
+            occurred_at: Utc::now(),
+        };
+        
+        self.event_bus.publish(Box::new(event)).await?;
 
         Ok(UpdateAccountResult { success: true })
-    }
-}
-
-impl UpdateAccountCommandHandler {
-    async fn reload_scheduler_safely(&self) -> Result<(), Box<dyn std::error::Error>> {
-        // TODO: Replace with domain event
-        Ok(())
     }
 }

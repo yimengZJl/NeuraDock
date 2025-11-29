@@ -3,9 +3,13 @@ use std::sync::Arc;
 use tauri::Manager;
 
 use crate::application::commands::handlers::*;
+use crate::application::event_handlers::SchedulerReloadEventHandler;
 use crate::application::queries::CheckInStreakQueries;
 use crate::application::services::AutoCheckInScheduler;
+use crate::domain::events::account_events::*;
+use crate::domain::events::EventBus;
 use crate::domain::account::AccountRepository;
+use crate::infrastructure::events::InMemoryEventBus;
 use crate::infrastructure::persistence::{repositories::SqliteAccountRepository, Database};
 
 /// Command handlers container
@@ -23,6 +27,7 @@ pub struct AppState {
     pub db: Arc<Database>,
     pub account_repo: Arc<dyn AccountRepository>,
     pub scheduler: Arc<AutoCheckInScheduler>,
+    pub event_bus: Arc<dyn EventBus>,
     pub streak_queries: Arc<CheckInStreakQueries>,
     pub command_handlers: CommandHandlers,
     pub app_handle: tauri::AppHandle,
@@ -75,15 +80,48 @@ impl AppState {
         scheduler.start().await?;
         eprintln!("✓ Scheduler started");
 
+        // Initialize event bus and register event handlers
+        eprintln!("🔧 Initializing event bus...");
+        let event_bus = Arc::new(InMemoryEventBus::new());
+        
+        // Get providers for event handlers
+        use crate::presentation::commands::get_builtin_providers;
+        let providers = get_builtin_providers();
+        
+        // Register SchedulerReloadEventHandler for account events
+        let scheduler_reload_handler = SchedulerReloadEventHandler::new(
+            scheduler.clone(),
+            account_repo.clone(),
+            providers.clone(),
+            app_handle.clone(),
+        );
+        
+        use crate::domain::events::TypedEventHandlerWrapper;
+        
+        event_bus.subscribe::<AccountCreated>(
+            Arc::new(TypedEventHandlerWrapper::<AccountCreated, _>::new(scheduler_reload_handler.clone()))
+        ).await;
+        event_bus.subscribe::<AccountUpdated>(
+            Arc::new(TypedEventHandlerWrapper::<AccountUpdated, _>::new(scheduler_reload_handler.clone()))
+        ).await;
+        event_bus.subscribe::<AccountDeleted>(
+            Arc::new(TypedEventHandlerWrapper::<AccountDeleted, _>::new(scheduler_reload_handler.clone()))
+        ).await;
+        event_bus.subscribe::<AccountToggled>(
+            Arc::new(TypedEventHandlerWrapper::<AccountToggled, _>::new(scheduler_reload_handler))
+        ).await;
+        
+        eprintln!("✓ Event bus initialized and handlers registered");
+
         // Load existing schedules from database
         eprintln!("📋 Loading auto check-in schedules...");
-        use crate::presentation::commands::get_builtin_providers;
+        eprintln!("📦 Got {} providers", providers.len());
         let providers = get_builtin_providers();
         eprintln!("📦 Got {} providers", providers.len());
 
         eprintln!("🔍 Calling reload_schedules...");
         if let Err(e) = scheduler
-            .reload_schedules(providers, account_repo.clone(), app_handle.clone())
+            .reload_schedules(providers.clone(), account_repo.clone(), app_handle.clone())
             .await
         {
             eprintln!("⚠️  Failed to load schedules: {}", e);
@@ -96,19 +134,19 @@ impl AppState {
         let command_handlers = CommandHandlers {
             create_account: Arc::new(CreateAccountCommandHandler::new(
                 account_repo.clone(),
-                scheduler.clone(),
+                event_bus.clone(),
             )),
             update_account: Arc::new(UpdateAccountCommandHandler::new(
                 account_repo.clone(),
-                scheduler.clone(),
+                event_bus.clone(),
             )),
             delete_account: Arc::new(DeleteAccountCommandHandler::new(
                 account_repo.clone(),
-                scheduler.clone(),
+                event_bus.clone(),
             )),
             toggle_account: Arc::new(ToggleAccountCommandHandler::new(
                 account_repo.clone(),
-                scheduler.clone(),
+                event_bus.clone(),
             )),
             execute_check_in: Arc::new(ExecuteCheckInCommandHandler::new(
                 account_repo.clone(),
@@ -126,6 +164,7 @@ impl AppState {
             db,
             account_repo,
             scheduler,
+            event_bus,
             streak_queries,
             command_handlers,
             app_handle,

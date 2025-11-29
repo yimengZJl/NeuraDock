@@ -1,27 +1,29 @@
 use async_trait::async_trait;
+use chrono::Utc;
 use log::info;
 use std::sync::Arc;
 
 use crate::application::commands::account_commands::*;
 use crate::application::commands::command_handler::CommandHandler;
-use crate::application::services::AutoCheckInScheduler;
 use crate::domain::account::{Account, AccountRepository, Credentials};
+use crate::domain::events::account_events::AccountCreated;
+use crate::domain::events::EventBus;
 use crate::domain::shared::{AccountId, DomainError, ProviderId};
 
 /// Create account command handler
 pub struct CreateAccountCommandHandler {
     account_repo: Arc<dyn AccountRepository>,
-    scheduler: Arc<AutoCheckInScheduler>,
+    event_bus: Arc<dyn EventBus>,
 }
 
 impl CreateAccountCommandHandler {
     pub fn new(
         account_repo: Arc<dyn AccountRepository>,
-        scheduler: Arc<AutoCheckInScheduler>,
+        event_bus: Arc<dyn EventBus>,
     ) -> Self {
         Self {
             account_repo,
-            scheduler,
+            event_bus,
         }
     }
 }
@@ -53,29 +55,31 @@ impl CommandHandler<CreateAccountCommand> for CreateAccountCommandHandler {
         // 4. Save account
         self.account_repo.save(&account).await?;
 
+        let account_id = account.id().clone();
+        let name = account.name().to_string();
+        let provider_id = account.provider_id().clone();
+        let auto_checkin_enabled = account.auto_checkin_enabled();
+
         info!(
             "Account created successfully: {} ({})",
-            account.name(),
-            account.id().as_str()
+            name,
+            account_id.as_str()
         );
 
-        // 5. Reload scheduler (will be replaced by event in future)
-        // TODO: Replace with domain event when event system is implemented
-        if let Err(e) = self.reload_scheduler_safely().await {
-            log::warn!("Failed to reload scheduler after account creation: {}", e);
-        }
+        // 5. Publish domain event
+        let event = AccountCreated {
+            account_id: account_id.clone(),
+            name,
+            provider_id,
+            auto_checkin_enabled,
+            occurred_at: Utc::now(),
+        };
+        
+        self.event_bus.publish(Box::new(event)).await?;
 
         // 6. Return result
         Ok(CreateAccountResult {
-            account_id: account.id().as_str().to_string(),
+            account_id: account_id.as_str().to_string(),
         })
-    }
-}
-
-impl CreateAccountCommandHandler {
-    async fn reload_scheduler_safely(&self) -> Result<(), Box<dyn std::error::Error>> {
-        // This is a temporary solution until we implement domain events
-        // The scheduler reload should be triggered by an AccountCreated event
-        Ok(())
     }
 }

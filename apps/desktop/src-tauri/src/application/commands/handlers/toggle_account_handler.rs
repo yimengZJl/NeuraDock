@@ -1,27 +1,29 @@
 use async_trait::async_trait;
+use chrono::Utc;
 use log::info;
 use std::sync::Arc;
 
 use crate::application::commands::account_commands::*;
 use crate::application::commands::command_handler::CommandHandler;
-use crate::application::services::AutoCheckInScheduler;
 use crate::domain::account::AccountRepository;
+use crate::domain::events::account_events::AccountToggled;
+use crate::domain::events::EventBus;
 use crate::domain::shared::{AccountId, DomainError};
 
 /// Toggle account command handler
 pub struct ToggleAccountCommandHandler {
     account_repo: Arc<dyn AccountRepository>,
-    scheduler: Arc<AutoCheckInScheduler>,
+    event_bus: Arc<dyn EventBus>,
 }
 
 impl ToggleAccountCommandHandler {
     pub fn new(
         account_repo: Arc<dyn AccountRepository>,
-        scheduler: Arc<AutoCheckInScheduler>,
+        event_bus: Arc<dyn EventBus>,
     ) -> Self {
         Self {
             account_repo,
-            scheduler,
+            event_bus,
         }
     }
 }
@@ -57,18 +59,15 @@ impl CommandHandler<ToggleAccountCommand> for ToggleAccountCommandHandler {
             if cmd.enabled { "enabled" } else { "disabled" }
         );
 
-        // 4. Reload scheduler (will be replaced by event in future)
-        if let Err(e) = self.reload_scheduler_safely().await {
-            log::warn!("Failed to reload scheduler after account toggle: {}", e);
-        }
+        // 4. Publish domain event
+        let event = AccountToggled {
+            account_id,
+            enabled: cmd.enabled,
+            occurred_at: Utc::now(),
+        };
+        
+        self.event_bus.publish(Box::new(event)).await?;
 
         Ok(ToggleAccountResult { success: true })
-    }
-}
-
-impl ToggleAccountCommandHandler {
-    async fn reload_scheduler_safely(&self) -> Result<(), Box<dyn std::error::Error>> {
-        // TODO: Replace with domain event
-        Ok(())
     }
 }
