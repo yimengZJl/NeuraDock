@@ -1,3 +1,6 @@
+use crate::application::commands::account_commands::*;
+use crate::application::commands::check_in_commands::*;
+use crate::application::commands::command_handler::CommandHandler;
 use crate::application::services::CheckInExecutor;
 use crate::application::*;
 use crate::domain::account::{Account, Credentials};
@@ -51,26 +54,20 @@ pub async fn create_account(
     input: CreateAccountInput,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
-    let credentials = Credentials::new(input.cookies, input.api_user);
-    let mut account = Account::new(
-        input.name,
-        ProviderId::from_string(&input.provider_id),
-        credentials,
-    )
-    .map_err(|e| e.to_string())?;
+    let command = CreateAccountCommand {
+        name: input.name,
+        provider_id: input.provider_id,
+        cookies: input.cookies,
+        api_user: input.api_user,
+        auto_checkin_enabled: input.auto_checkin_enabled,
+        auto_checkin_hour: input.auto_checkin_hour,
+        auto_checkin_minute: input.auto_checkin_minute,
+    };
 
-    // Set auto check-in configuration if provided
-    if let Some(enabled) = input.auto_checkin_enabled {
-        let hour = input.auto_checkin_hour.unwrap_or(9);
-        let minute = input.auto_checkin_minute.unwrap_or(0);
-        account
-            .update_auto_checkin(enabled, hour, minute)
-            .map_err(|e| e.to_string())?;
-    }
-
-    state
-        .account_repo
-        .save(&account)
+    let result = state
+        .command_handlers
+        .create_account
+        .handle(command)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -88,7 +85,7 @@ pub async fn create_account(
         eprintln!("Failed to reload schedules: {}", e);
     }
 
-    Ok(account.id().as_str().to_string())
+    Ok(result.account_id)
 }
 
 #[tauri::command]
@@ -97,53 +94,20 @@ pub async fn update_account(
     input: UpdateAccountInput,
     state: State<'_, AppState>,
 ) -> Result<bool, String> {
-    let account_id = AccountId::from_string(&input.account_id);
-    let mut account = state
-        .account_repo
-        .find_by_id(&account_id)
-        .await
-        .map_err(|e| e.to_string())?
-        .ok_or("Account not found")?;
+    let command = UpdateAccountCommand {
+        account_id: input.account_id,
+        name: input.name,
+        cookies: input.cookies,
+        api_user: input.api_user,
+        auto_checkin_enabled: input.auto_checkin_enabled,
+        auto_checkin_hour: input.auto_checkin_hour,
+        auto_checkin_minute: input.auto_checkin_minute,
+    };
 
-    if let Some(name) = input.name {
-        account.update_name(name).map_err(|e| e.to_string())?;
-    }
-
-    // Update credentials if cookies are provided
-    if let Some(cookies) = input.cookies {
-        // Use provided api_user or keep the existing one
-        let api_user = input
-            .api_user
-            .unwrap_or_else(|| account.credentials().api_user().to_string());
-        let credentials = Credentials::new(cookies, api_user);
-        account
-            .update_credentials(credentials)
-            .map_err(|e| e.to_string())?;
-    } else if let Some(api_user) = input.api_user {
-        // If only api_user is updated, keep existing cookies
-        let cookies = account.credentials().cookies().clone();
-        let credentials = Credentials::new(cookies, api_user);
-        account
-            .update_credentials(credentials)
-            .map_err(|e| e.to_string())?;
-    }
-
-    // Update auto check-in configuration if provided
-    if let Some(enabled) = input.auto_checkin_enabled {
-        let hour = input
-            .auto_checkin_hour
-            .unwrap_or(account.auto_checkin_hour());
-        let minute = input
-            .auto_checkin_minute
-            .unwrap_or(account.auto_checkin_minute());
-        account
-            .update_auto_checkin(enabled, hour, minute)
-            .map_err(|e| e.to_string())?;
-    }
-
-    state
-        .account_repo
-        .save(&account)
+    let result = state
+        .command_handlers
+        .update_account
+        .handle(command)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -161,7 +125,7 @@ pub async fn update_account(
         eprintln!("Failed to reload schedules: {}", e);
     }
 
-    Ok(true)
+    Ok(result.success)
 }
 
 #[tauri::command]
@@ -170,10 +134,12 @@ pub async fn delete_account(
     account_id: String,
     state: State<'_, AppState>,
 ) -> Result<bool, String> {
-    let id = AccountId::from_string(&account_id);
-    state
-        .account_repo
-        .delete(&id)
+    let command = DeleteAccountCommand { account_id };
+
+    let result = state
+        .command_handlers
+        .delete_account
+        .handle(command)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -191,7 +157,7 @@ pub async fn delete_account(
         eprintln!("Failed to reload schedules: {}", e);
     }
 
-    Ok(true)
+    Ok(result.success)
 }
 
 #[tauri::command]
@@ -201,18 +167,15 @@ pub async fn toggle_account(
     enabled: bool,
     state: State<'_, AppState>,
 ) -> Result<bool, String> {
-    let id = AccountId::from_string(&account_id);
-    let mut account = state
-        .account_repo
-        .find_by_id(&id)
-        .await
-        .map_err(|e| e.to_string())?
-        .ok_or("Account not found")?;
+    let command = ToggleAccountCommand {
+        account_id,
+        enabled,
+    };
 
-    account.toggle(enabled);
-    state
-        .account_repo
-        .save(&account)
+    let result = state
+        .command_handlers
+        .toggle_account
+        .handle(command)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -230,7 +193,7 @@ pub async fn toggle_account(
         eprintln!("Failed to reload schedules: {}", e);
     }
 
-    Ok(true)
+    Ok(result.success)
 }
 
 #[tauri::command]

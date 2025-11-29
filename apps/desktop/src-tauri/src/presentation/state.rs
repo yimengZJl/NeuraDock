@@ -2,10 +2,21 @@ use sqlx::SqlitePool;
 use std::sync::Arc;
 use tauri::Manager;
 
+use crate::application::commands::handlers::*;
 use crate::application::queries::CheckInStreakQueries;
 use crate::application::services::AutoCheckInScheduler;
 use crate::domain::account::AccountRepository;
 use crate::infrastructure::persistence::{repositories::SqliteAccountRepository, Database};
+
+/// Command handlers container
+pub struct CommandHandlers {
+    pub create_account: Arc<CreateAccountCommandHandler>,
+    pub update_account: Arc<UpdateAccountCommandHandler>,
+    pub delete_account: Arc<DeleteAccountCommandHandler>,
+    pub toggle_account: Arc<ToggleAccountCommandHandler>,
+    pub execute_check_in: Arc<ExecuteCheckInCommandHandler>,
+    pub batch_execute_check_in: Arc<BatchExecuteCheckInCommandHandler>,
+}
 
 pub struct AppState {
     pub pool: Arc<SqlitePool>,
@@ -13,6 +24,7 @@ pub struct AppState {
     pub account_repo: Arc<dyn AccountRepository>,
     pub scheduler: Arc<AutoCheckInScheduler>,
     pub streak_queries: Arc<CheckInStreakQueries>,
+    pub command_handlers: CommandHandlers,
     pub app_handle: tauri::AppHandle,
 }
 
@@ -79,12 +91,43 @@ impl AppState {
             eprintln!("✓ Auto check-in schedules loaded successfully");
         }
 
+        // Initialize command handlers
+        eprintln!("🔧 Initializing command handlers...");
+        let command_handlers = CommandHandlers {
+            create_account: Arc::new(CreateAccountCommandHandler::new(
+                account_repo.clone(),
+                scheduler.clone(),
+            )),
+            update_account: Arc::new(UpdateAccountCommandHandler::new(
+                account_repo.clone(),
+                scheduler.clone(),
+            )),
+            delete_account: Arc::new(DeleteAccountCommandHandler::new(
+                account_repo.clone(),
+                scheduler.clone(),
+            )),
+            toggle_account: Arc::new(ToggleAccountCommandHandler::new(
+                account_repo.clone(),
+                scheduler.clone(),
+            )),
+            execute_check_in: Arc::new(ExecuteCheckInCommandHandler::new(
+                account_repo.clone(),
+                true, // headless_browser
+            )),
+            batch_execute_check_in: Arc::new(BatchExecuteCheckInCommandHandler::new(
+                account_repo.clone(),
+                true, // headless_browser
+            )),
+        };
+        eprintln!("✓ Command handlers initialized");
+
         Ok(Self {
             pool,
             db,
             account_repo,
             scheduler,
             streak_queries,
+            command_handlers,
             app_handle,
         })
     }
