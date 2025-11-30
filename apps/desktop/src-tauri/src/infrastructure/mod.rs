@@ -4,4 +4,5 @@ pub mod events;
 pub mod http;
 pub mod notification;
 pub mod persistence;
+pub mod plugins;
 pub mod security;
