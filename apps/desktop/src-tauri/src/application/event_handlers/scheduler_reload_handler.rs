@@ -36,7 +36,7 @@ impl SchedulerReloadEventHandler {
     }
 
     async fn reload_schedules(&self) -> Result<(), DomainError> {
-        info!("Reloading scheduler schedules due to account change");
+        info!("🔄 [SCHEDULER] Reloading schedules due to account change");
         
         self.scheduler
             .reload_schedules(
@@ -46,11 +46,11 @@ impl SchedulerReloadEventHandler {
             )
             .await
             .map_err(|e| {
-                error!("Failed to reload schedules: {}", e);
+                error!("❌ [SCHEDULER] Failed to reload schedules: {}", e);
                 DomainError::Infrastructure(format!("Failed to reload schedules: {}", e))
             })?;
         
-        info!("Scheduler schedules reloaded successfully");
+        info!("✅ [SCHEDULER] Schedules reloaded successfully");
         Ok(())
     }
 }
@@ -59,14 +59,15 @@ impl SchedulerReloadEventHandler {
 impl EventHandler<AccountCreated> for SchedulerReloadEventHandler {
     async fn handle(&self, event: &AccountCreated) -> Result<(), DomainError> {
         info!(
-            "Handling AccountCreated event for account: {} ({})",
-            event.name, event.account_id
+            "🔔 [EVENT] AccountCreated: {} ({}) - auto_checkin_enabled: {}",
+            event.name, event.account_id, event.auto_checkin_enabled
         );
         
         if event.auto_checkin_enabled {
+            info!("🔄 Reloading scheduler for new account with auto check-in enabled");
             self.reload_schedules().await?;
         } else {
-            info!("Auto check-in not enabled for account, skipping scheduler reload");
+            info!("⏭️  Auto check-in not enabled for account, skipping scheduler reload");
         }
         
         Ok(())
@@ -76,13 +77,17 @@ impl EventHandler<AccountCreated> for SchedulerReloadEventHandler {
 #[async_trait]
 impl EventHandler<AccountUpdated> for SchedulerReloadEventHandler {
     async fn handle(&self, event: &AccountUpdated) -> Result<(), DomainError> {
-        info!("Handling AccountUpdated event for account: {}", event.account_id);
+        info!(
+            "🔔 [EVENT] AccountUpdated: {} - auto_checkin_config_updated: {}",
+            event.account_id, event.auto_checkin_config_updated
+        );
         
         // Reload if auto check-in config was updated
         if event.auto_checkin_config_updated {
+            info!("🔄 Reloading scheduler due to auto check-in config update");
             self.reload_schedules().await?;
         } else {
-            info!("Auto check-in config not updated, skipping scheduler reload");
+            info!("⏭️  Auto check-in config not updated, skipping scheduler reload");
         }
         
         Ok(())
@@ -93,10 +98,11 @@ impl EventHandler<AccountUpdated> for SchedulerReloadEventHandler {
 impl EventHandler<AccountDeleted> for SchedulerReloadEventHandler {
     async fn handle(&self, event: &AccountDeleted) -> Result<(), DomainError> {
         info!(
-            "Handling AccountDeleted event for account: {} ({})",
+            "🔔 [EVENT] AccountDeleted: {} ({})",
             event.name, event.account_id
         );
         
+        info!("🔄 Reloading scheduler to remove deleted account's schedule");
         self.reload_schedules().await?;
         Ok(())
     }
@@ -106,10 +112,11 @@ impl EventHandler<AccountDeleted> for SchedulerReloadEventHandler {
 impl EventHandler<AccountToggled> for SchedulerReloadEventHandler {
     async fn handle(&self, event: &AccountToggled) -> Result<(), DomainError> {
         info!(
-            "Handling AccountToggled event for account: {} (enabled: {})",
+            "🔔 [EVENT] AccountToggled: {} - enabled: {}",
             event.account_id, event.enabled
         );
         
+        info!("🔄 Reloading scheduler due to account toggle");
         self.reload_schedules().await?;
         Ok(())
     }

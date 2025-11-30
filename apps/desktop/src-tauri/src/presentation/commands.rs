@@ -71,19 +71,8 @@ pub async fn create_account(
         .await
         .map_err(|e| e.to_string())?;
 
-    // Reload scheduler to pick up new account
-    let providers = get_builtin_providers();
-    if let Err(e) = state
-        .scheduler
-        .reload_schedules(
-            providers,
-            state.account_repo.clone(),
-            state.app_handle.clone(),
-        )
-        .await
-    {
-        eprintln!("Failed to reload schedules: {}", e);
-    }
+    // Scheduler will be reloaded automatically via AccountCreated event
+    // handled by SchedulerReloadEventHandler
 
     Ok(result.account_id)
 }
@@ -111,19 +100,8 @@ pub async fn update_account(
         .await
         .map_err(|e| e.to_string())?;
 
-    // Reload scheduler to pick up changes
-    let providers = get_builtin_providers();
-    if let Err(e) = state
-        .scheduler
-        .reload_schedules(
-            providers,
-            state.account_repo.clone(),
-            state.app_handle.clone(),
-        )
-        .await
-    {
-        eprintln!("Failed to reload schedules: {}", e);
-    }
+    // Scheduler will be reloaded automatically via AccountUpdated event
+    // handled by SchedulerReloadEventHandler
 
     Ok(result.success)
 }
@@ -143,19 +121,8 @@ pub async fn delete_account(
         .await
         .map_err(|e| e.to_string())?;
 
-    // Reload scheduler to remove deleted account's job
-    let providers = get_builtin_providers();
-    if let Err(e) = state
-        .scheduler
-        .reload_schedules(
-            providers,
-            state.account_repo.clone(),
-            state.app_handle.clone(),
-        )
-        .await
-    {
-        eprintln!("Failed to reload schedules: {}", e);
-    }
+    // Scheduler will be reloaded automatically via AccountDeleted event
+    // handled by SchedulerReloadEventHandler
 
     Ok(result.success)
 }
@@ -179,19 +146,8 @@ pub async fn toggle_account(
         .await
         .map_err(|e| e.to_string())?;
 
-    // Reload scheduler when toggling account
-    let providers = get_builtin_providers();
-    if let Err(e) = state
-        .scheduler
-        .reload_schedules(
-            providers,
-            state.account_repo.clone(),
-            state.app_handle.clone(),
-        )
-        .await
-    {
-        eprintln!("Failed to reload schedules: {}", e);
-    }
+    // Scheduler will be reloaded automatically via AccountToggled event
+    // handled by SchedulerReloadEventHandler
 
     Ok(result.success)
 }
@@ -438,21 +394,8 @@ pub async fn update_accounts_batch(
         }
     }
 
-    // Reload scheduler if any accounts were updated or created
-    if updated > 0 || created > 0 {
-        let providers = get_builtin_providers();
-        if let Err(e) = state
-            .scheduler
-            .reload_schedules(
-                providers,
-                state.account_repo.clone(),
-                state.app_handle.clone(),
-            )
-            .await
-        {
-            eprintln!("Failed to reload schedules: {}", e);
-        }
-    }
+    // Scheduler will be reloaded automatically via domain events
+    // (AccountCreated/AccountUpdated) handled by SchedulerReloadEventHandler
 
     Ok(BatchUpdateResult {
         total: results.len() as i32,
