@@ -2,7 +2,7 @@ use chrono::{Local, Timelike};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::time::{interval_at, Duration, Instant};
-use tracing::{error, info};
+use tracing::{error, info, instrument};
 
 use crate::domain::account::AccountRepository;
 use crate::domain::check_in::Provider;
@@ -20,34 +20,30 @@ impl AutoCheckInScheduler {
     }
 
     pub async fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
-        info!("Auto check-in scheduler started (using tokio timer)");
-        eprintln!("✓ Auto check-in scheduler started");
+        info!("✅ Auto check-in scheduler started (using tokio timer)");
         Ok(())
     }
 
+    #[instrument(skip(self, providers, account_repo, app_handle))]
     pub async fn reload_schedules(
         &self,
         providers: HashMap<String, Provider>,
         account_repo: Arc<dyn AccountRepository>,
         app_handle: tauri::AppHandle,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        info!("Reloading auto check-in schedules");
-        eprintln!("🔄 Reloading auto check-in schedules...");
+        info!("🔄 Reloading auto check-in schedules");
 
         let now = Local::now();
-        eprintln!(
-            "  📍 Current local time: {}",
-            now.format("%Y-%m-%d %H:%M:%S %Z")
-        );
+        info!("📍 Current local time: {}", now.format("%Y-%m-%d %H:%M:%S %Z"));
 
         // Get all accounts with auto check-in enabled
         let accounts = account_repo.find_all().await?;
-        eprintln!("  Found {} total accounts", accounts.len());
+        info!("Found {} total accounts", accounts.len());
 
         let mut scheduled_count = 0;
         for account in accounts {
-            eprintln!(
-                "  Account: {} - enabled: {}, auto_checkin: {}",
+            info!(
+                "Account: {} - enabled: {}, auto_checkin: {}",
                 account.name(),
                 account.is_enabled(),
                 account.auto_checkin_enabled()
@@ -67,8 +63,8 @@ impl AutoCheckInScheduler {
                     );
                     scheduled_count += 1;
                 } else {
-                    eprintln!(
-                        "  ⚠ Provider '{}' not found for account {}",
+                    info!(
+                        "⚠️  Provider '{}' not found for account {}",
                         provider_id,
                         account.name()
                     );
@@ -76,7 +72,7 @@ impl AutoCheckInScheduler {
             }
         }
 
-        eprintln!("✓ Scheduled {} auto check-in jobs", scheduled_count);
+        info!("✅ Scheduled {} auto check-in jobs", scheduled_count);
 
         Ok(())
     }
@@ -91,10 +87,7 @@ impl AutoCheckInScheduler {
         account_repo: Arc<dyn AccountRepository>,
         app_handle: tauri::AppHandle,
     ) {
-        eprintln!(
-            "  ➕ Spawning task for '{}' at {}:{:02}",
-            account_name, hour, minute
-        );
+        info!("➕ Spawning task for '{}' at {}:{:02}", account_name, hour, minute);
 
         tokio::spawn(async move {
             loop {
@@ -118,8 +111,8 @@ impl AutoCheckInScheduler {
                 let duration_until_next =
                     (next_run - now).to_std().unwrap_or(Duration::from_secs(60));
 
-                eprintln!(
-                    "     Next run for '{}': {} (in {} seconds)",
+                info!(
+                    "Next run for '{}': {} (in {} seconds)",
                     account_name,
                     next_run.format("%Y-%m-%d %H:%M:%S"),
                     duration_until_next.as_secs()
@@ -129,12 +122,11 @@ impl AutoCheckInScheduler {
                 tokio::time::sleep(duration_until_next).await;
 
                 // Execute check-in
-                eprintln!(
+                info!(
                     "⏰ [AUTO CHECK-IN] Executing for account: {} at {}",
                     account_name,
                     Local::now().format("%Y-%m-%d %H:%M:%S %Z")
                 );
-                info!("Executing auto check-in for account {}", account_name);
 
                 use crate::application::services::CheckInExecutor;
                 match CheckInExecutor::new(account_repo.clone(), true) {
@@ -145,12 +137,8 @@ impl AutoCheckInScheduler {
                         {
                             Ok(result) => {
                                 if result.success {
-                                    eprintln!(
-                                        "✓ [AUTO CHECK-IN] Success for {}: {}",
-                                        account_name, result.message
-                                    );
                                     info!(
-                                        "Auto check-in successful for account {}: {}",
+                                        "✅ [AUTO CHECK-IN] Success for {}: {}",
                                         account_name, result.message
                                     );
 
@@ -163,32 +151,22 @@ impl AutoCheckInScheduler {
                                         .body(format!("{}: {}", account_name, result.message))
                                         .show()
                                     {
-                                        error!("Failed to send notification: {}", e);
-                                        eprintln!(
-                                            "✗ [AUTO CHECK-IN] Failed to send notification: {}",
-                                            e
-                                        );
+                                        error!("❌ [AUTO CHECK-IN] Failed to send notification: {}", e);
                                     }
                                 } else {
-                                    eprintln!(
-                                        "✗ [AUTO CHECK-IN] Failed for {}: {}",
-                                        account_name, result.message
-                                    );
                                     error!(
-                                        "Auto check-in failed for account {}: {}",
+                                        "❌ [AUTO CHECK-IN] Failed for {}: {}",
                                         account_name, result.message
                                     );
                                 }
                             }
                             Err(e) => {
-                                eprintln!("✗ [AUTO CHECK-IN] Error for {}: {}", account_name, e);
-                                error!("Auto check-in failed for account {}: {}", account_name, e);
+                                error!("❌ [AUTO CHECK-IN] Error for {}: {}", account_name, e);
                             }
                         }
                     }
                     Err(e) => {
-                        eprintln!("✗ [AUTO CHECK-IN] Failed to create executor: {}", e);
-                        error!("Failed to create CheckInExecutor: {}", e);
+                        error!("❌ [AUTO CHECK-IN] Failed to create executor: {}", e);
                     }
                 }
             }

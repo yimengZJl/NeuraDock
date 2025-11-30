@@ -4,6 +4,7 @@ use serde_json;
 use sqlx::FromRow;
 use sqlx::SqlitePool;
 use std::sync::Arc;
+use tracing::warn;
 
 use crate::domain::account::{Account, AccountRepository, Credentials};
 use crate::domain::shared::{AccountId, DomainError, ProviderId};
@@ -40,7 +41,7 @@ impl AccountRow {
             Ok(decrypted) => decrypted,
             Err(_) => {
                 // Assume it's plaintext (legacy data)
-                eprintln!("⚠️  Warning: Account {} has unencrypted cookies, will re-encrypt on next save", self.id);
+                warn!("⚠️  Account {} has unencrypted cookies, will re-encrypt on next save", self.id);
                 self.cookies
             }
         };

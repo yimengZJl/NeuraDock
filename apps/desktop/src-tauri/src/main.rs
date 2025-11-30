@@ -19,7 +19,19 @@ static STATE_CELL: OnceCell<()> = OnceCell::const_new();
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    // Initialize tracing with env filter
+    // Set RUST_LOG=debug for detailed logs, or RUST_LOG=info for normal operation
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+        )
+        .with_target(true)
+        .with_thread_ids(true)
+        .with_line_number(true)
+        .init();
+    
+    tracing::info!("🚀 NeuraDock starting...");
 
     let builder = Builder::<tauri::Wry>::new()
         .commands(collect_commands![
@@ -81,15 +93,15 @@ async fn main() {
 
             // Initialize state asynchronously
             tauri::async_runtime::spawn(async move {
-                eprintln!("Starting app state initialization...");
+                tracing::info!("🚀 Starting app state initialization...");
                 match AppState::new(handle.clone()).await {
                     Ok(app_state) => {
                         handle.manage(app_state);
                         STATE_CELL.set(()).ok();
-                        eprintln!("✓ App state initialized successfully");
+                        tracing::info!("✅ App state initialized successfully");
                     }
                     Err(e) => {
-                        eprintln!("✗ Failed to initialize app state: {}", e);
+                        tracing::error!("❌ Failed to initialize app state: {}", e);
                     }
                 }
             });

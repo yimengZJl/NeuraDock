@@ -1,6 +1,7 @@
 use sqlx::SqlitePool;
 use std::sync::Arc;
 use tauri::Manager;
+use tracing::{info, warn, error};
 
 use crate::application::commands::handlers::*;
 use crate::application::event_handlers::SchedulerReloadEventHandler;
@@ -58,10 +59,10 @@ impl AppState {
         let db_path = app_data_dir.join(db_filename);
         let db_path_str = db_path.to_str().ok_or("Invalid database path")?;
 
-        eprintln!("Database path: {}", db_path_str);
+        info!("Database path: {}", db_path_str);
 
         // Initialize encryption
-        eprintln!("🔐 Initializing encryption...");
+        info!("🔐 Initializing encryption...");
         let key_manager = KeyManager::new(app_data_dir.clone());
         let salt = key_manager.initialize()
             .map_err(|e| format!("Failed to initialize encryption salt: {}", e))?;
@@ -73,15 +74,15 @@ impl AppState {
             EncryptionService::from_password(encryption_password, &salt)
                 .map_err(|e| format!("Failed to create encryption service: {}", e))?
         );
-        eprintln!("✓ Encryption initialized");
+        info!("✓ Encryption initialized");
 
-        eprintln!("🔌 Connecting to database...");
+        info!("🔌 Connecting to database...");
         let database = Database::new(db_path_str).await?;
-        eprintln!("✓ Database connection established");
+        info!("✓ Database connection established");
 
-        eprintln!("🔄 Running migrations...");
+        info!("🔄 Running migrations...");
         database.run_migrations().await?;
-        eprintln!("✓ Migrations completed");
+        info!("✓ Migrations completed");
 
         let pool = Arc::new(database.pool().clone());
         let db = Arc::new(database);
@@ -90,17 +91,17 @@ impl AppState {
         let account_queries = Arc::new(AccountQueryService::new(account_repo.clone()));
         let streak_queries = Arc::new(CheckInStreakQueries::new(pool.clone()));
 
-        eprintln!("📊 Initializing scheduler...");
+        info!("📊 Initializing scheduler...");
         // Initialize scheduler
         let scheduler = Arc::new(AutoCheckInScheduler::new(account_repo.clone()).await?);
-        eprintln!("✓ Scheduler initialized");
+        info!("✓ Scheduler initialized");
 
-        eprintln!("▶️  Starting scheduler...");
+        info!("▶️  Starting scheduler...");
         scheduler.start().await?;
-        eprintln!("✓ Scheduler started");
+        info!("✓ Scheduler started");
 
         // Initialize event bus and register event handlers
-        eprintln!("🔧 Initializing event bus...");
+        info!("🔧 Initializing event bus...");
         let event_bus = Arc::new(InMemoryEventBus::new());
         
         // Get providers for event handlers
@@ -130,26 +131,24 @@ impl AppState {
             Arc::new(TypedEventHandlerWrapper::<AccountToggled, _>::new(scheduler_reload_handler))
         ).await;
         
-        eprintln!("✓ Event bus initialized and handlers registered");
+        info!("✓ Event bus initialized and handlers registered");
 
         // Load existing schedules from database
-        eprintln!("📋 Loading auto check-in schedules...");
-        eprintln!("📦 Got {} providers", providers.len());
+        info!("📋 Loading auto check-in schedules...");
         let providers = get_builtin_providers();
-        eprintln!("📦 Got {} providers", providers.len());
+        info!("📦 Got {} providers", providers.len());
 
-        eprintln!("🔍 Calling reload_schedules...");
         if let Err(e) = scheduler
             .reload_schedules(providers.clone(), account_repo.clone(), app_handle.clone())
             .await
         {
-            eprintln!("⚠️  Failed to load schedules: {}", e);
+            warn!("⚠️  Failed to load schedules: {}", e);
         } else {
-            eprintln!("✓ Auto check-in schedules loaded successfully");
+            info!("✓ Auto check-in schedules loaded successfully");
         }
 
         // Initialize command handlers
-        eprintln!("🔧 Initializing command handlers...");
+        info!("🔧 Initializing command handlers...");
         let command_handlers = CommandHandlers {
             create_account: Arc::new(CreateAccountCommandHandler::new(
                 account_repo.clone(),
@@ -176,7 +175,7 @@ impl AppState {
                 true, // headless_browser
             )),
         };
-        eprintln!("✓ Command handlers initialized");
+        info!("✓ Command handlers initialized");
 
         Ok(Self {
             pool,

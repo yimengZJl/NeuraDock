@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tracing::info;
 
 use super::{PluginInstance, PluginMetadata, ProviderPlugin};
 use crate::domain::shared::DomainError;
@@ -38,7 +39,7 @@ impl PluginRegistry {
             ));
         }
         
-        eprintln!("🔌 Registering plugin: {} ({})", plugin.name(), id);
+        info!("🔌 Registering plugin: {} ({})", plugin.name(), id);
         plugins.insert(id, plugin);
         Ok(())
     }

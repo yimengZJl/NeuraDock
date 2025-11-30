@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use log::{error, info, warn};
 use std::collections::HashMap;
 use std::sync::Arc;
+use tracing::instrument;
 
 use crate::domain::{
     account::{Account, AccountRepository},
@@ -49,6 +50,7 @@ impl CheckInExecutor {
     }
 
     /// Execute check-in for a single account
+    #[instrument(skip(self, provider), fields(account_id = %account_id, provider_id = %provider.id()))]
     pub async fn execute_check_in(
         &self,
         account_id: &str,
@@ -286,6 +288,7 @@ impl CheckInExecutor {
     }
 
     /// Execute batch check-in for multiple accounts
+    #[instrument(skip(self, providers), fields(batch_size = account_ids.len()))]
     pub async fn execute_batch_check_in(
         &self,
         account_ids: Vec<String>,
