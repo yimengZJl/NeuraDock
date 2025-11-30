@@ -36,19 +36,19 @@ WHERE last_balance_check_at IS NOT NULL;
 
 -- Compound index for account-based job queries with status filter
 CREATE INDEX IF NOT EXISTS idx_check_in_jobs_account_status 
-ON check_in_jobs(account_id, status, created_at DESC);
+ON check_in_jobs(account_id, status, scheduled_at DESC);
 
 -- Index for status-based queries (finding pending/running jobs)
 CREATE INDEX IF NOT EXISTS idx_check_in_jobs_status
-ON check_in_jobs(status, created_at DESC);
+ON check_in_jobs(status, scheduled_at DESC);
 
 -- Index for provider-based queries
 CREATE INDEX IF NOT EXISTS idx_check_in_jobs_provider
 ON check_in_jobs(provider_id);
 
 -- Index for time-range queries
-CREATE INDEX IF NOT EXISTS idx_check_in_jobs_created
-ON check_in_jobs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_check_in_jobs_scheduled
+ON check_in_jobs(scheduled_at DESC);
 
 -- ========================================
 -- Balance history table indexes
