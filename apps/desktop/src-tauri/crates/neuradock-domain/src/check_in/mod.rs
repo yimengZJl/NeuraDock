@@ -4,6 +4,11 @@ mod provider;
 mod repository;
 mod value_objects;
 
+#[cfg(test)]
+mod aggregate_test;
+#[cfg(test)]
+mod value_objects_test;
+
 pub use aggregate::CheckInJob;
 pub use domain_service::CheckInDomainService;
 pub use provider::Provider;
