@@ -11,6 +11,7 @@ use crate::domain::events::EventBus;
 use crate::domain::account::AccountRepository;
 use crate::infrastructure::events::InMemoryEventBus;
 use crate::infrastructure::persistence::{repositories::SqliteAccountRepository, Database};
+use crate::infrastructure::security::{EncryptionService, KeyManager};
 
 /// Command handlers container
 pub struct CommandHandlers {
@@ -31,6 +32,7 @@ pub struct AppState {
     pub account_queries: Arc<AccountQueryService>,
     pub streak_queries: Arc<CheckInStreakQueries>,
     pub command_handlers: CommandHandlers,
+    pub encryption_service: Arc<EncryptionService>,
     pub app_handle: tauri::AppHandle,
 }
 
@@ -58,6 +60,21 @@ impl AppState {
 
         eprintln!("Database path: {}", db_path_str);
 
+        // Initialize encryption
+        eprintln!("🔐 Initializing encryption...");
+        let key_manager = KeyManager::new(app_data_dir.clone());
+        let salt = key_manager.initialize()
+            .map_err(|e| format!("Failed to initialize encryption salt: {}", e))?;
+        
+        // TODO: In production, get password from secure input
+        // For now, use a default password (should be configurable)
+        let encryption_password = "neuradock_default_password_2024";
+        let encryption_service = Arc::new(
+            EncryptionService::from_password(encryption_password, &salt)
+                .map_err(|e| format!("Failed to create encryption service: {}", e))?
+        );
+        eprintln!("✓ Encryption initialized");
+
         eprintln!("🔌 Connecting to database...");
         let database = Database::new(db_path_str).await?;
         eprintln!("✓ Database connection established");
@@ -69,7 +86,7 @@ impl AppState {
         let pool = Arc::new(database.pool().clone());
         let db = Arc::new(database);
         let account_repo =
-            Arc::new(SqliteAccountRepository::new(pool.clone())) as Arc<dyn AccountRepository>;
+            Arc::new(SqliteAccountRepository::new(pool.clone(), encryption_service.clone())) as Arc<dyn AccountRepository>;
         let account_queries = Arc::new(AccountQueryService::new(account_repo.clone()));
         let streak_queries = Arc::new(CheckInStreakQueries::new(pool.clone()));
 
@@ -170,6 +187,7 @@ impl AppState {
             account_queries,
             streak_queries,
             command_handlers,
+            encryption_service,
             app_handle,
         })
     }

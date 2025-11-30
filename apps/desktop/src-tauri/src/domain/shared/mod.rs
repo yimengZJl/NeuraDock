@@ -63,4 +63,7 @@ pub enum DomainError {
 
     #[error("Validation error: {0}")]
     Validation(String),
+    
+    #[error("Data integrity error: {0}")]
+    DataIntegrity(String),
 }
