@@ -298,6 +298,7 @@
     "logLevelTrace": "追踪 (Trace) - 性能追踪",
     "logLevelUpdated": "日志级别已更新",
     "restartRequired": "重启应用后生效",
+    "logLevelSaved": "日志级别设置已保存到配置文件，重启应用后生效",
     "autoCheckin": "自动签到",
     "autoCheckinDaily": "每天自动执行签到",
     "hour": "小时",

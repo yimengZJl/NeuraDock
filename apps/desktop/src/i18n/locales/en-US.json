@@ -298,6 +298,7 @@
     "logLevelTrace": "Trace - Performance tracing",
     "logLevelUpdated": "Log level updated",
     "restartRequired": "Restart app to apply changes",
+    "logLevelSaved": "Log level setting saved to config file, will take effect after app restart",
     "autoCheckin": "Auto Check-in",
     "autoCheckinDaily": "Automatically check in daily",
     "hour": "Hour",

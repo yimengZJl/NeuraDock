@@ -1017,7 +1017,7 @@ pub async fn get_log_level(state: State<'_, AppState>) -> Result<String, String>
 #[specta::specta]
 pub async fn set_log_level(level: String, state: State<'_, AppState>) -> Result<(), String> {
     use crate::application::services::LogLevel;
-    
+
     let log_level = match level.to_lowercase().as_str() {
         "error" => LogLevel::Error,
         "warn" => LogLevel::Warn,
@@ -1026,8 +1026,9 @@ pub async fn set_log_level(level: String, state: State<'_, AppState>) -> Result<
         "trace" => LogLevel::Trace,
         _ => return Err("Invalid log level. Must be one of: error, warn, info, debug, trace".to_string()),
     };
-    
-    state.config_service.set_log_level(log_level);
+
+    state.config_service.set_log_level(log_level)
+        .map_err(|e| format!("Failed to save log level: {}", e))?;
     Ok(())
 }
 

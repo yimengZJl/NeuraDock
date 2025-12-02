@@ -224,7 +224,11 @@ impl AppState {
         info!("✓ Command handlers initialized");
 
         // Initialize config service
-        let config_service = Arc::new(ConfigService::new());
+        info!("🔧 Initializing config service...");
+        let config_service = Arc::new(
+            ConfigService::new(&app_handle)
+                .map_err(|e| format!("Failed to initialize config service: {}", e))?
+        );
         info!("✓ Config service initialized");
 
         Ok(Self {
