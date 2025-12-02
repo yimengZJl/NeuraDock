@@ -7,14 +7,16 @@ use tracing::{info, warn, error};
 use crate::application::commands::handlers::*;
 use crate::application::event_handlers::SchedulerReloadEventHandler;
 use crate::application::queries::{AccountQueryService, CheckInStreakQueries};
-use crate::application::services::{AutoCheckInScheduler, ConfigService};
+use crate::application::services::{AutoCheckInScheduler, ConfigService, NotificationService};
 use neuradock_domain::events::account_events::*;
 use neuradock_domain::events::EventBus;
 use neuradock_domain::account::AccountRepository;
 use neuradock_domain::session::SessionRepository;
+use neuradock_domain::notification::NotificationChannelRepository;
 use neuradock_domain::check_in::Provider;
 use neuradock_infrastructure::events::InMemoryEventBus;
 use neuradock_infrastructure::persistence::{repositories::{SqliteAccountRepository, SqliteSessionRepository}, Database};
+use neuradock_infrastructure::notification::SqliteNotificationChannelRepository;
 use neuradock_infrastructure::security::{EncryptionService, KeyManager};
 
 /// Command handlers container
@@ -25,6 +27,10 @@ pub struct CommandHandlers {
     pub toggle_account: Arc<ToggleAccountCommandHandler>,
     pub execute_check_in: Arc<ExecuteCheckInCommandHandler>,
     pub batch_execute_check_in: Arc<BatchExecuteCheckInCommandHandler>,
+    pub create_notification_channel: Arc<CreateNotificationChannelHandler>,
+    pub update_notification_channel: Arc<UpdateNotificationChannelHandler>,
+    pub delete_notification_channel: Arc<DeleteNotificationChannelHandler>,
+    pub test_notification_channel: Arc<TestNotificationChannelHandler>,
 }
 
 pub struct AppState {
@@ -32,6 +38,8 @@ pub struct AppState {
     pub db: Arc<Database>,
     pub account_repo: Arc<dyn AccountRepository>,
     pub session_repo: Arc<dyn SessionRepository>,
+    pub notification_channel_repo: Arc<dyn NotificationChannelRepository>,
+    pub notification_service: Arc<NotificationService>,
     pub scheduler: Arc<AutoCheckInScheduler>,
     pub event_bus: Arc<dyn EventBus>,
     pub account_queries: Arc<AccountQueryService>,
@@ -95,6 +103,9 @@ impl AppState {
             Arc::new(SqliteAccountRepository::new(pool.clone(), encryption_service.clone())) as Arc<dyn AccountRepository>;
         let session_repo =
             Arc::new(SqliteSessionRepository::new(pool.clone())) as Arc<dyn SessionRepository>;
+        let notification_channel_repo =
+            Arc::new(SqliteNotificationChannelRepository::new(pool.clone())) as Arc<dyn NotificationChannelRepository>;
+        let notification_service = Arc::new(NotificationService::new(notification_channel_repo.clone(), pool.clone()));
         let account_queries = Arc::new(AccountQueryService::new(account_repo.clone()));
         let streak_queries = Arc::new(CheckInStreakQueries::new(pool.clone()));
 
@@ -179,15 +190,35 @@ impl AppState {
                 account_repo.clone(),
                 event_bus.clone(),
             )),
-            execute_check_in: Arc::new(ExecuteCheckInCommandHandler::new(
-                account_repo.clone(),
-                providers_map.clone(),
-                true, // headless_browser
+            execute_check_in: Arc::new(
+                ExecuteCheckInCommandHandler::new(
+                    account_repo.clone(),
+                    providers_map.clone(),
+                    true, // headless_browser
+                    pool.clone(),
+                )
+                .with_notification_service(notification_service.clone())
+            ),
+            batch_execute_check_in: Arc::new(
+                BatchExecuteCheckInCommandHandler::new(
+                    account_repo.clone(),
+                    providers_map,
+                    true, // headless_browser
+                    pool.clone(),
+                )
+                .with_notification_service(notification_service.clone())
+            ),
+            create_notification_channel: Arc::new(CreateNotificationChannelHandler::new(
+                notification_channel_repo.clone(),
             )),
-            batch_execute_check_in: Arc::new(BatchExecuteCheckInCommandHandler::new(
-                account_repo.clone(),
-                providers_map,
-                true, // headless_browser
+            update_notification_channel: Arc::new(UpdateNotificationChannelHandler::new(
+                notification_channel_repo.clone(),
+            )),
+            delete_notification_channel: Arc::new(DeleteNotificationChannelHandler::new(
+                notification_channel_repo.clone(),
+            )),
+            test_notification_channel: Arc::new(TestNotificationChannelHandler::new(
+                notification_channel_repo.clone(),
             )),
         };
         info!("✓ Command handlers initialized");
@@ -201,6 +232,8 @@ impl AppState {
             db,
             account_repo,
             session_repo,
+            notification_channel_repo,
+            notification_service,
             scheduler,
             event_bus,
             account_queries,

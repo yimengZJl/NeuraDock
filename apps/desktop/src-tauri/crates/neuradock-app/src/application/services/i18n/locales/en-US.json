@@ -1,0 +1,24 @@
+{
+  "notification": {
+    "checkIn": {
+      "success": {
+        "title": "✅ Check-in Success",
+        "simple": "✅ Check-in success!"
+      },
+      "failure": {
+        "title": "❌ Check-in Failed"
+      }
+    },
+    "label": {
+      "account": "Account",
+      "provider": "Provider",
+      "yesterday": "📅 Yesterday Balance",
+      "today": "📅 Today's Balance",
+      "changes": "💰 Changes",
+      "currentBalance": "Current Balance",
+      "totalConsumed": "Total Consumed",
+      "totalIncome": "Total Income",
+      "error": "Error"
+    }
+  }
+}

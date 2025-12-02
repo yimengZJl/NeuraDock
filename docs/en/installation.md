@@ -2,7 +2,7 @@
 
 ## Pre-built Binaries
 
-The easiest way to install NeuraDock is to download pre-built binaries from the [Releases](https://github.com/neuradock/neuradock/releases) page.
+The easiest way to install NeuraDock is to download pre-built binaries from the [Releases](https://github.com/i-rtfsc/NeuraDock/releases) page.
 
 ### macOS
 
@@ -53,8 +53,8 @@ For development or to build the latest version from source:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/neuradock/neuradock.git
-   cd neuradock
+   git clone https://github.com/i-rtfsc/NeuraDock.git
+   cd NeuraDock
    ```
 
 2. **Install dependencies**:

@@ -1,7 +1,10 @@
 mod check_in_executor;
 mod config_service;
+mod notification_service;
+mod i18n;
 mod scheduler;
 
 pub use check_in_executor::{AccountCheckInResult, BatchCheckInResult, CheckInExecutor};
 pub use config_service::{ConfigService, LogLevel};
+pub use notification_service::NotificationService;
 pub use scheduler::AutoCheckInScheduler;

@@ -14,9 +14,9 @@
 [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 
 <!-- Project Info -->
-[![Version](https://img.shields.io/badge/version-0.1.0-brightgreen?style=flat-square)](https://github.com/neuradock/neuradock/releases)
+[![Version](https://img.shields.io/badge/version-0.1.0-brightgreen?style=flat-square)](https://github.com/i-rtfsc/NeuraDock/releases)
 [![License: GPLv3 + Commercial](https://img.shields.io/badge/License-GPLv3%20%2B%20Commercial-blue?style=flat-square)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-lightgrey?style=flat-square)](https://github.com/neuradock/neuradock/releases)
+[![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-lightgrey?style=flat-square)](https://github.com/i-rtfsc/NeuraDock/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](docs/en/contributing.md)
 
 <!-- Frontend Tech Stack -->
@@ -99,8 +99,8 @@ NeuraDock is a modern desktop application built with **Tauri 2 + Rust + React**,
 
 ```bash
 # Clone the repository
-git clone https://github.com/neuradock/neuradock.git
-cd neuradock
+git clone https://github.com/i-rtfsc/NeuraDock.git
+cd NeuraDock
 
 # Install dependencies
 npm install
@@ -125,40 +125,84 @@ npm run build
 ## 🏗️ Project Structure
 
 ```
-neuradock/
+NeuraDock/
 ├── apps/
 │   └── desktop/                    # Tauri desktop application
 │       ├── src/                    # React frontend
 │       │   ├── components/         # UI components
+│       │   │   ├── account/        # Account management components
+│       │   │   ├── checkin/        # Check-in components
+│       │   │   ├── notification/   # Notification components
+│       │   │   ├── layout/         # Layout components
+│       │   │   └── ui/             # UI base components
 │       │   ├── pages/              # Page components
 │       │   ├── hooks/              # Custom hooks
 │       │   └── lib/                # Utilities
-│       └── src-tauri/              # Rust backend
-│           └── src/
-│               ├── domain/         # Domain layer (DDD)
-│               ├── application/    # Application layer (CQRS)
-│               ├── infrastructure/ # Infrastructure layer
-│               └── presentation/   # Presentation layer
+│       └── src-tauri/              # Rust backend (Workspace)
+│           └── crates/
+│               ├── neuradock-app/           # Application + Presentation layers
+│               │   ├── src/application/     # Application layer (Commands/Queries)
+│               │   └── src/presentation/    # Presentation layer (Tauri IPC)
+│               ├── neuradock-domain/        # Domain layer (Core business logic)
+│               │   └── src/
+│               │       ├── account/         # Account aggregate
+│               │       ├── balance/         # Balance aggregate
+│               │       ├── check_in/        # Check-in aggregate
+│               │       ├── session/         # Session aggregate
+│               │       ├── notification/    # Notification aggregate
+│               │       └── plugins/         # Plugin system
+│               └── neuradock-infrastructure/ # Infrastructure layer
+│                   ├── src/
+│                   │   ├── persistence/     # SQLite repositories
+│                   │   ├── http/            # HTTP client
+│                   │   ├── browser/         # Browser automation
+│                   │   ├── notification/    # Notification service
+│                   │   └── security/        # Encryption service
+│                   └── migrations/          # Database migrations
 ├── docs/                           # Chinese documentation
 │   └── en/                         # English documentation
-└── migrations/                     # Database migrations
+└── CLAUDE.md                       # Claude Code project guide
 ```
 
 ---
 
 ## 🏛️ Architecture
 
-NeuraDock follows a **DDD 4-Layer Architecture**:
+NeuraDock follows a **DDD 4-Layer Architecture + Multi-Crate Organization**:
 
 ```
 ┌─────────────────────────────────────┐
-│    Presentation Layer (Tauri IPC)   │  ← Tauri commands & events
-├─────────────────────────────────────┤
-│    Application Layer (CQRS)         │  ← Command/Query handlers
-├─────────────────────────────────────┤
-│    Domain Layer (Core)              │  ← Business logic (no deps)
-├─────────────────────────────────────┤
-│    Infrastructure Layer             │  ← SQLite, HTTP, Browser
+│  Presentation Layer (Tauri IPC)     │  ← neuradock-app/presentation
+│  - commands.rs: Tauri commands      │  - Exposes commands to frontend
+│  - events.rs: Event definitions     │  - Emits events to frontend
+│  - state.rs: App state management   │
+└─────────────────────────────────────┘
+                  ↓
+┌─────────────────────────────────────┐
+│  Application Layer (CQRS)           │  ← neuradock-app/application
+│  - commands/: Command handlers      │  - Command/query separation
+│  - queries/: Query handlers         │  - DTOs for data transfer
+│  - services/: Application services  │  - CheckInExecutor, Scheduler
+│  - dtos/: Data transfer objects     │
+└─────────────────────────────────────┘
+                  ↓
+┌─────────────────────────────────────┐
+│  Domain Layer (Core Business)       │  ← neuradock-domain/
+│  - account/: Account aggregate      │  - Pure business logic
+│  - balance/: Balance aggregate      │  - No infrastructure deps
+│  - check_in/: CheckIn aggregate     │  - Repository traits
+│  - session/: Session aggregate      │  - Domain events
+│  - notification/: Notification agg. │
+│  - plugins/: Plugin system          │
+└─────────────────────────────────────┘
+                  ↓
+┌─────────────────────────────────────┐
+│  Infrastructure Layer               │  ← neuradock-infrastructure/
+│  - persistence/: SQLite repos       │  - External integrations
+│  - http/: HTTP client, WAF bypass   │  - Implements domain traits
+│  - browser/: Browser automation     │  - SQLite, HTTP, Browser
+│  - notification/: Notification svc  │
+│  - security/: Encryption service    │
 └─────────────────────────────────────┘
 ```
 
@@ -187,18 +231,33 @@ NeuraDock follows a **DDD 4-Layer Architecture**:
 
 ## 🗺️ Roadmap
 
-### Phase 1: Tauri Desktop App ✅ In Progress
+### Phase 1: Tauri Desktop App ✅ Mostly Complete
 
-- [x] DDD domain layer architecture
-- [x] SQLite database layer
+- [x] DDD domain layer architecture (Multi-crate organization)
+- [x] SQLite database layer (sqlx + migrations)
 - [x] tauri-specta type-safe IPC
 - [x] Account CRUD operations
 - [x] JSON import/export
-- [ ] Check-in executor (HTTP + WAF bypass)
+- [x] Check-in executor (HTTP + WAF bypass)
+- [x] Balance query and caching
+- [x] Session management and caching
+- [x] Auto check-in scheduler (tokio-cron-scheduler)
+- [x] Notification system (Feishu Webhook)
+- [x] Multi-language support (i18n)
+- [x] Plugin system foundation
 - [ ] Check-in history and statistics
-- [ ] Notification system
+- [ ] More notification channels (Email, Telegram, etc.)
+- [ ] More service provider support
 
-### Phase 2: VSCode Extension 🔮 Future
+### Phase 2: Enhanced Features 🔄 In Progress
+
+- [ ] Improve test coverage (Unit + Integration tests)
+- [ ] Performance optimization and monitoring
+- [ ] Error handling and logging improvements
+- [ ] UI/UX optimization
+- [ ] Plugin marketplace
+
+### Phase 3: VSCode Extension 🔮 Future
 
 - [ ] Extract shared core to `packages/core`
 - [ ] Support WASM compilation
@@ -225,8 +284,8 @@ To purchase or inquire about commercial licensing, please contact us via Issues,
 
 ## 📬 Contact
 
-- 📝 **Issues**: [GitHub Issues](https://github.com/neuradock/neuradock/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/neuradock/neuradock/discussions)
+- 📝 **Issues**: [GitHub Issues](https://github.com/i-rtfsc/NeuraDock/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/i-rtfsc/NeuraDock/discussions)
 
 ---
 

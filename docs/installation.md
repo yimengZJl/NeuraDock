@@ -2,7 +2,7 @@
 
 ## 预编译二进制文件
 
-安装 NeuraDock 最简单的方式是从 [Releases](https://github.com/neuradock/neuradock/releases) 页面下载预编译的二进制文件。
+安装 NeuraDock 最简单的方式是从 [Releases](https://github.com/i-rtfsc/NeuraDock/releases) 页面下载预编译的二进制文件。
 
 ### macOS
 
@@ -53,8 +53,8 @@
 
 1. **克隆仓库**：
    ```bash
-   git clone https://github.com/neuradock/neuradock.git
-   cd neuradock
+   git clone https://github.com/i-rtfsc/NeuraDock.git
+   cd NeuraDock
    ```
 
 2. **安装依赖**：

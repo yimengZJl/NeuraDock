@@ -14,9 +14,9 @@
 [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 
 <!-- 项目信息 -->
-[![Version](https://img.shields.io/badge/version-0.1.0-brightgreen?style=flat-square)](https://github.com/neuradock/neuradock/releases)
+[![Version](https://img.shields.io/badge/version-0.1.0-brightgreen?style=flat-square)](https://github.com/i-rtfsc/NeuraDock/releases)
 [![License: GPLv3 + Commercial](https://img.shields.io/badge/License-GPLv3%20%2B%20Commercial-blue?style=flat-square)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-lightgrey?style=flat-square)](https://github.com/neuradock/neuradock/releases)
+[![Platform](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-lightgrey?style=flat-square)](https://github.com/i-rtfsc/NeuraDock/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](docs/contributing.md)
 
 <!-- 前端技术栈 -->
@@ -99,8 +99,8 @@ NeuraDock 是一个基于 **Tauri 2 + Rust + React** 构建的现代桌面应用
 
 ```bash
 # 克隆仓库
-git clone https://github.com/neuradock/neuradock.git
-cd neuradock
+git clone https://github.com/i-rtfsc/NeuraDock.git
+cd NeuraDock
 
 # 安装依赖
 npm install
@@ -125,40 +125,84 @@ npm run build
 ## 🏗️ 项目结构
 
 ```
-neuradock/
+NeuraDock/
 ├── apps/
 │   └── desktop/                    # Tauri 桌面应用
 │       ├── src/                    # React 前端
 │       │   ├── components/         # UI 组件
+│       │   │   ├── account/        # 账号管理组件
+│       │   │   ├── checkin/        # 签到组件
+│       │   │   ├── notification/   # 通知组件
+│       │   │   ├── layout/         # 布局组件
+│       │   │   └── ui/             # UI 基础组件
 │       │   ├── pages/              # 页面组件
 │       │   ├── hooks/              # 自定义 Hooks
 │       │   └── lib/                # 工具函数
-│       └── src-tauri/              # Rust 后端
-│           └── src/
-│               ├── domain/         # 领域层 (DDD)
-│               ├── application/    # 应用层 (CQRS)
-│               ├── infrastructure/ # 基础设施层
-│               └── presentation/   # 表示层
+│       └── src-tauri/              # Rust 后端 (Workspace)
+│           └── crates/
+│               ├── neuradock-app/           # 应用层 + 表示层
+│               │   ├── src/application/     # 应用层 (Commands/Queries)
+│               │   └── src/presentation/    # 表示层 (Tauri IPC)
+│               ├── neuradock-domain/        # 领域层 (核心业务逻辑)
+│               │   └── src/
+│               │       ├── account/         # 账号聚合
+│               │       ├── balance/         # 余额聚合
+│               │       ├── check_in/        # 签到聚合
+│               │       ├── session/         # 会话聚合
+│               │       ├── notification/    # 通知聚合
+│               │       └── plugins/         # 插件系统
+│               └── neuradock-infrastructure/ # 基础设施层
+│                   ├── src/
+│                   │   ├── persistence/     # SQLite 仓储
+│                   │   ├── http/            # HTTP 客户端
+│                   │   ├── browser/         # 浏览器自动化
+│                   │   ├── notification/    # 通知服务
+│                   │   └── security/        # 加密服务
+│                   └── migrations/          # 数据库迁移
 ├── docs/                           # 中文文档
 │   └── en/                         # 英文文档
-└── migrations/                     # 数据库迁移
+└── CLAUDE.md                       # Claude Code 项目指南
 ```
 
 ---
 
 ## 🏛️ 架构设计
 
-NeuraDock 采用 **DDD 四层架构**：
+NeuraDock 采用 **DDD 四层架构 + 多 Crate 组织**：
 
 ```
 ┌─────────────────────────────────────┐
-│    表示层 (Tauri IPC)                │  ← Tauri 命令和事件
-├─────────────────────────────────────┤
-│    应用层 (CQRS)                     │  ← 命令/查询处理器
-├─────────────────────────────────────┤
-│    领域层 (核心)                     │  ← 业务逻辑 (无依赖)
-├─────────────────────────────────────┤
-│    基础设施层                        │  ← SQLite、HTTP、浏览器
+│  表示层 (Tauri IPC)                  │  ← neuradock-app/presentation
+│  - commands.rs: Tauri 命令          │  - 暴露命令给前端
+│  - events.rs: 事件定义              │  - 发送事件到前端
+│  - state.rs: 应用状态管理           │
+└─────────────────────────────────────┘
+                  ↓
+┌─────────────────────────────────────┐
+│  应用层 (CQRS)                       │  ← neuradock-app/application
+│  - commands/: 命令处理器             │  - 命令/查询分离
+│  - queries/: 查询处理器              │  - DTOs 数据传输
+│  - services/: 应用服务               │  - CheckInExecutor, Scheduler
+│  - dtos/: 数据传输对象              │
+└─────────────────────────────────────┘
+                  ↓
+┌─────────────────────────────────────┐
+│  领域层 (核心业务)                   │  ← neuradock-domain/
+│  - account/: 账号聚合                │  - 纯业务逻辑
+│  - balance/: 余额聚合                │  - 无基础设施依赖
+│  - check_in/: 签到聚合               │  - 仓储 Traits
+│  - session/: 会话聚合                │  - 领域事件
+│  - notification/: 通知聚合           │
+│  - plugins/: 插件系统                │
+└─────────────────────────────────────┘
+                  ↓
+┌─────────────────────────────────────┐
+│  基础设施层                          │  ← neuradock-infrastructure/
+│  - persistence/: SQLite 仓储         │  - 外部集成
+│  - http/: HTTP 客户端, WAF 绕过      │  - 实现领域 Traits
+│  - browser/: 浏览器自动化            │  - SQLite, HTTP, 浏览器
+│  - notification/: 通知服务           │
+│  - security/: 加密服务               │
 └─────────────────────────────────────┘
 ```
 
@@ -187,18 +231,33 @@ NeuraDock 采用 **DDD 四层架构**：
 
 ## 🗺️ 路线图
 
-### Phase 1: Tauri 桌面应用 ✅ 进行中
+### Phase 1: Tauri 桌面应用 ✅ 基本完成
 
-- [x] DDD 领域层架构
-- [x] SQLite 数据库层
+- [x] DDD 领域层架构 (多 Crate 组织)
+- [x] SQLite 数据库层 (sqlx + 迁移)
 - [x] tauri-specta 类型安全 IPC
 - [x] 账号 CRUD 操作
 - [x] JSON 导入/导出
-- [ ] 签到执行器 (HTTP + WAF bypass)
+- [x] 签到执行器 (HTTP + WAF bypass)
+- [x] 余额查询和缓存
+- [x] 会话管理和缓存
+- [x] 自动签到调度器 (tokio-cron-scheduler)
+- [x] 通知系统 (飞书 Webhook)
+- [x] 多语言支持 (i18n)
+- [x] 插件系统基础架构
 - [ ] 签到历史和统计
-- [ ] 通知系统
+- [ ] 更多通知渠道 (邮件、Telegram 等)
+- [ ] 更多服务提供商支持
 
-### Phase 2: VSCode 插件 🔮 未来
+### Phase 2: 增强功能 🔄 进行中
+
+- [ ] 完善测试覆盖 (单元测试 + 集成测试)
+- [ ] 性能优化和监控
+- [ ] 错误处理和日志改进
+- [ ] UI/UX 优化
+- [ ] 插件市场
+
+### Phase 3: VSCode 插件 🔮 未来
 
 - [ ] 提取共享核心到 `packages/core`
 - [ ] 支持 WASM 编译
@@ -225,8 +284,8 @@ NeuraDock 采用 **DDD 四层架构**：
 
 ## 📬 联系方式
 
-- 📝 **Issues**: [GitHub Issues](https://github.com/neuradock/neuradock/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/neuradock/neuradock/discussions)
+- 📝 **Issues**: [GitHub Issues](https://github.com/i-rtfsc/NeuraDock/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/i-rtfsc/NeuraDock/discussions)
 
 ---
 

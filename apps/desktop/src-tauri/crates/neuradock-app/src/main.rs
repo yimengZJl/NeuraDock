@@ -73,6 +73,12 @@ async fn main() {
             // Config commands
             get_log_level,
             set_log_level,
+            // Notification commands
+            create_notification_channel,
+            update_notification_channel,
+            delete_notification_channel,
+            get_all_notification_channels,
+            test_notification_channel,
         ])
         .events(collect_events![
             presentation::events::CheckInProgress,

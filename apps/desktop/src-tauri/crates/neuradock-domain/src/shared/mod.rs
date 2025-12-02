@@ -152,9 +152,24 @@ pub enum DomainError {
 
     #[error("Validation error: {0}")]
     Validation(String),
-    
+
     #[error("Data integrity error: {0}")]
     DataIntegrity(String),
+
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
+
+    #[error("Serialization error: {0}")]
+    Serialization(String),
+
+    #[error("Deserialization error: {0}")]
+    Deserialization(String),
+
+    #[error("Not found: {0}")]
+    NotFound(String),
+
+    #[error("Not implemented: {0}")]
+    NotImplemented(String),
 }
 
 impl DomainError {
@@ -169,9 +184,14 @@ impl DomainError {
             DomainError::Infrastructure(_) => ErrorCode::InfrastructureError,
             DomainError::Validation(_) => ErrorCode::ValidationError,
             DomainError::DataIntegrity(_) => ErrorCode::DataIntegrityError,
+            DomainError::InvalidInput(_) => ErrorCode::InvalidInput,
+            DomainError::Serialization(_) => ErrorCode::SerializationError,
+            DomainError::Deserialization(_) => ErrorCode::SerializationError,
+            DomainError::NotFound(_) => ErrorCode::AccountNotFound,
+            DomainError::NotImplemented(_) => ErrorCode::InfrastructureError,
         }
     }
-    
+
     /// Get error message
     pub fn message(&self) -> &str {
         match self {
@@ -182,7 +202,12 @@ impl DomainError {
             | DomainError::Repository(msg)
             | DomainError::Infrastructure(msg)
             | DomainError::Validation(msg)
-            | DomainError::DataIntegrity(msg) => msg,
+            | DomainError::DataIntegrity(msg)
+            | DomainError::InvalidInput(msg)
+            | DomainError::Serialization(msg)
+            | DomainError::Deserialization(msg)
+            | DomainError::NotFound(msg)
+            | DomainError::NotImplemented(msg) => msg,
         }
     }
     

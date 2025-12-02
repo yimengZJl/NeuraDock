@@ -15,7 +15,7 @@ NeuraDock is a modern automatic check-in management system built with **Tauri 2 
 
 ## Quick Start
 
-1. **Download the latest release** from the [Releases](https://github.com/neuradock/neuradock/releases) page
+1. **Download the latest release** from the [Releases](https://github.com/i-rtfsc/NeuraDock/releases) page
 
 2. **Install the application**:
    - **macOS**: Open the `.dmg` file and drag NeuraDock to Applications

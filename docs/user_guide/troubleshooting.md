@@ -134,4 +134,4 @@ $env:RUST_LOG="debug"
 4. **错误消息**或截图
 5. **调试日志**（如有）
 
-报告问题：https://github.com/neuradock/neuradock/issues
+报告问题：https://github.com/i-rtfsc/NeuraDock/issues

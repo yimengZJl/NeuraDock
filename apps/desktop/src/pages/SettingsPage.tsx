@@ -10,6 +10,8 @@ import { Moon, Sun, Monitor } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { invoke } from '@tauri-apps/api/core';
+import { NotificationChannelList } from '@/components/notification/NotificationChannelList';
+import { useNotificationChannels } from '@/hooks/useNotificationChannels';
 
 export function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -17,6 +19,9 @@ export function SettingsPage() {
   const [cacheAgeHours, setCacheAgeHours] = useState<number>(1);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [logLevel, setLogLevel] = useState<string>('info');
+
+  // Load notification channels
+  const { data: notificationChannels = [], refetch: refetchChannels } = useNotificationChannels();
 
   useEffect(() => {
     const stored = localStorage.getItem('maxCacheAgeHours');
@@ -214,6 +219,20 @@ export function SettingsPage() {
               {t('settings.logLevelDescription')}
             </p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Notification Settings */}
+      <Card className="rounded-2xl">
+        <CardHeader>
+          <CardTitle>{t('settings.notification')}</CardTitle>
+          <CardDescription>{t('settings.notificationDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <NotificationChannelList
+            channels={notificationChannels}
+            onUpdate={refetchChannels}
+          />
         </CardContent>
       </Card>
 

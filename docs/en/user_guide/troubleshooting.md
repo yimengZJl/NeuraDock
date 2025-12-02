@@ -134,4 +134,4 @@ When reporting issues, please include:
 4. **Error messages** or screenshots
 5. **Debug logs** if available
 
-Report issues at: https://github.com/neuradock/neuradock/issues
+Report issues at: https://github.com/i-rtfsc/NeuraDock/issues

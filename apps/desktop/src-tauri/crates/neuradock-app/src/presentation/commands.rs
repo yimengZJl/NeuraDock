@@ -1,5 +1,6 @@
 use crate::application::commands::account_commands::*;
 use crate::application::commands::check_in_commands::*;
+use crate::application::commands::notification_commands::*;
 use crate::application::commands::command_handler::CommandHandler;
 use crate::application::services::CheckInExecutor;
 use crate::application::*;
@@ -466,111 +467,28 @@ pub async fn execute_check_in(
     account_id: String,
     state: State<'_, AppState>,
 ) -> Result<ExecuteCheckInResult, String> {
+    use crate::application::commands::check_in_commands::{ExecuteCheckInCommand, CheckInCommandResult};
+
     log::info!(
         "=== execute_check_in command called for account: {} ===",
         account_id
     );
 
-    let providers = get_builtin_providers();
+    let command = ExecuteCheckInCommand {
+        account_id: account_id.clone(),
+    };
 
-    // Get account to determine provider
-    let acc_id = AccountId::from_string(&account_id);
-    let account = state
-        .account_repo
-        .find_by_id(&acc_id)
+    let result = state
+        .command_handlers
+        .execute_check_in
+        .handle(command)
         .await
-        .map_err(|e| {
-            log::error!("Failed to find account {}: {}", account_id, e);
-            e.to_string()
-        })?
-        .ok_or_else(|| {
-            log::error!("Account not found: {}", account_id);
-            "Account not found".to_string()
-        })?;
-
-    log::info!(
-        "Account found: {}, provider: {}",
-        account.name(),
-        account.provider_id().as_str()
-    );
-
-    let provider_id = account.provider_id().as_str();
-    let provider = providers.get(provider_id).ok_or_else(|| {
-        log::error!("Provider {} not found", provider_id);
-        format!("Provider {} not found", provider_id)
-    })?;
-
-    log::info!("Provider found: {}", provider.name());
-
-    // Create executor
-    let executor = CheckInExecutor::new(state.account_repo.clone(), true).map_err(|e| {
-        log::error!("Failed to create CheckInExecutor: {}", e);
-        e.to_string()
-    })?;
-
-    log::info!("Executor created, starting check-in...");
-
-    // Execute check-in
-    let result = executor
-        .execute_check_in(&account_id, provider)
-        .await
-        .map_err(|e| {
-            log::error!("Check-in execution failed: {}", e);
-            e.to_string()
-        })?;
-
-    log::info!(
-        "Check-in execution completed: success={}, message={}",
-        result.success,
-        result.message
-    );
-
-    // Convert to DTO and store balance history
-    // Note: API returns quota (current balance) and used_quota (total consumed)
-    let balance_dto = result.user_info.as_ref().map(|info| {
-        let current_balance = info.quota;
-        let total_consumed = info.used_quota;
-        BalanceDto {
-            current_balance,
-            total_consumed,
-            total_income: current_balance + total_consumed, // Total income = current balance + consumed
-        }
-    });
-
-    // Update account with balance cache and session info
-    if let Some(ref balance) = balance_dto {
-        let mut account = state
-            .account_repo
-            .find_by_id(&acc_id)
-            .await
-            .map_err(|e| e.to_string())?
-            .ok_or("Account not found")?;
-
-        // Update balance cache
-        account.update_balance(
-            balance.current_balance,
-            balance.total_consumed,
-            balance.total_income,
-        );
-
-        // Mark check-in time
-        account.record_check_in();
-
-        // Save updated account
-        state
-            .account_repo
-            .save(&account)
-            .await
-            .map_err(|e| e.to_string())?;
-
-        // Store balance history
-        save_balance_history(&account_id, balance, &state).await?;
-    }
+        .map_err(|e| e.to_string())?;
 
     Ok(ExecuteCheckInResult {
         job_id: account_id,
         success: result.success,
-        balance: balance_dto,
+        balance: result.balance,
         error: if result.success {
             None
         } else {
@@ -585,69 +503,37 @@ pub async fn execute_batch_check_in(
     account_ids: Vec<String>,
     state: State<'_, AppState>,
 ) -> Result<BatchCheckInResult, String> {
-    let providers = get_builtin_providers();
+    use crate::application::commands::check_in_commands::{BatchExecuteCheckInCommand, BatchCheckInCommandResult};
 
-    // Create executor
-    let executor =
-        CheckInExecutor::new(state.account_repo.clone(), true).map_err(|e| e.to_string())?;
+    let command = BatchExecuteCheckInCommand { account_ids };
 
-    // Execute batch check-in
-    let result = executor
-        .execute_batch_check_in(account_ids, &providers)
+    let result = state
+        .command_handlers
+        .batch_execute_check_in
+        .handle(command)
         .await
         .map_err(|e| e.to_string())?;
 
-    // Convert results to DTOs and store balance history
-    let mut results_dto: Vec<ExecuteCheckInResult> = Vec::new();
-
-    for r in result.results.iter() {
-        // Note: API returns quota (current balance) and used_quota (total consumed)
-        let balance_dto = r.user_info.as_ref().map(|info| {
-            let current_balance = info.quota;
-            let total_consumed = info.used_quota;
-            BalanceDto {
-                current_balance,
-                total_consumed,
-                total_income: current_balance + total_consumed, // Total income = current balance + consumed
-            }
-        });
-
-        // Update account cache and store balance history if available
-        if let Some(ref balance) = balance_dto {
-            let acc_id = AccountId::from_string(&r.account_id);
-            if let Ok(Some(mut account)) = state.account_repo.find_by_id(&acc_id).await {
-                // Update balance cache
-                account.update_balance(
-                    balance.current_balance,
-                    balance.total_consumed,
-                    balance.total_income,
-                );
-                account.record_check_in();
-
-                // Save updated account
-                let _ = state.account_repo.save(&account).await;
-            }
-
-            // Store balance history
-            let _ = save_balance_history(&r.account_id, balance, &state).await;
-        }
-
-        results_dto.push(ExecuteCheckInResult {
-            job_id: r.account_id.clone(),
+    // Convert results to DTOs
+    let results_dto: Vec<ExecuteCheckInResult> = result
+        .results
+        .into_iter()
+        .map(|r| ExecuteCheckInResult {
+            job_id: format!("batch_{}", r.message.len()), // Placeholder
             success: r.success,
-            balance: balance_dto,
+            balance: r.balance,
             error: if r.success {
                 None
             } else {
-                Some(r.message.clone())
+                Some(r.message)
             },
-        });
-    }
+        })
+        .collect();
 
     Ok(BatchCheckInResult {
         total: result.total as i32,
-        succeeded: result.success_count as i32,
-        failed: result.failed_count as i32,
+        succeeded: result.succeeded as i32,
+        failed: result.failed as i32,
         results: results_dto,
     })
 }
@@ -1143,4 +1029,105 @@ pub async fn set_log_level(level: String, state: State<'_, AppState>) -> Result<
     
     state.config_service.set_log_level(log_level);
     Ok(())
+}
+
+// ============================================================
+// Notification Commands
+// ============================================================
+
+#[tauri::command]
+#[specta::specta]
+pub async fn create_notification_channel(
+    input: CreateNotificationChannelInput,
+    state: State<'_, AppState>,
+) -> Result<NotificationChannelDto, String> {
+    use crate::application::commands::notification_commands::CreateNotificationChannelCommand;
+
+    let command = CreateNotificationChannelCommand { input };
+
+    state
+        .command_handlers
+        .create_notification_channel
+        .handle(command)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn update_notification_channel(
+    input: UpdateNotificationChannelInput,
+    state: State<'_, AppState>,
+) -> Result<NotificationChannelDto, String> {
+    use crate::application::commands::notification_commands::UpdateNotificationChannelCommand;
+
+    let command = UpdateNotificationChannelCommand { input };
+
+    state
+        .command_handlers
+        .update_notification_channel
+        .handle(command)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_notification_channel(
+    channel_id: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    use crate::application::commands::notification_commands::DeleteNotificationChannelCommand;
+
+    let command = DeleteNotificationChannelCommand { channel_id };
+
+    state
+        .command_handlers
+        .delete_notification_channel
+        .handle(command)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_all_notification_channels(
+    state: State<'_, AppState>,
+) -> Result<Vec<NotificationChannelDto>, String> {
+    let channels = state
+        .notification_channel_repo
+        .find_all()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let dtos = channels
+        .iter()
+        .map(|channel| NotificationChannelDto {
+            id: channel.id().as_str().to_string(),
+            channel_type: channel.channel_type().as_str().to_string(),
+            config: serde_json::to_value(channel.config()).unwrap_or(serde_json::json!({})),
+            enabled: channel.is_enabled(),
+            created_at: channel.created_at().to_rfc3339(),
+        })
+        .collect();
+
+    Ok(dtos)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn test_notification_channel(
+    channel_id: String,
+    state: State<'_, AppState>,
+) -> Result<TestNotificationChannelResult, String> {
+    use crate::application::commands::notification_commands::TestNotificationChannelCommand;
+
+    let command = TestNotificationChannelCommand { channel_id };
+
+    state
+        .command_handlers
+        .test_notification_channel
+        .handle(command)
+        .await
+        .map_err(|e| e.to_string())
 }

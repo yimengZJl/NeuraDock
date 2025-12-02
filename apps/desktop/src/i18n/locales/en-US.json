@@ -272,6 +272,8 @@
     "appearanceDescription": "Customize the look and language of the app",
     "dataPerformance": "Data & Performance",
     "dataPerformanceDescription": "Manage data caching and refresh behavior",
+    "notification": "Notifications",
+    "notificationDescription": "Configure notification methods for check-in success/failure",
     "about": "About",
     "aboutDescription": "Application version and information",
     "theme": "Theme",

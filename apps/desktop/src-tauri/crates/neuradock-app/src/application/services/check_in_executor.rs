@@ -238,16 +238,16 @@ impl CheckInExecutor {
             }
         };
 
-        // For auto check-in providers (no sign_in_url), fetch balance again to get updated value
-        // Always retry for auto check-in providers, even if first call failed
-        let final_user_info = if provider.sign_in_url().is_none() {
+        // Fetch balance after check-in to get updated value
+        // For successful check-ins, always fetch updated balance
+        let final_user_info = if check_in_result.success {
             info!(
-                "[{}] Fetching updated balance after auto check-in...",
+                "[{}] Fetching updated balance after check-in...",
                 account_name
             );
 
-            // Wait longer for server to process check-in (increased from 500ms to 2s)
-            tokio::time::sleep(std::time::Duration::from_millis(2000)).await;
+            // Wait for server to process check-in
+            tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
 
             match self
                 .http_client
@@ -268,13 +268,14 @@ impl CheckInExecutor {
                 }
                 Err(e) => {
                     warn!(
-                        "[{}] Failed to get updated balance: {}, fallback to initial balance",
+                        "[{}] Failed to get updated balance: {}, using pre-check-in balance",
                         account_name, e
                     );
                     user_info
                 }
             }
         } else {
+            // Check-in failed, use initial balance if available
             user_info
         };
 

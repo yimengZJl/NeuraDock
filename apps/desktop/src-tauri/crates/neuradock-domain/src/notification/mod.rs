@@ -1,7 +1,9 @@
-use serde::{Deserialize, Serialize};
-use specta::Type;
+mod aggregate;
+mod repository;
+mod sender;
+mod value_objects;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub struct NotificationChannel {
-    // Simplified for now
-}
+pub use aggregate::NotificationChannel;
+pub use repository::NotificationChannelRepository;
+pub use sender::{NotificationMessage, NotificationSender};
+pub use value_objects::{ChannelConfig, ChannelType, NotificationChannelId};

@@ -16,8 +16,8 @@ Thank you for your interest in contributing to NeuraDock! This guide will help y
 
 ```bash
 # Clone the repository
-git clone https://github.com/neuradock/neuradock.git
-cd neuradock
+git clone https://github.com/i-rtfsc/NeuraDock.git
+cd NeuraDock
 
 # Install dependencies
 npm install

@@ -15,7 +15,7 @@ NeuraDock 是一个现代化的自动签到管理系统，基于 **Tauri 2 + Rus
 
 ## 快速开始
 
-1. **下载最新版本** 从 [Releases](https://github.com/neuradock/neuradock/releases) 页面
+1. **下载最新版本** 从 [Releases](https://github.com/i-rtfsc/NeuraDock/releases) 页面
 
 2. **安装应用**：
    - **macOS**: 打开 `.dmg` 文件，将 NeuraDock 拖入 Applications

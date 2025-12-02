@@ -16,8 +16,8 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/neuradock/neuradock.git
-cd neuradock
+git clone https://github.com/i-rtfsc/NeuraDock.git
+cd NeuraDock
 
 # 安装依赖
 npm install
@@ -29,7 +29,7 @@ npm run dev
 ## 项目结构
 
 ```
-neuradock/
+NeuraDock/
 ├── apps/
 │   └── desktop/              # Tauri 桌面应用
 │       ├── src/              # React 前端

@@ -1,0 +1,24 @@
+{
+  "notification": {
+    "checkIn": {
+      "success": {
+        "title": "✅ 签到成功",
+        "simple": "✅ 签到成功！"
+      },
+      "failure": {
+        "title": "❌ 签到失败"
+      }
+    },
+    "label": {
+      "account": "账户",
+      "provider": "服务商",
+      "yesterday": "📅 昨天余额",
+      "today": "📅 今天余额",
+      "changes": "💰 变化",
+      "currentBalance": "当前余额",
+      "totalConsumed": "历史消耗",
+      "totalIncome": "总收益",
+      "error": "错误信息"
+    }
+  }
+}
