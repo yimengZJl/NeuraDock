@@ -57,22 +57,96 @@ export function ConfigDialog({
     enabled: !!account && open,
   });
 
+  // Fetch provider models for compatibility check when model limits are disabled
+  const { data: providerModels = [] } = useQuery<string[]>({
+    queryKey: ['provider-models', account?.provider_id],
+    queryFn: () => invoke('fetch_provider_models', {
+      providerId: account!.provider_id,
+      accountId: account!.id,
+      forceRefresh: false,
+    }),
+    enabled: !!account && !!token && !token.model_limits_enabled && open,
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+
   // Check compatibility when tool or token changes
   useEffect(() => {
     if (token && open) {
-      invoke<[boolean, string]>('check_model_compatibility', {
-        models: token.model_limits_allowed,
-        tool: selectedTool,
-      })
-        .then(([compatible, warning]) => {
-          setIsCompatible(compatible);
-          setCompatibilityWarning(warning);
+      // Determine which models to check:
+      // - If model_limits_enabled is true, use model_limits_allowed
+      // - If model_limits_enabled is false, use provider models
+      const modelsToCheck = token.model_limits_enabled
+        ? token.model_limits_allowed
+        : providerModels;
+
+      if (modelsToCheck.length === 0 && !token.model_limits_enabled) {
+        // Still loading provider models
+        setIsCompatible(true);
+        setCompatibilityWarning('');
+        return;
+      }
+
+      // For tokens without model limits, check differently
+      const checkCompatibilityForUnrestrictedToken = (models: string[]) => {
+        const modelsLower = models.map(m => m.toLowerCase());
+
+        if (selectedTool === 'claude') {
+          // For Claude Code, check if provider has compatible models
+          const hasCompatible = modelsLower.some(m =>
+            m.includes('claude') || m.includes('glm') || m.includes('deepseek') || m.includes('gemini')
+          );
+
+          if (!hasCompatible) {
+            setIsCompatible(false);
+            setCompatibilityWarning(
+              t('token.noCompatibleModelsForClaude',
+                'This provider does not support Claude-compatible models (Claude, GLM, DeepSeek, Gemini).')
+            );
+          } else {
+            setIsCompatible(true);
+            setCompatibilityWarning(
+              t('token.noModelLimits', 'Note: This token has no model restrictions.')
+            );
+          }
+        } else if (selectedTool === 'codex') {
+          // For Codex, check if provider has GPT models
+          const hasGPT = modelsLower.some(m =>
+            m.includes('gpt') || m.includes('openai') || m.includes('o1')
+          );
+
+          if (!hasGPT) {
+            setIsCompatible(true);
+            setCompatibilityWarning(
+              t('token.noGPTModels',
+                'Note: This token has no model restrictions. This provider may not have GPT models, but Codex can work with OpenAI-compatible APIs.')
+            );
+          } else {
+            setIsCompatible(true);
+            setCompatibilityWarning(
+              t('token.noModelLimits', 'Note: This token has no model restrictions.')
+            );
+          }
+        }
+      };
+
+      // For tokens with model limits, use the original check
+      if (!token.model_limits_enabled) {
+        checkCompatibilityForUnrestrictedToken(modelsToCheck);
+      } else {
+        invoke<[boolean, string]>('check_model_compatibility', {
+          models: modelsToCheck,
+          tool: selectedTool,
         })
-        .catch((err) => {
-          console.error('Failed to check compatibility:', err);
-        });
+          .then(([compatible, warning]) => {
+            setIsCompatible(compatible);
+            setCompatibilityWarning(warning);
+          })
+          .catch((err) => {
+            console.error('Failed to check compatibility:', err);
+          });
+      }
     }
-  }, [token, selectedTool, open]);
+  }, [token, selectedTool, open, providerModels, t]);
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -154,8 +228,9 @@ export function ConfigDialog({
     onSuccess: (commands) => {
       setTempCommands(commands);
     },
-    onError: (error: Error) => {
-      toast.error(t('token.generateError', 'Failed to generate commands: ') + error.message);
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(t('token.generateError', 'Failed to generate commands: ') + message);
     },
   });
 

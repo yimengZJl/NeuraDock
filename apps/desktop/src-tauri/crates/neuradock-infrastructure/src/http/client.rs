@@ -87,13 +87,31 @@ impl HttpClient {
         let status = response.status();
 
         if !status.is_success() {
-            anyhow::bail!("User info request failed with status: {}", status);
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unable to read response".to_string());
+            // Check if this is a WAF challenge
+            if error_text.contains("acw_sc__v2") || error_text.contains("<script>var arg1=") {
+                anyhow::bail!("WAF_CHALLENGE: {}", &error_text[..error_text.len().min(500)]);
+            }
+            anyhow::bail!("User info request failed with status {}: {}", status, error_text);
         }
 
-        let data: serde_json::Value = response
-            .json()
+        // Get response text first to check for WAF challenge
+        let response_text = response
+            .text()
             .await
-            .context("Failed to parse user info response")?;
+            .context("Failed to read user info response")?;
+
+        // Check if response is HTML (WAF challenge page)
+        if response_text.trim().starts_with('<') || response_text.contains("acw_sc__v2") || response_text.contains("<script>var arg1=") {
+            log::warn!("Received WAF challenge page instead of JSON: {}", &response_text[..response_text.len().min(200)]);
+            anyhow::bail!("WAF_CHALLENGE: Received HTML instead of JSON - {}", &response_text[..response_text.len().min(500)]);
+        }
+
+        let data: serde_json::Value = serde_json::from_str(&response_text)
+            .context(format!("Failed to parse user info response: {}", &response_text[..response_text.len().min(200)]))?;
 
         // Debug: Log the full response to understand structure
         log::info!(
@@ -230,6 +248,10 @@ impl HttpClient {
                 .text()
                 .await
                 .unwrap_or_else(|_| "Unable to read response".to_string());
+            // Check if this is a WAF challenge
+            if error_text.contains("acw_sc__v2") || error_text.contains("<script>var arg1=") {
+                anyhow::bail!("WAF_CHALLENGE: {}", &error_text[..error_text.len().min(500)]);
+            }
             log::error!(
                 "Check-in request failed with status {}: {}",
                 status,
@@ -244,6 +266,12 @@ impl HttpClient {
 
         // Parse response
         let text = response.text().await?;
+
+        // Check if response is HTML (WAF challenge page)
+        if text.trim().starts_with('<') || text.contains("acw_sc__v2") || text.contains("<script>var arg1=") {
+            log::warn!("Received WAF challenge page instead of JSON in check-in: {}", &text[..text.len().min(200)]);
+            anyhow::bail!("WAF_CHALLENGE: Received HTML instead of JSON - {}", &text[..text.len().min(500)]);
+        }
 
         // Log full response for debugging
         log::info!("Check-in response body: {}", text);
@@ -419,15 +447,23 @@ impl HttpClient {
         let status = response.status();
         log::info!("API endpoint response status: {}", status);
 
+        // Get response text to check for WAF challenge
+        let response_text = response
+            .text()
+            .await
+            .unwrap_or_else(|_| String::new());
+
+        // Check for WAF challenge
+        if response_text.contains("acw_sc__v2") || response_text.contains("<script>var arg1=") {
+            log::warn!("WAF challenge detected in API endpoint response");
+            anyhow::bail!("WAF_CHALLENGE: {}", &response_text[..response_text.len().min(500)]);
+        }
+
         if !status.is_success() {
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unable to read response".to_string());
             log::warn!(
                 "API endpoint returned non-success status {}: {}",
                 status,
-                error_text
+                &response_text[..response_text.len().min(200)]
             );
             // Don't fail, just log warning
         }

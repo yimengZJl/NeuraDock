@@ -17,7 +17,7 @@ use neuradock_domain::token::TokenRepository;
 use neuradock_domain::custom_node::CustomProviderNodeRepository;
 use neuradock_domain::check_in::Provider;
 use neuradock_infrastructure::events::InMemoryEventBus;
-use neuradock_infrastructure::persistence::{repositories::{SqliteAccountRepository, SqliteSessionRepository, SqliteTokenRepository, SqliteCustomProviderNodeRepository}, Database};
+use neuradock_infrastructure::persistence::{repositories::{SqliteAccountRepository, SqliteSessionRepository, SqliteTokenRepository, SqliteCustomProviderNodeRepository, SqliteProviderModelsRepository, SqliteWafCookiesRepository}, Database};
 use neuradock_infrastructure::notification::SqliteNotificationChannelRepository;
 use neuradock_infrastructure::security::{EncryptionService, KeyManager};
 
@@ -43,6 +43,8 @@ pub struct AppState {
     pub notification_channel_repo: Arc<dyn NotificationChannelRepository>,
     pub token_repo: Arc<dyn TokenRepository>,
     pub custom_node_repo: Arc<dyn CustomProviderNodeRepository>,
+    pub provider_models_repo: Arc<SqliteProviderModelsRepository>,
+    pub waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
     pub notification_service: Arc<NotificationService>,
     pub token_service: Arc<TokenService>,
     pub claude_config_service: Arc<ClaudeConfigService>,
@@ -116,6 +118,8 @@ impl AppState {
             Arc::new(SqliteTokenRepository::new(pool.clone())) as Arc<dyn TokenRepository>;
         let custom_node_repo =
             Arc::new(SqliteCustomProviderNodeRepository::new(pool.clone())) as Arc<dyn CustomProviderNodeRepository>;
+        let provider_models_repo = Arc::new(SqliteProviderModelsRepository::new(pool.clone()));
+        let waf_cookies_repo = Arc::new(SqliteWafCookiesRepository::new(pool.clone()));
         let notification_service = Arc::new(NotificationService::new(notification_channel_repo.clone(), pool.clone()));
         let account_queries = Arc::new(AccountQueryService::new(account_repo.clone()));
         let streak_queries = Arc::new(CheckInStreakQueries::new(pool.clone()));
@@ -125,6 +129,7 @@ impl AppState {
         let token_service = Arc::new(
             TokenService::new(token_repo.clone(), account_repo.clone())
                 .map_err(|e| format!("Failed to initialize token service: {}", e))?
+                .with_waf_cookies_repo(waf_cookies_repo.clone())
         );
         let claude_config_service = Arc::new(ClaudeConfigService::new());
         let codex_config_service = Arc::new(CodexConfigService::new());
@@ -214,6 +219,8 @@ impl AppState {
             execute_check_in: Arc::new(
                 ExecuteCheckInCommandHandler::new(
                     account_repo.clone(),
+                    provider_models_repo.clone(),
+                    waf_cookies_repo.clone(),
                     providers_map.clone(),
                     true, // headless_browser
                     pool.clone(),
@@ -223,6 +230,8 @@ impl AppState {
             batch_execute_check_in: Arc::new(
                 BatchExecuteCheckInCommandHandler::new(
                     account_repo.clone(),
+                    provider_models_repo.clone(),
+                    waf_cookies_repo.clone(),
                     providers_map,
                     true, // headless_browser
                     pool.clone(),
@@ -260,6 +269,8 @@ impl AppState {
             notification_channel_repo,
             token_repo,
             custom_node_repo,
+            provider_models_repo,
+            waf_cookies_repo,
             notification_service,
             token_service,
             claude_config_service,

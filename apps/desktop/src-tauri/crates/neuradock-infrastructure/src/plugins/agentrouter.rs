@@ -23,6 +23,7 @@ impl AgentRouterPlugin {
                 None, // No separate sign-in endpoint - check-in happens automatically when querying user info
                 "/api/user/self".to_string(),
                 Some("/api/token/".to_string()),
+                Some("/api/user/models".to_string()),
                 "new-api-user".to_string(),
                 None, // No WAF bypass needed
             ),

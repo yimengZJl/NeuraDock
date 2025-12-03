@@ -56,6 +56,7 @@ pub struct ApiToken {
     remain_quota: i64,
     unlimited_quota: bool,
     expired_time: Option<DateTime<Utc>>,
+    model_limits_enabled: bool,
     model_limits: Option<ModelLimits>,
     fetched_at: DateTime<Utc>,
 }
@@ -71,6 +72,7 @@ impl ApiToken {
         remain_quota: i64,
         unlimited_quota: bool,
         expired_time: Option<DateTime<Utc>>,
+        model_limits_enabled: bool,
         model_limits: Option<ModelLimits>,
     ) -> Self {
         Self {
@@ -83,6 +85,7 @@ impl ApiToken {
             remain_quota,
             unlimited_quota,
             expired_time,
+            model_limits_enabled,
             model_limits,
             fetched_at: Utc::now(),
         }
@@ -137,6 +140,10 @@ impl ApiToken {
         self.expired_time
     }
 
+    pub fn model_limits_enabled(&self) -> bool {
+        self.model_limits_enabled
+    }
+
     pub fn model_limits(&self) -> Option<&ModelLimits> {
         self.model_limits.as_ref()
     }
@@ -181,6 +188,7 @@ mod tests {
             100000,
             false,
             None,
+            false,
             None,
         );
 
@@ -200,6 +208,7 @@ mod tests {
             100000,
             false,
             Some(expired_time),
+            false,
             None,
         );
 
@@ -219,6 +228,7 @@ mod tests {
             70000,
             false,
             None,
+            false,
             None,
         );
 
@@ -237,6 +247,7 @@ mod tests {
             70000,
             true,
             None,
+            false,
             None,
         );
 

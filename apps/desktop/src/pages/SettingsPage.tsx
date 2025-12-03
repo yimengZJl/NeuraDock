@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
-import { Moon, Sun, Monitor, Palette, Zap, Code, Bell, Info, ChevronRight } from 'lucide-react';
+import { Moon, Sun, Monitor, Palette, Zap, Code, Bell, Info, ChevronRight, AlertTriangle, Scale } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { invoke } from '@tauri-apps/api/core';
@@ -263,22 +264,52 @@ export function SettingsPage() {
 
       case 'about':
         return (
-          <Card className="rounded-2xl">
-            <CardHeader>
-              <CardTitle>{t('settings.about')}</CardTitle>
-              <CardDescription>{t('settings.aboutDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{t('settings.version')}</span>
-                <span className="font-medium">v0.1.0</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{t('settings.copyright')}</span>
-                <span className="font-medium">© 2025 NeuraDock</span>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle>{t('settings.about')}</CardTitle>
+                <CardDescription>{t('settings.aboutDescription')}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{t('settings.version')}</span>
+                  <span className="font-medium">v0.1.0</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{t('settings.copyright')}</span>
+                  <span className="font-medium">© 2025 NeuraDock</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Disclaimer */}
+            <Alert variant="warning" className="border-2 rounded-2xl">
+              <AlertTriangle className="h-5 w-5" />
+              <AlertDescription className="space-y-4 pt-2">
+                <div className="font-bold text-base">{t('disclaimer.title')}</div>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold">
+                    {t('disclaimer.liability.title')}
+                  </p>
+                  <p className="text-sm">{t('disclaimer.liability.description')}</p>
+                  <p className="text-sm font-semibold">
+                    ⚠️ {t('disclaimer.liability.warning')}
+                  </p>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <Scale className="h-4 w-4" />
+                    {t('disclaimer.license.title')}
+                  </div>
+                  <p>{t('disclaimer.license.description')}</p>
+                  <p className="font-semibold">{t('disclaimer.license.commercial')}</p>
+                  <p className="text-muted-foreground italic">
+                    {t('disclaimer.license.footer')}
+                  </p>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </div>
         );
 
       default:

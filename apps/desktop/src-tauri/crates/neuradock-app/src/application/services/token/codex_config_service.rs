@@ -62,7 +62,7 @@ preferred_auth_method = "apikey"
 [model_providers.openai-chat-completions]
 name = "OpenAI using Chat Completions"
 base_url = "{}/v1"
-env_key = "AGENT_ROUTER_TOKEN"
+#env_key = "AGENT_ROUTER_TOKEN"
 wire_api = "chat"
 query_params = {{}}
 stream_idle_timeout_ms = 300000

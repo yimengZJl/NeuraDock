@@ -13,6 +13,7 @@ import {
 import { useDeleteAccount, useToggleAccount } from '@/hooks/useAccounts';
 import { useFetchAccountBalance, useRefreshAccountBalance } from '@/hooks/useBalance';
 import { CheckInButton } from '@/components/checkin/CheckInButton';
+import { ProviderModelsSection } from '@/components/account/ProviderModelsSection';
 import { toast } from 'sonner';
 import {
   MoreVertical,
@@ -238,7 +239,7 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
                 {t('accountCard.autoDisabled')}
               </div>
             )}
-            
+
             {/* 右侧：手动签到按钮（小圆形） */}
             <CheckInButton
               accountId={account.id}
@@ -248,6 +249,16 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
               className="rounded-full h-7 px-3 text-xs"
             />
           </div>
+        )}
+
+        {/* 模型列表 */}
+        {account.enabled && (
+          <ProviderModelsSection
+            providerId={account.provider_id}
+            providerName={account.provider_name}
+            accountId={account.id}
+            compact={true}
+          />
         )}
       </CardContent>
 

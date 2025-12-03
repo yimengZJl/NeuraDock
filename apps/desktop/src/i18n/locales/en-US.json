@@ -23,6 +23,7 @@
     "consumed": "Consumed",
     "total_income": "Total Income",
     "manageAccounts": "Manage Accounts",
+    "supportedModels": "Supported Models",
     "stats": {
       "totalIncome": "Total Income",
       "historicalConsumption": "Historical Consumption",
@@ -124,7 +125,13 @@
     "sessionValidDays": "Valid for {{days}} days",
     "sessionUnknown": "Session Unknown",
     "refreshBalance": "Refresh balance",
-    "balanceRefreshed": "Balance refreshed"
+    "balanceRefreshed": "Balance refreshed",
+    "supportedModels": "Supported Models",
+    "loadingModels": "Loading...",
+    "noModels": "No models, click refresh to fetch",
+    "refreshModels": "Refresh models (with WAF bypass)",
+    "modelsRefreshed": "Models refreshed successfully",
+    "modelsRefreshError": "Failed to refresh models"
   },
   "accountDialog": {
     "createTitle": "Add New Account",
@@ -368,7 +375,7 @@
     "tempConfig": "Temporary Configuration",
     "globalConfigDesc": "This will write the configuration to ~/.claude/settings.json and apply globally to all Claude Code sessions.",
     "claudeGlobalDesc": "This will write the configuration to ~/.claude/settings.json and apply globally.",
-    "codexGlobalDesc": "This will write the configuration to ~/.codex/auth.json and apply globally.",
+    "codexGlobalDesc": "This will write the configuration to ~/.codex/config.toml and ~/.codex/auth.json and apply globally.",
     "tempConfigDesc": "Generate export commands to use in your current terminal session only.",
     "configureGlobally": "Configure Globally",
     "generateCommands": "Generate Commands",
@@ -407,8 +414,14 @@
     "clearConfigDesc": "This will only remove configurations managed by NeuraDock, preserving your other settings.",
     "clearConfigBtn": "Clear Configuration",
     "clearClaudeDesc": "Clears ANTHROPIC_API_KEY, ANTHROPIC_BASE_URL and other managed settings from ~/.claude/settings.json",
-    "clearCodexDesc": "Removes ~/.codex/auth.json file",
-    "clearConfigError": "Failed to clear config: "
+    "clearCodexDesc": "Removes ~/.codex/config.toml and ~/.codex/auth.json files",
+    "clearConfigError": "Failed to clear config: ",
+    "noModelLimits": "Note: This token has no model restrictions.",
+    "providerModelsNote": "Checking compatibility using provider's available models.",
+    "noLimits": "Unrestricted",
+    "noModelsConfigured": "None",
+    "noCompatibleModelsForClaude": "This provider does not support Claude-compatible models (Claude, GLM, DeepSeek, Gemini).",
+    "noGPTModels": "Note: This token has no model restrictions. This provider may not have GPT models, but Codex can work with OpenAI-compatible APIs."
   },
   "disclaimer": {
     "title": "Important Notices",

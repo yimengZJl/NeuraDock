@@ -20,6 +20,7 @@ struct TokenRow {
     remain_quota: i64,
     unlimited_quota: i32,
     expired_time: Option<i64>,
+    model_limits_enabled: i32,
     model_limits_allowed: Option<String>,
     model_limits_denied: Option<String>,
     fetched_at: String,
@@ -71,6 +72,7 @@ impl SqliteTokenRepository {
             row.remain_quota,
             row.unlimited_quota != 0,
             expired_time,
+            row.model_limits_enabled != 0,
             model_limits,
         ))
     }
@@ -91,9 +93,9 @@ impl TokenRepository for SqliteTokenRepository {
             INSERT INTO api_tokens (
                 account_id, token_id, token_name, token_key, status,
                 used_quota, remain_quota, unlimited_quota, expired_time,
-                model_limits_allowed, model_limits_denied, fetched_at
+                model_limits_enabled, model_limits_allowed, model_limits_denied, fetched_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(account_id, token_id) DO UPDATE SET
                 token_name = excluded.token_name,
                 token_key = excluded.token_key,
@@ -102,6 +104,7 @@ impl TokenRepository for SqliteTokenRepository {
                 remain_quota = excluded.remain_quota,
                 unlimited_quota = excluded.unlimited_quota,
                 expired_time = excluded.expired_time,
+                model_limits_enabled = excluded.model_limits_enabled,
                 model_limits_allowed = excluded.model_limits_allowed,
                 model_limits_denied = excluded.model_limits_denied,
                 fetched_at = excluded.fetched_at
@@ -116,6 +119,7 @@ impl TokenRepository for SqliteTokenRepository {
         .bind(token.remain_quota())
         .bind(if token.unlimited_quota() { 1 } else { 0 })
         .bind(expired_time)
+        .bind(if token.model_limits_enabled() { 1 } else { 0 })
         .bind(model_limits_allowed)
         .bind(model_limits_denied)
         .bind(token.fetched_at().to_rfc3339())
@@ -143,9 +147,9 @@ impl TokenRepository for SqliteTokenRepository {
                 INSERT INTO api_tokens (
                     account_id, token_id, token_name, token_key, status,
                     used_quota, remain_quota, unlimited_quota, expired_time,
-                    model_limits_allowed, model_limits_denied, fetched_at
+                    model_limits_enabled, model_limits_allowed, model_limits_denied, fetched_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(account_id, token_id) DO UPDATE SET
                     token_name = excluded.token_name,
                     token_key = excluded.token_key,
@@ -154,6 +158,7 @@ impl TokenRepository for SqliteTokenRepository {
                     remain_quota = excluded.remain_quota,
                     unlimited_quota = excluded.unlimited_quota,
                     expired_time = excluded.expired_time,
+                    model_limits_enabled = excluded.model_limits_enabled,
                     model_limits_allowed = excluded.model_limits_allowed,
                     model_limits_denied = excluded.model_limits_denied,
                     fetched_at = excluded.fetched_at
@@ -168,6 +173,7 @@ impl TokenRepository for SqliteTokenRepository {
             .bind(token.remain_quota())
             .bind(if token.unlimited_quota() { 1 } else { 0 })
             .bind(expired_time)
+            .bind(if token.model_limits_enabled() { 1 } else { 0 })
             .bind(model_limits_allowed)
             .bind(model_limits_denied)
             .bind(token.fetched_at().to_rfc3339())
@@ -187,7 +193,7 @@ impl TokenRepository for SqliteTokenRepository {
             r#"
             SELECT id, account_id, token_id, token_name, token_key, status,
                    used_quota, remain_quota, unlimited_quota, expired_time,
-                   model_limits_allowed, model_limits_denied, fetched_at
+                   model_limits_enabled, model_limits_allowed, model_limits_denied, fetched_at
             FROM api_tokens
             WHERE token_id = ?
             "#,
@@ -208,7 +214,7 @@ impl TokenRepository for SqliteTokenRepository {
             r#"
             SELECT id, account_id, token_id, token_name, token_key, status,
                    used_quota, remain_quota, unlimited_quota, expired_time,
-                   model_limits_allowed, model_limits_denied, fetched_at
+                   model_limits_enabled, model_limits_allowed, model_limits_denied, fetched_at
             FROM api_tokens
             WHERE account_id = ?
             ORDER BY token_id

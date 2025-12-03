@@ -341,6 +341,7 @@ pub struct TokenDto {
     pub expired_at: Option<String>,
     pub is_active: bool,
     pub is_expired: bool,
+    pub model_limits_enabled: bool,
     pub model_limits_allowed: Vec<String>,
     pub model_limits_denied: Vec<String>,
     pub fetched_at: String,

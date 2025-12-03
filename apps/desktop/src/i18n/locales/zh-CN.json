@@ -23,6 +23,7 @@
     "consumed": "已消耗",
     "total_income": "总收益",
     "manageAccounts": "管理账号",
+    "supportedModels": "支持的模型",
     "stats": {
       "totalIncome": "总收益",
       "historicalConsumption": "历史消耗",
@@ -124,7 +125,13 @@
     "sessionValidDays": "有效期 {{days}} 天",
     "sessionUnknown": "Session 未知",
     "refreshBalance": "刷新余额",
-    "balanceRefreshed": "余额已刷新"
+    "balanceRefreshed": "余额已刷新",
+    "supportedModels": "支持的模型",
+    "loadingModels": "加载中...",
+    "noModels": "暂无模型，点击刷新获取",
+    "refreshModels": "刷新模型列表（含 WAF 绕过）",
+    "modelsRefreshed": "模型列表已刷新",
+    "modelsRefreshError": "刷新模型列表失败"
   },
   "accountDialog": {
     "createTitle": "添加新账号",
@@ -368,7 +375,7 @@
     "tempConfig": "临时配置",
     "globalConfigDesc": "将配置写入 ~/.claude/settings.json，全局应用于所有 Claude Code 会话。",
     "claudeGlobalDesc": "将配置写入 ~/.claude/settings.json，全局应用。",
-    "codexGlobalDesc": "将配置写入 ~/.codex/auth.json，全局应用。",
+    "codexGlobalDesc": "将配置写入 ~/.codex/config.toml 和 ~/.codex/auth.json，全局应用。",
     "tempConfigDesc": "生成导出命令，仅在当前终端会话中使用。",
     "configureGlobally": "全局配置",
     "generateCommands": "生成命令",
@@ -407,8 +414,14 @@
     "clearConfigDesc": "仅清除 NeuraDock 管理的配置项，保留其他设置不变。",
     "clearConfigBtn": "清除配置",
     "clearClaudeDesc": "从 ~/.claude/settings.json 中清除 ANTHROPIC_API_KEY、ANTHROPIC_BASE_URL 等托管设置",
-    "clearCodexDesc": "删除 ~/.codex/auth.json 文件",
-    "clearConfigError": "清除配置失败："
+    "clearCodexDesc": "删除 ~/.codex/config.toml 和 ~/.codex/auth.json 文件",
+    "clearConfigError": "清除配置失败：",
+    "noModelLimits": "注意：此令牌没有模型限制。",
+    "providerModelsNote": "正在使用中转站可用的模型列表检查兼容性。",
+    "noLimits": "不限制",
+    "noModelsConfigured": "无",
+    "noCompatibleModelsForClaude": "此中转站不支持 Claude 兼容的模型（Claude、GLM、DeepSeek、Gemini）。",
+    "noGPTModels": "注意：此令牌没有模型限制。此中转站可能没有 GPT 模型，但 Codex 可以使用 OpenAI 兼容的 API。"
   },
   "disclaimer": {
     "title": "重要声明",

@@ -39,6 +39,7 @@ impl TokenDto {
             expired_at: token.expired_time().map(|dt| dt.to_rfc3339()),
             is_active: token.is_active(),
             is_expired: token.is_expired(),
+            model_limits_enabled: token.model_limits_enabled(),
             model_limits_allowed,
             model_limits_denied,
             fetched_at: token.fetched_at().to_rfc3339(),

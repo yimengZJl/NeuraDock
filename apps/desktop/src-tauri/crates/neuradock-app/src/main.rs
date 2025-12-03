@@ -91,6 +91,9 @@ async fn main() {
             delete_custom_node,
             clear_claude_global,
             clear_codex_global,
+            fetch_provider_models,
+            refresh_provider_models_with_waf,
+            get_cached_provider_models,
         ])
         .events(collect_events![
             presentation::events::CheckInProgress,

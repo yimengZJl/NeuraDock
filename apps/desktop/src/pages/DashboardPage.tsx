@@ -2,8 +2,8 @@ import { Users, DollarSign, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBalanceStatistics } from '@/hooks/useBalance';
+import { ProviderModelsSection } from '@/components/account/ProviderModelsSection';
 import { useTranslation } from 'react-i18next';
-import { DisclaimerBanner } from '@/components/layout/DisclaimerBanner';
 
 export function DashboardPage() {
   const { data: accounts, isLoading } = useAccounts();
@@ -21,8 +21,6 @@ export function DashboardPage() {
           {t('dashboard.description')}
         </p>
       </div>
-
-      <DisclaimerBanner />
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -92,31 +90,50 @@ export function DashboardPage() {
             <CardTitle>{t('dashboard.providerBreakdown')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {statistics.providers.map((provider) => (
-                <div key={provider.provider_id} className="flex items-center justify-between border-b pb-3 last:border-0">
-                  <div className="space-y-1">
-                    <p className="font-semibold">{provider.provider_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {provider.account_count} {provider.account_count === 1 ? t('dashboard.account') : t('dashboard.accounts_plural')}
-                    </p>
+            <div className="space-y-6">
+              {statistics.providers.map((provider) => {
+                // Get first account of this provider to fetch models
+                const providerAccount = accounts?.find(
+                  (acc) => acc.provider_id === provider.provider_id && acc.enabled
+                );
+
+                return (
+                  <div key={provider.provider_id} className="space-y-3 border-b pb-4 last:border-0">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="font-semibold">{provider.provider_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {provider.account_count} {provider.account_count === 1 ? t('dashboard.account') : t('dashboard.accounts_plural')}
+                        </p>
+                      </div>
+                      <div className="flex gap-6 text-sm">
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">{t('dashboard.stats.totalIncome')}</p>
+                          <p className="font-semibold text-blue-600">${provider.total_income.toFixed(2)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">{t('dashboard.stats.historicalConsumption')}</p>
+                          <p className="font-semibold text-orange-600">${provider.total_consumed.toFixed(2)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">{t('dashboard.stats.currentBalance')}</p>
+                          <p className="font-semibold text-green-600">${provider.current_balance.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 模型列表显示 */}
+                    {providerAccount && (
+                      <ProviderModelsSection
+                        providerId={provider.provider_id}
+                        providerName={provider.provider_name}
+                        accountId={providerAccount.id}
+                        compact={false}
+                      />
+                    )}
                   </div>
-                  <div className="flex gap-6 text-sm">
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">{t('dashboard.stats.totalIncome')}</p>
-                      <p className="font-semibold text-blue-600">${provider.total_income.toFixed(2)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">{t('dashboard.stats.historicalConsumption')}</p>
-                      <p className="font-semibold text-orange-600">${provider.total_consumed.toFixed(2)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">{t('dashboard.stats.currentBalance')}</p>
-                      <p className="font-semibold text-green-600">${provider.current_balance.toFixed(2)}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

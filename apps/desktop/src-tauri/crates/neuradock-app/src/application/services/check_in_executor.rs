@@ -10,6 +10,7 @@ use neuradock_domain::{
     shared::AccountId,
 };
 use neuradock_infrastructure::http::{CheckInResult, HttpClient, UserInfo, WafBypassService};
+use neuradock_infrastructure::persistence::repositories::SqliteWafCookiesRepository;
 
 /// Check-in result for a single account
 #[derive(Debug, Clone)]
@@ -35,6 +36,7 @@ pub struct CheckInExecutor {
     http_client: HttpClient,
     waf_service: WafBypassService,
     account_repo: Arc<dyn AccountRepository>,
+    waf_cookies_repo: Option<Arc<SqliteWafCookiesRepository>>,
 }
 
 impl CheckInExecutor {
@@ -46,7 +48,14 @@ impl CheckInExecutor {
             http_client,
             waf_service,
             account_repo,
+            waf_cookies_repo: None,
         })
+    }
+
+    /// Set WAF cookies repository for caching
+    pub fn with_waf_cookies_repo(mut self, repo: Arc<SqliteWafCookiesRepository>) -> Self {
+        self.waf_cookies_repo = Some(repo);
+        self
     }
 
     /// Execute check-in for a single account
@@ -94,8 +103,8 @@ impl CheckInExecutor {
             });
         }
 
-        // Prepare cookies
-        let cookies = self
+        // Prepare cookies (with WAF cookies from cache or bypass)
+        let mut cookies = self
             .prepare_cookies(&account_name, provider, account.credentials().cookies())
             .await?;
 
@@ -112,13 +121,43 @@ impl CheckInExecutor {
             )
             .await;
 
-        let user_info = match user_info_result {
+        // Check if we got a WAF challenge and need to refresh cookies
+        let user_info = match &user_info_result {
             Ok(info) => {
                 info!(
                     "[{}] Current balance: ${:.2}, Used: ${:.2}",
                     account_name, info.quota, info.used_quota
                 );
-                Some(info)
+                Some(info.clone())
+            }
+            Err(e) if self.is_waf_challenge_error(e) => {
+                warn!("[{}] WAF challenge detected, invalidating cache and retrying...", account_name);
+
+                // Invalidate WAF cache and get fresh cookies
+                cookies = self
+                    .refresh_waf_cookies_and_retry(&account_name, provider, account.credentials().cookies())
+                    .await?;
+
+                // Retry get user info
+                match self
+                    .http_client
+                    .get_user_info(
+                        &provider.user_info_url(),
+                        &cookies,
+                        provider.api_user_key(),
+                        api_user,
+                    )
+                    .await
+                {
+                    Ok(info) => {
+                        info!("[{}] Retry successful, balance: ${:.2}", account_name, info.quota);
+                        Some(info)
+                    }
+                    Err(e) => {
+                        warn!("[{}] Failed to get user info after retry: {}", account_name, e);
+                        None
+                    }
+                }
             }
             Err(e) => {
                 warn!("[{}] Failed to get user info: {}", account_name, e);
@@ -162,11 +201,12 @@ impl CheckInExecutor {
                 }
             } else {
                 // Call API endpoint (JSON response expected)
-                match self
+                let check_in_call = self
                     .http_client
                     .execute_check_in(&sign_in_url, &cookies, provider.api_user_key(), api_user)
-                    .await
-                {
+                    .await;
+
+                match check_in_call {
                     Ok(result) => {
                         if result.success {
                             info!("[{}] Check-in successful!", account_name);
@@ -174,6 +214,46 @@ impl CheckInExecutor {
                             warn!("[{}] Check-in failed: {}", account_name, result.message);
                         }
                         result
+                    }
+                    Err(e) if self.is_waf_challenge_error(&e) => {
+                        warn!("[{}] WAF challenge detected during check-in, refreshing cookies and retrying...", account_name);
+
+                        // Refresh WAF cookies and retry
+                        match self
+                            .refresh_waf_cookies_and_retry(&account_name, provider, account.credentials().cookies())
+                            .await
+                        {
+                            Ok(fresh_cookies) => {
+                                // Update main cookies variable for subsequent operations
+                                cookies = fresh_cookies;
+
+                                // Retry check-in with fresh cookies
+                                match self
+                                    .http_client
+                                    .execute_check_in(&sign_in_url, &cookies, provider.api_user_key(), api_user)
+                                    .await
+                                {
+                                    Ok(result) => {
+                                        info!("[{}] Check-in retry successful after WAF refresh!", account_name);
+                                        result
+                                    }
+                                    Err(retry_err) => {
+                                        error!("[{}] Check-in retry failed: {}", account_name, retry_err);
+                                        CheckInResult {
+                                            success: false,
+                                            message: format!("Check-in failed after WAF retry: {}", retry_err),
+                                        }
+                                    }
+                                }
+                            }
+                            Err(refresh_err) => {
+                                error!("[{}] Failed to refresh WAF cookies: {}", account_name, refresh_err);
+                                CheckInResult {
+                                    success: false,
+                                    message: format!("WAF refresh failed: {}", refresh_err),
+                                }
+                            }
+                        }
                     }
                     Err(e) => {
                         error!("[{}] Check-in request error: {}", account_name, e);
@@ -200,18 +280,51 @@ impl CheckInExecutor {
             ];
 
             let mut success_count = 0;
+            let mut waf_refreshed = false;
+            let mut current_cookies = cookies.clone();
+
             for endpoint in &api_endpoints {
-                match self
+                let result = self
                     .http_client
-                    .call_api_endpoint(endpoint, &cookies, provider.api_user_key(), api_user)
-                    .await
-                {
+                    .call_api_endpoint(endpoint, &current_cookies, provider.api_user_key(), api_user)
+                    .await;
+
+                match result {
                     Ok(_) => {
                         info!(
                             "[{}] API endpoint called successfully: {}",
                             account_name, endpoint
                         );
                         success_count += 1;
+                    }
+                    Err(e) if self.is_waf_challenge_error(&e) && !waf_refreshed => {
+                        warn!(
+                            "[{}] WAF challenge during API endpoint {}, refreshing cookies...",
+                            account_name, endpoint
+                        );
+
+                        // Refresh WAF cookies and retry
+                        if let Ok(fresh_cookies) = self
+                            .refresh_waf_cookies_and_retry(&account_name, provider, account.credentials().cookies())
+                            .await
+                        {
+                            current_cookies = fresh_cookies;
+                            waf_refreshed = true;
+
+                            // Retry this endpoint
+                            if self
+                                .http_client
+                                .call_api_endpoint(endpoint, &current_cookies, provider.api_user_key(), api_user)
+                                .await
+                                .is_ok()
+                            {
+                                info!(
+                                    "[{}] API endpoint retry successful: {}",
+                                    account_name, endpoint
+                                );
+                                success_count += 1;
+                            }
+                        }
                     }
                     Err(e) => {
                         warn!(
@@ -220,6 +333,11 @@ impl CheckInExecutor {
                         );
                     }
                 }
+            }
+
+            // Update cookies for subsequent operations if WAF was refreshed
+            if waf_refreshed {
+                cookies = current_cookies;
             }
 
             info!(
@@ -411,7 +529,7 @@ impl CheckInExecutor {
         })
     }
 
-    /// Prepare cookies with WAF bypass if needed
+    /// Prepare cookies with WAF bypass if needed (with caching support)
     async fn prepare_cookies(
         &self,
         account_name: &str,
@@ -421,8 +539,31 @@ impl CheckInExecutor {
         let mut cookies = user_cookies.clone();
 
         if provider.needs_waf_bypass() {
+            let provider_id = provider.id().as_str();
+
+            // Try to use cached WAF cookies first
+            if let Some(ref waf_cookies_repo) = self.waf_cookies_repo {
+                match waf_cookies_repo.get_valid(provider_id).await {
+                    Ok(Some(cached_waf)) => {
+                        info!(
+                            "[{}] Using cached WAF cookies (expires at {})",
+                            account_name, cached_waf.expires_at
+                        );
+                        cookies.extend(cached_waf.cookies);
+                        return Ok(cookies);
+                    }
+                    Ok(None) => {
+                        info!("[{}] No valid cached WAF cookies found", account_name);
+                    }
+                    Err(e) => {
+                        warn!("[{}] Failed to check cached WAF cookies: {}", account_name, e);
+                    }
+                }
+            }
+
+            // No valid cache, run WAF bypass
             info!(
-                "[{}] WAF bypass required, getting WAF cookies via Python script...",
+                "[{}] WAF bypass required, getting WAF cookies via browser...",
                 account_name
             );
 
@@ -432,11 +573,89 @@ impl CheckInExecutor {
                 .await
                 .context("Failed to get WAF cookies")?;
 
-            // Merge WAF cookies with user cookies (WAF cookies first)
+            // Cache the new WAF cookies
+            if let Some(ref waf_cookies_repo) = self.waf_cookies_repo {
+                if let Err(e) = waf_cookies_repo.save(provider_id, &waf_cookies).await {
+                    warn!("[{}] Failed to cache WAF cookies: {}", account_name, e);
+                } else {
+                    info!("[{}] WAF cookies cached for 24 hours", account_name);
+                }
+            }
+
+            // Merge WAF cookies with user cookies
             cookies.extend(waf_cookies);
         } else {
             info!("[{}] No WAF bypass required", account_name);
         }
+
+        Ok(cookies)
+    }
+
+    /// Check if an error indicates a WAF challenge response
+    fn is_waf_challenge_error(&self, error: &anyhow::Error) -> bool {
+        let error_str = error.to_string();
+        let error_lower = error_str.to_lowercase();
+        // WAF challenge indicators:
+        // - WAF_CHALLENGE marker from HTTP client
+        // - JavaScript challenge page with acw_sc__v2 cookie generation
+        // - Cloudflare challenge page
+        // - 403 with challenge content
+        error_str.contains("WAF_CHALLENGE")
+            || error_lower.contains("acw_sc__v2")
+            || error_lower.contains("waf")
+            || error_str.contains("<script>var arg1=")
+            || error_lower.contains("just a moment")
+            || error_lower.contains("checking your browser")
+    }
+
+    /// Invalidate WAF cache and get fresh cookies
+    async fn refresh_waf_cookies_and_retry(
+        &self,
+        account_name: &str,
+        provider: &Provider,
+        user_cookies: &HashMap<String, String>,
+    ) -> Result<HashMap<String, String>> {
+        let provider_id = provider.id().as_str();
+
+        // Delete cached WAF cookies
+        if let Some(ref waf_cookies_repo) = self.waf_cookies_repo {
+            if let Err(e) = waf_cookies_repo.delete(provider_id).await {
+                warn!("[{}] Failed to delete cached WAF cookies: {}", account_name, e);
+            } else {
+                info!("[{}] Invalidated cached WAF cookies", account_name);
+            }
+        }
+
+        // Run fresh WAF bypass
+        info!(
+            "[{}] Running fresh WAF bypass after challenge detection...",
+            account_name
+        );
+
+        let waf_cookies = self
+            .waf_service
+            .get_waf_cookies(&provider.login_url(), account_name)
+            .await
+            .context("Failed to get fresh WAF cookies after challenge")?;
+
+        info!(
+            "[{}] Got {} fresh WAF cookies",
+            account_name,
+            waf_cookies.len()
+        );
+
+        // Cache the new WAF cookies
+        if let Some(ref waf_cookies_repo) = self.waf_cookies_repo {
+            if let Err(e) = waf_cookies_repo.save(provider_id, &waf_cookies).await {
+                warn!("[{}] Failed to cache new WAF cookies: {}", account_name, e);
+            } else {
+                info!("[{}] New WAF cookies cached for 24 hours", account_name);
+            }
+        }
+
+        // Merge with user cookies
+        let mut cookies = user_cookies.clone();
+        cookies.extend(waf_cookies);
 
         Ok(cookies)
     }

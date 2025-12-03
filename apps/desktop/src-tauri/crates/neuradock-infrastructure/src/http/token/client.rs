@@ -75,6 +75,25 @@ pub struct TokenClient {
     client: Client,
 }
 
+/// Response format for provider models API
+#[derive(Debug, Deserialize)]
+pub struct ProviderModelsResponse {
+    pub success: bool,
+    pub message: String,
+    pub data: Vec<String>,  // Changed: data is a simple string array, not objects
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ProviderModelData {
+    pub id: String,
+    #[serde(default)]
+    pub object: Option<String>,
+    #[serde(default)]
+    pub created: Option<i64>,
+    #[serde(default)]
+    pub owned_by: Option<String>,
+}
+
 impl TokenClient {
     pub fn new() -> Result<Self> {
         let client = Client::builder()
@@ -83,6 +102,68 @@ impl TokenClient {
             .build()?;
 
         Ok(Self { client })
+    }
+
+    /// Fetch provider supported models from /api/user/models
+    pub async fn fetch_provider_models(
+        &self,
+        base_url: &str,
+        models_path: &str,
+        cookie_string: &str,
+        api_user: Option<&str>,
+    ) -> Result<Vec<String>> {
+        let url = format!("{}{}", base_url, models_path);
+
+        log::info!("Fetching provider models from: {}", url);
+
+        let mut request = self
+            .client
+            .get(&url)
+            .header("Cookie", cookie_string)
+            .header("Accept", "application/json")
+            .header("Accept-Encoding", "gzip, deflate, br")
+            .header("Cache-Control", "no-store")
+            .header("Referer", format!("{}/console", base_url));
+
+        // Add New-API-User header if provided
+        if let Some(user) = api_user {
+            request = request.header("New-API-User", user);
+        }
+
+        let response = request.send().await?;
+
+        if !response.status().is_success() {
+            log::error!("HTTP request failed: {}", response.status());
+            anyhow::bail!("Failed to fetch models: HTTP {}", response.status());
+        }
+
+        let response_text = response.text().await?;
+        log::debug!("Models response: {}", response_text);
+
+        // Check if response is WAF challenge page
+        if response_text.contains("<html>") && response_text.contains("acw_sc__v2") {
+            log::warn!("Detected WAF challenge page");
+            anyhow::bail!("WAF_CHALLENGE: Session cookies expired or invalid");
+        }
+
+        // Parse JSON
+        let models_response: ProviderModelsResponse = serde_json::from_str(&response_text)
+            .map_err(|e| {
+                log::error!("Failed to parse models JSON: {}", e);
+                anyhow::anyhow!("Failed to parse models response: {}", e)
+            })?;
+
+        if !models_response.success {
+            log::error!("API returned error: {}", models_response.message);
+            anyhow::bail!("API returned error: {}", models_response.message);
+        }
+
+        // Data is already a Vec<String>, no need to extract
+        let model_ids = models_response.data;
+
+        log::info!("Successfully fetched {} models", model_ids.len());
+
+        Ok(model_ids)
     }
 
     pub async fn fetch_tokens(

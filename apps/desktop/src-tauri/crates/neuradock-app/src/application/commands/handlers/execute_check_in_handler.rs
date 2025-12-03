@@ -13,11 +13,15 @@ use crate::application::services::{CheckInExecutor, NotificationService};
 use neuradock_domain::account::AccountRepository;
 use neuradock_domain::check_in::Provider;
 use neuradock_domain::shared::{AccountId, DomainError};
+use neuradock_infrastructure::persistence::repositories::{SqliteProviderModelsRepository, SqliteWafCookiesRepository};
+use neuradock_infrastructure::http::token::TokenClient;
 
 /// Execute check-in command handler
 pub struct ExecuteCheckInCommandHandler {
     account_repo: Arc<dyn AccountRepository>,
     notification_service: Option<Arc<NotificationService>>,
+    provider_models_repo: Arc<SqliteProviderModelsRepository>,
+    waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
     providers: HashMap<String, Provider>,
     headless_browser: bool,
     pool: Arc<SqlitePool>,
@@ -26,6 +30,8 @@ pub struct ExecuteCheckInCommandHandler {
 impl ExecuteCheckInCommandHandler {
     pub fn new(
         account_repo: Arc<dyn AccountRepository>,
+        provider_models_repo: Arc<SqliteProviderModelsRepository>,
+        waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
         providers: HashMap<String, Provider>,
         headless_browser: bool,
         pool: Arc<SqlitePool>,
@@ -33,6 +39,8 @@ impl ExecuteCheckInCommandHandler {
         Self {
             account_repo,
             notification_service: None,
+            provider_models_repo,
+            waf_cookies_repo,
             providers,
             headless_browser,
             pool,
@@ -42,6 +50,86 @@ impl ExecuteCheckInCommandHandler {
     pub fn with_notification_service(mut self, service: Arc<NotificationService>) -> Self {
         self.notification_service = Some(service);
         self
+    }
+
+    /// Fetch and save provider models after successful check-in
+    async fn fetch_and_save_provider_models(&self, provider: &Provider, cookies: &HashMap<String, String>, api_user: &str) {
+        // Check if provider has models API
+        let models_url = match provider.models_url() {
+            Some(url) => url,
+            None => {
+                info!("Provider {} does not have models API, skipping", provider.name());
+                return;
+            }
+        };
+
+        // Extract path from URL
+        let models_path = models_url.replace(provider.domain(), "");
+        let provider_id = provider.id().as_str();
+
+        // Build cookies with WAF cookies from cache
+        let mut all_cookies = cookies.clone();
+
+        // Try to get cached WAF cookies
+        match self.waf_cookies_repo.get_valid(provider_id).await {
+            Ok(Some(cached_waf)) => {
+                info!("Using cached WAF cookies for provider models fetch");
+                all_cookies.extend(cached_waf.cookies);
+            }
+            Ok(None) => {
+                info!("No cached WAF cookies available for provider models fetch");
+            }
+            Err(e) => {
+                error!("Failed to get cached WAF cookies: {}", e);
+            }
+        }
+
+        // Build cookie string
+        let cookie_string: String = all_cookies
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, v))
+            .collect::<Vec<_>>()
+            .join("; ");
+
+        // Create token client and fetch models
+        let client = match TokenClient::new() {
+            Ok(c) => c,
+            Err(e) => {
+                error!("Failed to create token client: {}", e);
+                return;
+            }
+        };
+
+        // Use account's api_user value, not provider's api_user_key (which is the header name)
+        let api_user_opt = if api_user.is_empty() { None } else { Some(api_user) };
+
+        match client
+            .fetch_provider_models(
+                provider.domain(),
+                &models_path,
+                &cookie_string,
+                api_user_opt,
+            )
+            .await
+        {
+            Ok(models) => {
+                info!("Fetched {} models for provider {}", models.len(), provider.name());
+
+                // Save to database
+                if let Err(e) = self.provider_models_repo
+                    .save(provider_id, &models)
+                    .await
+                {
+                    error!("Failed to save provider models: {}", e);
+                } else {
+                    info!("Provider models saved to database");
+                }
+            }
+            Err(e) => {
+                // Don't fail the check-in if models fetch fails
+                error!("Failed to fetch provider models (non-critical): {}", e);
+            }
+        }
     }
 
     /// Save balance to balance_history table (one record per day, always update if exists)
@@ -142,7 +230,8 @@ impl CommandHandler<ExecuteCheckInCommand> for ExecuteCheckInCommandHandler {
 
         // Create executor
         let executor = CheckInExecutor::new(self.account_repo.clone(), self.headless_browser)
-            .map_err(|e| DomainError::Infrastructure(e.to_string()))?;
+            .map_err(|e| DomainError::Infrastructure(e.to_string()))?
+            .with_waf_cookies_repo(self.waf_cookies_repo.clone());
 
         // Execute check-in
         let result = executor
@@ -182,6 +271,20 @@ impl CommandHandler<ExecuteCheckInCommand> for ExecuteCheckInCommandHandler {
 
             // Save to balance_history table
             self.save_balance_history(&cmd.account_id, &balance).await;
+
+            // Auto-fetch provider models if not exists in database
+            // Check if provider models already exist
+            if let Ok(existing_models) = self.provider_models_repo.find_by_provider(provider.id().as_str()).await {
+                if existing_models.is_none() || existing_models.as_ref().map(|m| m.models.is_empty()).unwrap_or(true) {
+                    info!("No provider models in database, auto-fetching...");
+                    // Reload account to get the latest cookies (may have been updated during check-in)
+                    if let Ok(Some(updated_acc)) = self.account_repo.find_by_id(&AccountId::from_string(&cmd.account_id)).await {
+                        self.fetch_and_save_provider_models(provider, updated_acc.credentials().cookies(), updated_acc.credentials().api_user()).await;
+                    }
+                } else {
+                    info!("Provider models already exist in database, skipping auto-fetch");
+                }
+            }
 
             Some(balance)
         } else {
@@ -233,6 +336,8 @@ impl CommandHandler<ExecuteCheckInCommand> for ExecuteCheckInCommandHandler {
 pub struct BatchExecuteCheckInCommandHandler {
     account_repo: Arc<dyn AccountRepository>,
     notification_service: Option<Arc<NotificationService>>,
+    provider_models_repo: Arc<SqliteProviderModelsRepository>,
+    waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
     providers: HashMap<String, Provider>,
     headless_browser: bool,
     pool: Arc<SqlitePool>,
@@ -241,6 +346,8 @@ pub struct BatchExecuteCheckInCommandHandler {
 impl BatchExecuteCheckInCommandHandler {
     pub fn new(
         account_repo: Arc<dyn AccountRepository>,
+        provider_models_repo: Arc<SqliteProviderModelsRepository>,
+        waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
         providers: HashMap<String, Provider>,
         headless_browser: bool,
         pool: Arc<SqlitePool>,
@@ -248,6 +355,8 @@ impl BatchExecuteCheckInCommandHandler {
         Self {
             account_repo,
             notification_service: None,
+            provider_models_repo,
+            waf_cookies_repo,
             providers,
             headless_browser,
             pool,
@@ -257,6 +366,86 @@ impl BatchExecuteCheckInCommandHandler {
     pub fn with_notification_service(mut self, service: Arc<NotificationService>) -> Self {
         self.notification_service = Some(service);
         self
+    }
+
+    /// Fetch and save provider models after successful check-in
+    async fn fetch_and_save_provider_models(&self, provider: &Provider, cookies: &HashMap<String, String>, api_user: &str) {
+        // Check if provider has models API
+        let models_url = match provider.models_url() {
+            Some(url) => url,
+            None => {
+                info!("Provider {} does not have models API, skipping", provider.name());
+                return;
+            }
+        };
+
+        // Extract path from URL
+        let models_path = models_url.replace(provider.domain(), "");
+        let provider_id = provider.id().as_str();
+
+        // Build cookies with WAF cookies from cache
+        let mut all_cookies = cookies.clone();
+
+        // Try to get cached WAF cookies
+        match self.waf_cookies_repo.get_valid(provider_id).await {
+            Ok(Some(cached_waf)) => {
+                info!("Using cached WAF cookies for provider models fetch");
+                all_cookies.extend(cached_waf.cookies);
+            }
+            Ok(None) => {
+                info!("No cached WAF cookies available for provider models fetch");
+            }
+            Err(e) => {
+                error!("Failed to get cached WAF cookies: {}", e);
+            }
+        }
+
+        // Build cookie string
+        let cookie_string: String = all_cookies
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, v))
+            .collect::<Vec<_>>()
+            .join("; ");
+
+        // Create token client and fetch models
+        let client = match TokenClient::new() {
+            Ok(c) => c,
+            Err(e) => {
+                error!("Failed to create token client: {}", e);
+                return;
+            }
+        };
+
+        // Use account's api_user value, not provider's api_user_key (which is the header name)
+        let api_user_opt = if api_user.is_empty() { None } else { Some(api_user) };
+
+        match client
+            .fetch_provider_models(
+                provider.domain(),
+                &models_path,
+                &cookie_string,
+                api_user_opt,
+            )
+            .await
+        {
+            Ok(models) => {
+                info!("Fetched {} models for provider {}", models.len(), provider.name());
+
+                // Save to database
+                if let Err(e) = self.provider_models_repo
+                    .save(provider_id, &models)
+                    .await
+                {
+                    error!("Failed to save provider models: {}", e);
+                } else {
+                    info!("Provider models saved to database");
+                }
+            }
+            Err(e) => {
+                // Don't fail the check-in if models fetch fails
+                error!("Failed to fetch provider models (non-critical): {}", e);
+            }
+        }
     }
 
     /// Save balance to balance_history table (one record per day, always update if exists)
@@ -347,7 +536,8 @@ impl CommandHandler<BatchExecuteCheckInCommand> for BatchExecuteCheckInCommandHa
         let mut results = Vec::new();
 
         let executor = CheckInExecutor::new(self.account_repo.clone(), self.headless_browser)
-            .map_err(|e| DomainError::Infrastructure(e.to_string()))?;
+            .map_err(|e| DomainError::Infrastructure(e.to_string()))?
+            .with_waf_cookies_repo(self.waf_cookies_repo.clone());
 
         for account_id in cmd.account_ids {
             // Load account to get provider_id
@@ -423,6 +613,20 @@ impl CommandHandler<BatchExecuteCheckInCommand> for BatchExecuteCheckInCommandHa
 
                         // Save to balance_history table
                         self.save_balance_history(&account_id, &balance).await;
+
+                        // Auto-fetch provider models if not exists in database
+                        // Check if provider models already exist
+                        if let Ok(existing_models) = self.provider_models_repo.find_by_provider(provider.id().as_str()).await {
+                            if existing_models.is_none() || existing_models.as_ref().map(|m| m.models.is_empty()).unwrap_or(true) {
+                                info!("No provider models in database, auto-fetching...");
+                                // Reload account to get the latest cookies
+                                if let Ok(Some(updated_acc)) = self.account_repo.find_by_id(&AccountId::from_string(&account_id)).await {
+                                    self.fetch_and_save_provider_models(provider, updated_acc.credentials().cookies(), updated_acc.credentials().api_user()).await;
+                                }
+                            } else {
+                                info!("Provider models already exist in database, skipping auto-fetch");
+                            }
+                        }
 
                         Some(balance)
                     } else {

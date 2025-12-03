@@ -13,6 +13,7 @@ pub struct Provider {
     sign_in_path: Option<String>,
     user_info_path: String,
     token_api_path: Option<String>,
+    models_path: Option<String>,
     api_user_key: String,
     bypass_method: Option<String>,
     is_builtin: bool,
@@ -27,6 +28,7 @@ impl Provider {
         sign_in_path: Option<String>,
         user_info_path: String,
         token_api_path: Option<String>,
+        models_path: Option<String>,
         api_user_key: String,
         bypass_method: Option<String>,
     ) -> Self {
@@ -38,6 +40,7 @@ impl Provider {
             sign_in_path,
             user_info_path,
             token_api_path,
+            models_path,
             api_user_key,
             bypass_method,
             is_builtin: false,
@@ -53,6 +56,7 @@ impl Provider {
         sign_in_path: Option<String>,
         user_info_path: String,
         token_api_path: Option<String>,
+        models_path: Option<String>,
         api_user_key: String,
         bypass_method: Option<String>,
     ) -> Self {
@@ -64,6 +68,7 @@ impl Provider {
             sign_in_path,
             user_info_path,
             token_api_path,
+            models_path,
             api_user_key,
             bypass_method,
             is_builtin: true,
@@ -99,6 +104,12 @@ impl Provider {
 
     pub fn token_api_url(&self) -> Option<String> {
         self.token_api_path
+            .as_ref()
+            .map(|p| format!("{}{}", self.domain, p))
+    }
+
+    pub fn models_url(&self) -> Option<String> {
+        self.models_path
             .as_ref()
             .map(|p| format!("{}{}", self.domain, p))
     }

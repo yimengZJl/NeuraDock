@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use neuradock_domain::account::{Account, AccountRepository};
@@ -6,12 +7,14 @@ use neuradock_domain::shared::AccountId;
 use neuradock_domain::token::{ApiToken, ModelLimits, TokenId, TokenRepository, TokenStatus};
 use neuradock_infrastructure::http::token::{TokenClient, TokenData};
 use neuradock_infrastructure::http::WafBypassService;
+use neuradock_infrastructure::persistence::repositories::SqliteWafCookiesRepository;
 
 pub struct TokenService {
     token_repo: Arc<dyn TokenRepository>,
     account_repo: Arc<dyn AccountRepository>,
     http_client: TokenClient,
     waf_service: WafBypassService,
+    waf_cookies_repo: Option<Arc<SqliteWafCookiesRepository>>,
 }
 
 impl TokenService {
@@ -24,7 +27,14 @@ impl TokenService {
             account_repo,
             http_client: TokenClient::new()?,
             waf_service: WafBypassService::new(true), // headless by default
+            waf_cookies_repo: None,
         })
+    }
+
+    /// Set WAF cookies repository for caching
+    pub fn with_waf_cookies_repo(mut self, repo: Arc<SqliteWafCookiesRepository>) -> Self {
+        self.waf_cookies_repo = Some(repo);
+        self
     }
 
     /// Fetch and cache tokens from API
@@ -80,11 +90,32 @@ impl TokenService {
 
         // 4. Fetch from API
         let (base_url, token_api_path) = self.get_provider_urls(&account)?;
-        let cookie_string = account.credentials().cookie_string();
+        let provider_id = account.provider_id().as_str();
+
+        // Build initial cookie string with cached WAF cookies if available
+        let mut cookies_map = account.credentials().cookies().clone();
+
+        // Try to get cached WAF cookies first
+        if let Some(ref waf_cookies_repo) = self.waf_cookies_repo {
+            match waf_cookies_repo.get_valid(provider_id).await {
+                Ok(Some(cached_waf)) => {
+                    log::info!("Using cached WAF cookies (expires at {})", cached_waf.expires_at);
+                    cookies_map.extend(cached_waf.cookies);
+                }
+                Ok(None) => {
+                    log::info!("No valid cached WAF cookies available");
+                }
+                Err(e) => {
+                    log::warn!("Failed to check cached WAF cookies: {}", e);
+                }
+            }
+        }
+
+        let cookie_string = self.build_cookie_string(&cookies_map);
         let api_user = account.credentials().api_user();
         let api_user_opt = if api_user.is_empty() { None } else { Some(api_user) };
-        
-        log::info!("Fetching tokens from API: url={}{}, has_api_user={}", 
+
+        log::info!("Fetching tokens from API: url={}{}, has_api_user={}",
                    base_url, token_api_path, api_user_opt.is_some());
 
         let response = self
@@ -96,43 +127,17 @@ impl TokenService {
         let response = match response {
             Ok(resp) => resp,
             Err(e) if e.to_string().contains("WAF_CHALLENGE") => {
-                log::warn!("WAF challenge detected, attempting to refresh cookies...");
-                
-                // Try to refresh WAF cookies
-                let login_url = format!("{}/console/token", base_url);
-                let waf_cookies = self.waf_service
-                    .get_waf_cookies(&login_url, &account.name())
-                    .await
-                    .context("Failed to refresh WAF cookies")?;
-                
-                log::info!("Successfully refreshed {} WAF cookies", waf_cookies.len());
-                
-                // Merge new WAF cookies with existing session cookies
-                let mut updated_cookies = cookie_string.clone();
-                for (name, value) in waf_cookies {
-                    // Remove old cookie if exists
-                    let cookie_prefix = format!("{}=", name);
-                    if let Some(start) = updated_cookies.find(&cookie_prefix) {
-                        let end = updated_cookies[start..]
-                            .find(';')
-                            .map(|i| start + i)
-                            .unwrap_or(updated_cookies.len());
-                        updated_cookies.replace_range(start..end, "");
-                        // Clean up extra semicolons
-                        updated_cookies = updated_cookies.replace(";;", ";");
-                        if updated_cookies.ends_with(";") {
-                            updated_cookies.pop();
-                        }
-                    }
-                    // Add new cookie
-                    if !updated_cookies.is_empty() && !updated_cookies.ends_with(";") {
-                        updated_cookies.push_str("; ");
-                    }
-                    updated_cookies.push_str(&format!("{}={}", name, value));
-                }
-                
-                log::info!("Retrying with refreshed cookies (length: {})", updated_cookies.len());
-                
+                log::warn!("WAF challenge detected, attempting to get WAF cookies...");
+
+                // Get WAF cookies (try cache first, then bypass)
+                let waf_cookies = self.get_waf_cookies_with_cache(provider_id, &account).await?;
+
+                // Merge new WAF cookies with existing cookies
+                cookies_map.extend(waf_cookies);
+                let updated_cookies = self.build_cookie_string(&cookies_map);
+
+                log::info!("Retrying with WAF cookies (cookie length: {})", updated_cookies.len());
+
                 // Retry with updated cookies
                 self.http_client
                     .fetch_tokens(&base_url, &token_api_path, &updated_cookies, api_user_opt, 0, 10)
@@ -207,6 +212,7 @@ impl TokenService {
             data.remain_quota,
             data.unlimited_quota,
             expired_time,
+            data.model_limits_enabled,
             model_limits,
         ))
     }
@@ -239,5 +245,59 @@ impl TokenService {
         log::debug!("Parsed model limits: {} allowed models", allowed.len());
 
         ModelLimits { allowed, denied }
+    }
+
+    /// Build cookie string from HashMap
+    fn build_cookie_string(&self, cookies: &HashMap<String, String>) -> String {
+        cookies
+            .iter()
+            .map(|(k, v)| format!("{}={}", k, v))
+            .collect::<Vec<_>>()
+            .join("; ")
+    }
+
+    /// Get WAF cookies with caching support
+    async fn get_waf_cookies_with_cache(
+        &self,
+        provider_id: &str,
+        account: &Account,
+    ) -> Result<HashMap<String, String>> {
+        // Try to get cached WAF cookies first
+        if let Some(ref waf_cookies_repo) = self.waf_cookies_repo {
+            match waf_cookies_repo.get_valid(provider_id).await {
+                Ok(Some(cached_waf)) => {
+                    log::info!("Using cached WAF cookies for WAF challenge (expires at {})", cached_waf.expires_at);
+                    return Ok(cached_waf.cookies);
+                }
+                Ok(None) => {
+                    log::info!("No valid cached WAF cookies, running WAF bypass...");
+                }
+                Err(e) => {
+                    log::warn!("Failed to check cached WAF cookies: {}, running bypass", e);
+                }
+            }
+        }
+
+        // Run WAF bypass
+        let (base_url, _) = self.get_provider_urls(account)?;
+        let login_url = format!("{}/console/token", base_url);
+
+        let waf_cookies = self.waf_service
+            .get_waf_cookies(&login_url, account.name())
+            .await
+            .context("Failed to get WAF cookies")?;
+
+        log::info!("Successfully got {} WAF cookies via bypass", waf_cookies.len());
+
+        // Cache the new WAF cookies
+        if let Some(ref waf_cookies_repo) = self.waf_cookies_repo {
+            if let Err(e) = waf_cookies_repo.save(provider_id, &waf_cookies).await {
+                log::warn!("Failed to cache WAF cookies: {}", e);
+            } else {
+                log::info!("WAF cookies cached for 24 hours");
+            }
+        }
+
+        Ok(waf_cookies)
     }
 }

@@ -16,6 +16,7 @@ export interface TokenDto {
   expired_at: string | null;
   is_active: boolean;
   is_expired: boolean;
+  model_limits_enabled: boolean;
   model_limits_allowed: string[];
   model_limits_denied: string[];
   fetched_at: string;
