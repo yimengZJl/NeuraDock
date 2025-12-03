@@ -3,7 +3,6 @@ use tauri::State;
 use crate::application::dtos::{ProviderNodeDto, TokenDto};
 use crate::presentation::state::AppState;
 use neuradock_domain::shared::AccountId;
-use neuradock_domain::check_in::Provider;
 
 #[tauri::command]
 #[specta::specta]
@@ -227,6 +226,8 @@ pub async fn delete_custom_node(
 pub async fn configure_codex_global(
     token_id: i64,
     account_id: String,
+    provider_id: String,
+    base_url: String,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
     let account_id = AccountId::from_string(&account_id);
@@ -247,7 +248,7 @@ pub async fn configure_codex_global(
     // Configure to Codex
     let result = state
         .codex_config_service
-        .configure_global(token)
+        .configure_global(token, &provider_id, &base_url)
         .map_err(|e| e.to_string())?;
 
     Ok(result)
@@ -258,6 +259,7 @@ pub async fn configure_codex_global(
 pub async fn generate_codex_temp_commands(
     token_id: i64,
     account_id: String,
+    provider_id: String,
     base_url: String,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
@@ -276,10 +278,10 @@ pub async fn generate_codex_temp_commands(
         .find(|t| t.id() == &token_id)
         .ok_or_else(|| "Token not found".to_string())?;
 
-    // Generate temp commands
+    // Generate temp commands (currently unavailable)
     let commands = state
         .codex_config_service
-        .generate_temp_commands(token, &base_url)
+        .generate_temp_commands(token, &provider_id, &base_url)
         .map_err(|e| e.to_string())?;
 
     Ok(commands)

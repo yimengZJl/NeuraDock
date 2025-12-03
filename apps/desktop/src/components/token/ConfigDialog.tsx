@@ -119,6 +119,8 @@ export function ConfigDialog({
         return invoke<string>('configure_codex_global', {
           tokenId: token!.id,
           accountId: token!.account_id,
+          providerId: account!.provider_id,
+          baseUrl: selectedNode,
         });
       }
     },
@@ -144,6 +146,7 @@ export function ConfigDialog({
         return invoke<string>('generate_codex_temp_commands', {
           tokenId: token!.id,
           accountId: token!.account_id,
+          providerId: account!.provider_id,
           baseUrl: selectedNode,
         });
       }
@@ -240,7 +243,7 @@ export function ConfigDialog({
               <p className="text-sm text-muted-foreground">
                 {selectedTool === 'claude'
                   ? t('token.claudeGlobalDesc', 'This will write the configuration to ~/.claude/settings.json and apply globally.')
-                  : t('token.codexGlobalDesc', 'This will write the configuration to ~/.codex/auth.json and apply globally.')}
+                  : t('token.codexGlobalDesc', 'This will write the configuration to ~/.codex/config.toml and ~/.codex/auth.json and apply globally.')}
               </p>
               <Button
                 className="w-full"

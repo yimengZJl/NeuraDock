@@ -1,11 +1,11 @@
 use anyhow::{Context, Result};
-use sqlx::SqlitePool;
+use sqlx::{Row, SqlitePool};
 use std::sync::Arc;
 
-use neuradock_domain::shared::{ProviderId, DomainError};
 use neuradock_domain::custom_node::{
     CustomNodeId, CustomProviderNode, CustomProviderNodeRepository,
 };
+use neuradock_domain::shared::{DomainError, ProviderId};
 
 pub struct SqliteCustomProviderNodeRepository {
     pool: Arc<SqlitePool>,
@@ -24,15 +24,15 @@ impl CustomProviderNodeRepository for SqliteCustomProviderNodeRepository {
         let name = node.name();
         let base_url = node.base_url();
 
-        let result = sqlx::query!(
+        let result = sqlx::query(
             r#"
             INSERT INTO custom_provider_nodes (provider_id, name, base_url)
             VALUES (?, ?, ?)
             "#,
-            provider_id,
-            name,
-            base_url,
         )
+        .bind(&provider_id)
+        .bind(name)
+        .bind(base_url)
         .execute(&*self.pool)
         .await
         .context("Failed to insert custom provider node")
@@ -49,43 +49,55 @@ impl CustomProviderNodeRepository for SqliteCustomProviderNodeRepository {
         ))
     }
 
-    async fn find_by_id(&self, id: &CustomNodeId) -> Result<Option<CustomProviderNode>, DomainError> {
+    async fn find_by_id(
+        &self,
+        id: &CustomNodeId,
+    ) -> Result<Option<CustomProviderNode>, DomainError> {
         let id_value = id.value();
-        let record = sqlx::query!(
+        let record = sqlx::query(
             r#"
             SELECT id, provider_id, name, base_url, created_at
             FROM custom_provider_nodes
             WHERE id = ?
             "#,
-            id_value
         )
+        .bind(id_value)
         .fetch_optional(&*self.pool)
         .await
         .context("Failed to query custom provider node by id")
         .map_err(|e| DomainError::Repository(e.to_string()))?;
 
         Ok(record.map(|r| {
+            let id: i64 = r.get("id");
+            let provider_id: String = r.get("provider_id");
+            let name: String = r.get("name");
+            let base_url: String = r.get("base_url");
+            let created_at: chrono::NaiveDateTime = r.get("created_at");
+
             CustomProviderNode::new(
-                CustomNodeId::new(r.id),
-                ProviderId::from_string(&r.provider_id),
-                r.name,
-                r.base_url,
-                chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(r.created_at, chrono::Utc),
+                CustomNodeId::new(id),
+                ProviderId::from_string(&provider_id),
+                name,
+                base_url,
+                chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(created_at, chrono::Utc),
             )
         }))
     }
 
-    async fn find_by_provider(&self, provider_id: &ProviderId) -> Result<Vec<CustomProviderNode>, DomainError> {
+    async fn find_by_provider(
+        &self,
+        provider_id: &ProviderId,
+    ) -> Result<Vec<CustomProviderNode>, DomainError> {
         let provider_id_str = provider_id.to_string();
-        let records = sqlx::query!(
+        let records = sqlx::query(
             r#"
             SELECT id, provider_id, name, base_url, created_at
             FROM custom_provider_nodes
             WHERE provider_id = ?
             ORDER BY created_at ASC
             "#,
-            provider_id_str
         )
+        .bind(&provider_id_str)
         .fetch_all(&*self.pool)
         .await
         .context("Failed to query custom provider nodes by provider")
@@ -93,28 +105,34 @@ impl CustomProviderNodeRepository for SqliteCustomProviderNodeRepository {
 
         Ok(records
             .into_iter()
-            .filter_map(|r| {
-                Some(CustomProviderNode::new(
-                    CustomNodeId::new(r.id?),
-                    ProviderId::from_string(&r.provider_id),
-                    r.name,
-                    r.base_url,
+            .map(|r| {
+                let id: i64 = r.get("id");
+                let provider_id: String = r.get("provider_id");
+                let name: String = r.get("name");
+                let base_url: String = r.get("base_url");
+                let created_at: chrono::NaiveDateTime = r.get("created_at");
+
+                CustomProviderNode::new(
+                    CustomNodeId::new(id),
+                    ProviderId::from_string(&provider_id),
+                    name,
+                    base_url,
                     chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
-                        r.created_at,
-                        chrono::Utc
+                        created_at,
+                        chrono::Utc,
                     ),
-                ))
+                )
             })
             .collect())
     }
 
     async fn find_all(&self) -> Result<Vec<CustomProviderNode>, DomainError> {
-        let records = sqlx::query!(
+        let records = sqlx::query(
             r#"
             SELECT id, provider_id, name, base_url, created_at
             FROM custom_provider_nodes
             ORDER BY provider_id, created_at ASC
-            "#
+            "#,
         )
         .fetch_all(&*self.pool)
         .await
@@ -123,17 +141,23 @@ impl CustomProviderNodeRepository for SqliteCustomProviderNodeRepository {
 
         Ok(records
             .into_iter()
-            .filter_map(|r| {
-                Some(CustomProviderNode::new(
-                    CustomNodeId::new(r.id?),
-                    ProviderId::from_string(&r.provider_id),
-                    r.name,
-                    r.base_url,
+            .map(|r| {
+                let id: i64 = r.get("id");
+                let provider_id: String = r.get("provider_id");
+                let name: String = r.get("name");
+                let base_url: String = r.get("base_url");
+                let created_at: chrono::NaiveDateTime = r.get("created_at");
+
+                CustomProviderNode::new(
+                    CustomNodeId::new(id),
+                    ProviderId::from_string(&provider_id),
+                    name,
+                    base_url,
                     chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
-                        r.created_at,
-                        chrono::Utc
+                        created_at,
+                        chrono::Utc,
                     ),
-                ))
+                )
             })
             .collect())
     }
@@ -143,16 +167,16 @@ impl CustomProviderNodeRepository for SqliteCustomProviderNodeRepository {
         let base_url = node.base_url();
         let id_value = node.id().value();
 
-        sqlx::query!(
+        sqlx::query(
             r#"
             UPDATE custom_provider_nodes
             SET name = ?, base_url = ?
             WHERE id = ?
             "#,
-            name,
-            base_url,
-            id_value
         )
+        .bind(name)
+        .bind(base_url)
+        .bind(id_value)
         .execute(&*self.pool)
         .await
         .context("Failed to update custom provider node")
@@ -163,13 +187,13 @@ impl CustomProviderNodeRepository for SqliteCustomProviderNodeRepository {
 
     async fn delete(&self, id: &CustomNodeId) -> Result<(), DomainError> {
         let id_value = id.value();
-        sqlx::query!(
+        sqlx::query(
             r#"
             DELETE FROM custom_provider_nodes
             WHERE id = ?
             "#,
-            id_value
         )
+        .bind(id_value)
         .execute(&*self.pool)
         .await
         .context("Failed to delete custom provider node")
