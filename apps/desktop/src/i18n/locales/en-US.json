@@ -4,10 +4,10 @@
     "title": "NeuraDock"
   },
   "nav": {
-    "dashboard": "Dashboard",
+    "dashboard": "Home",
     "accounts": "Accounts",
-    "streaks": "Check-in Stats",
-    "tokens": "Token Manager",
+    "streaks": "Streaks",
+    "tokens": "Tokens",
     "settings": "Settings"
   },
   "sidebar": {
