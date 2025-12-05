@@ -127,16 +127,25 @@ impl TokenService {
         let response = match response {
             Ok(resp) => resp,
             Err(e) if e.to_string().contains("WAF_CHALLENGE") => {
-                log::warn!("WAF challenge detected, attempting to get WAF cookies...");
+                log::warn!("WAF challenge detected, invalidating cache and getting fresh WAF cookies...");
 
-                // Get WAF cookies (try cache first, then bypass)
-                let waf_cookies = self.get_waf_cookies_with_cache(provider_id, &account).await?;
+                // Invalidate cached WAF cookies first (they are clearly invalid)
+                if let Some(ref waf_cookies_repo) = self.waf_cookies_repo {
+                    if let Err(e) = waf_cookies_repo.delete(provider_id).await {
+                        log::warn!("Failed to delete cached WAF cookies: {}", e);
+                    } else {
+                        log::info!("Invalidated cached WAF cookies");
+                    }
+                }
+
+                // Get fresh WAF cookies via browser bypass
+                let waf_cookies = self.get_fresh_waf_cookies(provider_id, &account).await?;
 
                 // Merge new WAF cookies with existing cookies
                 cookies_map.extend(waf_cookies);
                 let updated_cookies = self.build_cookie_string(&cookies_map);
 
-                log::info!("Retrying with WAF cookies (cookie length: {})", updated_cookies.len());
+                log::info!("Retrying with fresh WAF cookies (cookie length: {})", updated_cookies.len());
 
                 // Retry with updated cookies
                 self.http_client
@@ -278,6 +287,15 @@ impl TokenService {
             }
         }
 
+        self.get_fresh_waf_cookies(provider_id, account).await
+    }
+
+    /// Get fresh WAF cookies via browser bypass (skips cache)
+    async fn get_fresh_waf_cookies(
+        &self,
+        provider_id: &str,
+        account: &Account,
+    ) -> Result<HashMap<String, String>> {
         // Run WAF bypass
         let (base_url, _) = self.get_provider_urls(account)?;
         let login_url = format!("{}/console/token", base_url);

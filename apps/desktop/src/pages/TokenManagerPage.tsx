@@ -141,8 +141,9 @@ export function TokenManagerPage() {
         await refetch();
         toast.success(t('token.refreshSuccess', 'Tokens refreshed successfully'));
       } catch (error) {
-        toast.error(t('token.refreshError', 'Failed to refresh tokens'));
         console.error(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        toast.error(errorMessage || t('token.refreshError', 'Failed to refresh tokens'));
       }
     }
   };
