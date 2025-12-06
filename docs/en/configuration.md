@@ -39,16 +39,17 @@ Cookies should be provided in JSON format:
 
 ```json
 {
-  "session": "your_session_token",
-  "cf_clearance": "cloudflare_clearance_cookie"
+  "session": "your_session_token"
 }
 ```
+
+> **Note**: Only the `session` cookie is required. Other cookies will be automatically obtained at runtime.
 
 **How to obtain cookies:**
 1. Log in to your service provider's website
 2. Open browser DevTools (F12)
 3. Go to Application → Cookies
-4. Copy the required cookie values
+4. Copy the `session` cookie value
 
 ### Batch Import/Export
 
@@ -96,6 +97,50 @@ Built-in providers are configured in the application:
 ## Environment Variables
 
 Currently, NeuraDock does not use environment variables. All configuration is stored in the application settings and database.
+
+## Token Configuration
+
+### AI Tool Configuration
+
+NeuraDock can configure tokens for AI development tools, supporting:
+
+| Tool | Config File | Description |
+|------|-------------|-------------|
+| **Claude Code** | `~/.claude/settings.json` | Anthropic Claude CLI tool |
+| **Codex** | `~/.codex/auth.json` | AI code assistant |
+
+### Configuring Tokens
+
+1. Navigate to **Token Manager** page
+2. Select an account (AnyRouter or AgentRouter)
+3. Click **Configure** button next to the token
+4. Select AI tool and node
+5. Click **Apply Configuration**
+
+### Custom Nodes
+
+If you have custom API endpoints, you can add custom nodes:
+
+1. Click **Manage Nodes** button
+2. Select service provider
+3. Enter node name and URL
+4. Click **Add**
+
+**Example node configuration:**
+```
+Name: My Private Node
+URL: https://api.example.com
+```
+
+### Clear Configuration
+
+To clear configurations managed by NeuraDock:
+
+1. Click **Clear Config** button
+2. Select tool to clear (Claude Code or Codex)
+3. Confirm operation
+
+
 
 ## Advanced Configuration
 

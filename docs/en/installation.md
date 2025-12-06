@@ -59,17 +59,17 @@ For development or to build the latest version from source:
 
 2. **Install dependencies**:
    ```bash
-   npm install
+   make setup
    ```
 
 3. **Start development server** (optional, for testing):
    ```bash
-   npm run dev
+   make dev
    ```
 
 4. **Build production binary**:
    ```bash
-   npm run build
+   make build
    ```
 
 5. **Find the built application**:
@@ -92,6 +92,6 @@ After installation, verify NeuraDock is working:
 | macOS: "App is damaged" | Run `xattr -cr /Applications/NeuraDock.app` |
 | Windows: SmartScreen warning | Click "More info" → "Run anyway" |
 | Linux: AppImage won't run | Ensure FUSE is installed: `sudo apt install fuse` |
-| Build fails on dependencies | Run `npm install --legacy-peer-deps` |
+| Build fails on dependencies | Re-run `make setup` |
 
 See [Troubleshooting](./user_guide/troubleshooting.md) for more solutions.

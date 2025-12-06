@@ -11,7 +11,7 @@
 | Name | Yes | Display name (usually email address) |
 | Provider | Yes | Service provider (AnyRouter, AgentRouter) |
 | Cookies | Yes | Authentication cookies in JSON format |
-| API User | No | API user identifier (provider-specific) |
+| API User | Yes | API user identifier (provider-specific) |
 | Auto Check-In | No | Enable automatic daily check-in |
 | Check-In Time | No | Time for auto check-in (24h format) |
 
@@ -27,10 +27,11 @@
 
 ```json
 {
-  "session": "your_session_token_here",
-  "cf_clearance": "cloudflare_cookie_if_needed"
+  "session": "your_session_token_here"
 }
 ```
+
+> **Note**: Only the `session` cookie is required. Other cookies needed for WAF bypass (like `cf_clearance`) will be automatically obtained at runtime.
 
 ## Editing an Account
 
@@ -77,7 +78,8 @@ Import multiple accounts at once using JSON:
     "provider": "agentrouter",
     "cookies": {
       "session": "token2"
-    }
+    },
+    "api_user": "user2"
   }
 ]
 ```

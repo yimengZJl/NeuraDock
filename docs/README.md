@@ -17,6 +17,8 @@
 - [用户指南概览](./user_guide/README.md) - 完整使用文档
 - [账号管理](./user_guide/account_management.md) - 管理账号
 - [签到操作](./user_guide/check_in_operations.md) - 手动和自动签到
+- [签到记录与统计](./user_guide/check_in_streaks.md) - 连续签到、日历和趋势
+- [Token 管理](./user_guide/token_management.md) - AI 工具 Token 配置
 - [余额追踪](./user_guide/balance_tracking.md) - 监控配额
 - [故障排除](./user_guide/troubleshooting.md) - 常见问题与解决方案
 
@@ -25,8 +27,13 @@
 - [行为准则](./code_of_conduct.md) - 社区准则
 - [更新日志](./changelog.md) - 版本历史
 
+### 🛠️ 开发指南
+- [开发指南](./development.md) - 完整命令参考（⭐ 推荐阅读）
+- [贡献指南](./contributing.md) - 如何为 NeuraDock 做贡献
+
 ### 🏗️ 架构文档
 - [架构概览](./architecture/architecture_overview.md) - 系统设计
+- [技术实现细节](./architecture/technical_details.md) - 详细技术文档（⭐ 推荐阅读）
 - [ADR-001: 使用 React](./architecture/adr/001-use-react.md) - 前端技术选型
 - [ADR-002: 数据库选型](./architecture/adr/002-database-selection.md) - SQLite 选择
 - [ADR-003: DDD 架构](./architecture/adr/003-ddd-architecture.md) - 领域驱动设计

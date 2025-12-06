@@ -20,10 +20,10 @@ git clone https://github.com/i-rtfsc/NeuraDock.git
 cd NeuraDock
 
 # 安装依赖
-npm install
+make setup
 
 # 启动开发服务器
-npm run dev
+make dev
 ```
 
 ## 项目结构
@@ -50,24 +50,111 @@ NeuraDock/
 
 ## 开发命令
 
+### 快速开始
+
 ```bash
-# 启动带热重载的开发服务器
-npm run dev
+# 首次使用 - 安装所有依赖
+make setup
 
-# 运行 Rust 测试
-cd apps/desktop/src-tauri && cargo test
+# 启动开发服务器（带热重载）
+make dev
 
-# 运行 TypeScript 类型检查
-cd apps/desktop && npm run typecheck
+# 快速启动（跳过依赖检查）
+make dev-fast
+```
 
-# 格式化 Rust 代码
-cd apps/desktop/src-tauri && cargo fmt
+### 完整命令列表
 
-# Lint Rust 代码
-cd apps/desktop/src-tauri && cargo clippy
+#### 📦 安装和依赖
 
-# 构建生产二进制文件
-npm run build
+```bash
+make setup              # 首次安装所有依赖
+make install            # 同 setup
+make check-deps         # 检查依赖是否已安装
+make update-deps        # 更新所有依赖
+make outdated           # 检查过时的依赖
+make install-rust-tools # 安装 Rust 开发工具（sqlx-cli, tarpaulin 等）
+```
+
+#### 🚀 开发模式
+
+```bash
+make dev                # 启动开发模式（RUST_LOG=info）
+make dev-debug          # 启动开发模式（RUST_LOG=debug - 详细日志）
+make dev-trace          # 启动开发模式（RUST_LOG=trace - 性能追踪）
+make dev-warn           # 启动开发模式（RUST_LOG=warn - 仅警告）
+make dev-fast           # 快速启动（跳过依赖检查）
+make dev-first          # 首次运行（自动安装依赖并启动）
+make kill               # 杀掉所有运行中的进程
+```
+
+#### 📦 构建命令
+
+```bash
+make build              # 构建 Release 版本（不打包）
+make build-release      # 构建并打包 Release 版本（生成安装包）
+make build-release-fast # 快速构建 Release（不打包）
+make build-frontend     # 仅构建前端
+make build-backend      # 仅构建后端
+make run-release        # 运行 Release 版本
+make rebuild            # 清理后重新构建
+make bindings           # 生成 TypeScript 绑定
+```
+
+#### 🧪 测试命令
+
+```bash
+make test               # 运行所有测试
+make test-backend       # 运行后端测试
+make test-coverage      # 运行测试并生成覆盖率报告
+make coverage-report    # 打开覆盖率报告（HTML）
+```
+
+#### 🧹 清理命令
+
+```bash
+make clean              # 清理所有构建产物
+make clean-frontend     # 清理前端构建产物
+make clean-backend      # 清理后端构建产物
+make clean-all          # 深度清理（包括 node_modules 和所有依赖）
+```
+
+#### ✅ 代码质量
+
+```bash
+make check              # 检查代码格式（rustfmt + clippy）
+make fix                # 自动修复代码格式
+```
+
+#### 🔧 工具和信息
+
+```bash
+make env-check          # 检查开发环境
+make version            # 显示版本信息
+make status             # 查看项目状态
+make migrate            # 运行数据库迁移
+make logs               # 查看今天的日志
+make fix-permissions    # 修复文件权限
+make help               # 显示所有命令的帮助信息
+```
+
+### 常用命令组合
+
+```bash
+# 重启开发服务器
+make kill dev
+
+# 清理后重新构建
+make clean build
+
+# 测试并查看覆盖率
+make test-coverage
+make coverage-report
+
+# 完整的发布流程
+make clean-all
+make setup
+make build-release
 ```
 
 ## 代码风格指南

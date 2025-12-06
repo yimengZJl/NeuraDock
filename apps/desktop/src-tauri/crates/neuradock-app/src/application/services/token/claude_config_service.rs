@@ -9,7 +9,7 @@ pub struct ClaudeConfigService;
 
 // Keys that we manage in the env section
 const MANAGED_ENV_KEYS: &[&str] = &[
-    "ANTHROPIC_API_KEY",
+    "ANTHROPIC_AUTH_TOKEN",
     "ANTHROPIC_BASE_URL",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
     "DISABLE_TELEMETRY",
@@ -73,7 +73,7 @@ impl ClaudeConfigService {
         if let Some(env_value) = config_obj.get_mut("env") {
             // env exists, update it if it's an object
             if let Some(env_obj) = env_value.as_object_mut() {
-                env_obj.insert("ANTHROPIC_API_KEY".to_string(), json!(api_key));
+                env_obj.insert("ANTHROPIC_AUTH_TOKEN".to_string(), json!(api_key));
                 env_obj.insert("ANTHROPIC_BASE_URL".to_string(), json!(base_url));
                 env_obj.insert("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".to_string(), json!("1"));
                 env_obj.insert("DISABLE_TELEMETRY".to_string(), json!("1"));
@@ -87,7 +87,7 @@ impl ClaudeConfigService {
             } else {
                 // env exists but is not an object, replace it
                 let mut env_map = serde_json::Map::new();
-                env_map.insert("ANTHROPIC_API_KEY".to_string(), json!(api_key));
+                env_map.insert("ANTHROPIC_AUTH_TOKEN".to_string(), json!(api_key));
                 env_map.insert("ANTHROPIC_BASE_URL".to_string(), json!(base_url));
                 env_map.insert("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".to_string(), json!("1"));
                 env_map.insert("DISABLE_TELEMETRY".to_string(), json!("1"));
@@ -104,7 +104,7 @@ impl ClaudeConfigService {
         } else {
             // env doesn't exist, create it
             let mut env_map = serde_json::Map::new();
-            env_map.insert("ANTHROPIC_API_KEY".to_string(), json!(api_key));
+            env_map.insert("ANTHROPIC_AUTH_TOKEN".to_string(), json!(api_key));
             env_map.insert("ANTHROPIC_BASE_URL".to_string(), json!(base_url));
             env_map.insert("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".to_string(), json!("1"));
             env_map.insert("DISABLE_TELEMETRY".to_string(), json!("1"));
@@ -182,7 +182,7 @@ impl ClaudeConfigService {
     ) -> Result<String> {
         let api_key = Self::ensure_sk_prefix(token.key());
         let mut commands = vec![
-            format!("export ANTHROPIC_API_KEY=\"{}\"", api_key),
+            format!("export ANTHROPIC_AUTH_TOKEN=\"{}\"", api_key),
             format!("export ANTHROPIC_BASE_URL=\"{}\"", base_url),
             "export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=\"1\"".to_string(),
             "export DISABLE_TELEMETRY=\"1\"".to_string(),

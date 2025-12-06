@@ -9,9 +9,29 @@ NeuraDock is a modern automatic check-in management system built with **Tauri 2 
 - **Multi-Account Management**: Manage accounts across different service providers (AnyRouter, AgentRouter, etc.)
 - **Automatic Check-In**: Schedule daily check-ins at specified times
 - **Balance Tracking**: Monitor quota usage and balance history
+- **Check-in Streaks**: Streak statistics, calendar view, and trend analysis
+- **Token Manager**: Configure tokens for Claude Code/Codex AI tools
 - **WAF Bypass**: Automatic Cloudflare protection bypass using browser automation
 - **Session Caching**: Reduce browser automation overhead with intelligent session management
 - **Cross-Platform**: Runs on macOS, Windows, and Linux
+
+## Screenshots
+
+### Dashboard
+![Dashboard](../assets/app-dashboard-en.png)
+*View overall balance statistics and model lists by provider*
+
+### Account Management
+![Account Management](../assets/app-accounts-en.png)
+*Manage multiple provider accounts, perform check-ins and balance refreshes*
+
+### Check-in Streaks
+![Check-in Streaks](../assets/app-streak-en.png)
+*View streak statistics, calendar view, and trend analysis*
+
+### Token Manager
+![Token Manager](../assets/app-token-en.png)
+*Configure API tokens for AI tools*
 
 ## Quick Start
 

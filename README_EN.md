@@ -41,10 +41,37 @@ NeuraDock is a modern desktop application built with **Tauri 2 + Rust + React**,
 - 🔐 **Multi-Account Management** - Unified management for multiple service provider accounts
 - ⏰ **Auto Check-in** - Configurable daily automatic check-in scheduling
 - 📊 **Balance Tracking** - Quota usage monitoring and history records
+- 🔥 **Check-in Streaks** - Streak statistics, calendar view, and trend analysis
+- 🎯 **Token Manager** - Configure tokens for Claude Code/Codex AI tools
 - 🛡️ **WAF Bypass** - Browser automation to bypass Cloudflare protection
 - 💾 **Session Caching** - Intelligent session management to reduce browser automation overhead
 - 🌐 **Cross-Platform** - Supports macOS, Windows, and Linux
 - 🌍 **Internationalization** - Supports Chinese and English interfaces
+
+### 📸 Screenshots
+
+<table>
+<tr>
+<td width="50%">
+<img src="docs/assets/app-dashboard-en.png" alt="Dashboard" />
+<p align="center"><b>Dashboard - Balance Stats & Model List</b></p>
+</td>
+<td width="50%">
+<img src="docs/assets/app-accounts-en.png" alt="Accounts" />
+<p align="center"><b>Account Management - Multi-Provider</b></p>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="docs/assets/app-streak-en.png" alt="Check-in Streaks" />
+<p align="center"><b>Check-in Streaks - Calendar & Stats</b></p>
+</td>
+<td width="50%">
+<img src="docs/assets/app-token-en.png" alt="Token Manager" />
+<p align="center"><b>Token Manager - AI Tools Config</b></p>
+</td>
+</tr>
+</table>
 
 ---
 
@@ -103,13 +130,21 @@ git clone https://github.com/i-rtfsc/NeuraDock.git
 cd NeuraDock
 
 # Install dependencies
-npm install
+make setup
 
 # Start development server
-npm run dev
+make dev
 
-# Build for production
-npm run build
+# Build and package Release version
+make build-release
+```
+
+**More commands:**
+```bash
+make help              # View all available commands
+make dev-fast          # Quick start (skip checks)
+make test-backend      # Run backend tests
+make clean-all         # Deep clean (including dependencies)
 ```
 
 ### Build Outputs
@@ -245,9 +280,13 @@ NeuraDock follows a **DDD 4-Layer Architecture + Multi-Crate Organization**:
 - [x] Notification system (Feishu Webhook)
 - [x] Multi-language support (i18n)
 - [x] Plugin system foundation
-- [ ] Check-in history and statistics
+- [x] Token manager (Claude Code/Codex)
+- [x] Check-in history and statistics (streaks, calendar view)
+- [x] Custom node management
+- [x] Clear global configuration feature
 - [ ] More notification channels (Email, Telegram, etc.)
 - [ ] More service provider support
+- [ ] Model usage statistics and cost analysis
 
 ### Phase 2: Enhanced Features 🔄 In Progress
 
@@ -255,7 +294,6 @@ NeuraDock follows a **DDD 4-Layer Architecture + Multi-Crate Organization**:
 - [ ] Performance optimization and monitoring
 - [ ] Error handling and logging improvements
 - [ ] UI/UX optimization
-- [ ] Plugin marketplace
 
 ### Phase 3: VSCode Extension 🔮 Future
 

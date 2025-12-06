@@ -1,4 +1,4 @@
-.PHONY: help dev dev-first setup install check-deps build build-frontend build-backend test test-backend test-coverage coverage-report clean clean-frontend clean-backend clean-all check fix logs kill rebuild
+.PHONY: help dev dev-fast dev-first setup install check-deps build build-release build-release-fast build-frontend build-backend test test-backend test-coverage coverage-report clean clean-frontend clean-backend clean-all check fix logs kill rebuild migrate status bindings env-check version run-release update-deps outdated install-rust-tools fix-permissions
 
 # 默认目标
 help:
@@ -16,9 +16,12 @@ help:
 	@echo "  dev-warn         - ⚠️  启动开发模式 (RUST_LOG=warn - 仅警告)"
 	@echo "  dev-first        - 🆕 首次运行 (自动安装依赖并启动)"
 	@echo "  check-deps       - 🔍 检查依赖是否已安装"
-	@echo "  build            - 📦 构建生产版本 (前端 + 后端)"
+	@echo "  build            - 📦 构建 Release 版本（不打包）"
+	@echo "  build-release    - 🎁 构建并打包 Release 版本（生成安装包）"
+	@echo "  build-release-fast - ⚡ 快速构建 Release（不打包）"
 	@echo "  build-frontend   - 📦 仅构建前端"
 	@echo "  build-backend    - 📦 仅构建后端"
+	@echo "  run-release      - 🚀 运行 Release 版本"
 	@echo "  test             - 🧪 运行所有测试"
 	@echo "  test-backend     - 🧪 运行后端测试"
 	@echo "  test-coverage    - 📊 运行测试并生成覆盖率报告"
@@ -31,12 +34,23 @@ help:
 	@echo "  logs             - 📝 查看今天的日志"
 	@echo "  install          - 📥 安装所有依赖 (同 setup)"
 	@echo "  rebuild          - 🔄 清理后重新构建"
+	@echo "  migrate          - 🗄️  运行数据库迁移"
+	@echo "  status           - 📊 查看项目状态"
+	@echo "  bindings         - 🔗 生成 TypeScript 绑定"
+	@echo "  env-check        - 🔍 检查开发环境"
+	@echo "  version          - 📋 显示版本信息"
+	@echo "  update-deps      - 📦 更新所有依赖"
+	@echo "  outdated         - 🔍 检查过时的依赖"
+	@echo "  install-rust-tools - 🔧 安装 Rust 开发工具"
+	@echo "  fix-permissions  - 🔧 修复文件权限"
+	@echo "  dev-fast         - ⚡ 快速启动（跳过检查）"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make setup       - 首次安装依赖"
-	@echo "  make dev         - 启动开发服务器"
-	@echo "  make kill dev    - 杀掉旧进程后启动开发"
-	@echo "  make clean build - 清理后重新构建"
+	@echo "  make setup           - 首次安装依赖"
+	@echo "  make dev             - 启动开发服务器"
+	@echo "  make build-release   - 构建生产版本并打包"
+	@echo "  make kill dev        - 杀掉旧进程后启动开发"
+	@echo "  make clean build     - 清理后重新构建"
 
 # 杀掉所有进程
 kill:
@@ -104,13 +118,28 @@ dev-warn: kill check-deps
 	@echo "🚀 启动开发模式 (RUST_LOG=warn)..."
 	@cd apps/desktop && RUST_LOG=warn npm run tauri:dev
 
-# 构建生产版本
+# 构建开发版本（不打包）
 build: build-frontend build-backend
 	@echo "✅ 构建完成"
-	@echo "二进制文件位置："
+	@echo "二进制文件位置: apps/desktop/src-tauri/target/release/neuradock"
+
+# 构建并打包 release 版本
+build-release: check-deps
+	@echo "📦 构建 Release 版本（包含打包）..."
+	@cd apps/desktop && npm run tauri:build
+	@echo "✅ Release 构建完成"
+	@echo ""
+	@echo "安装包位置："
 	@echo "  - macOS:   apps/desktop/src-tauri/target/release/bundle/dmg/"
 	@echo "  - Windows: apps/desktop/src-tauri/target/release/bundle/msi/"
 	@echo "  - Linux:   apps/desktop/src-tauri/target/release/bundle/appimage/"
+	@echo ""
+	@echo "查看详细构建产物："
+	@ls -lh apps/desktop/src-tauri/target/release/bundle/*/ 2>/dev/null || true
+
+# 快速构建 release（不打包，仅编译）
+build-release-fast: build-frontend build-backend
+	@echo "✅ 快速 Release 构建完成（未打包）"
 
 # 构建前端
 build-frontend: check-deps
@@ -178,13 +207,22 @@ clean-backend:
 # 深度清理
 clean-all:
 	@echo "🧹 深度清理（包括依赖）..."
+	@echo "正在删除 node_modules..."
 	@rm -rf apps/desktop/node_modules
+	@rm -rf node_modules
+	@echo "正在删除前端构建产物..."
 	@rm -rf apps/desktop/dist
 	@rm -rf apps/desktop/.vite
+	@rm -rf apps/desktop/node_modules/.vite
+	@echo "正在删除后端构建产物..."
 	@cd apps/desktop/src-tauri && cargo clean && rm -rf target
 	@rm -rf apps/desktop/src-tauri/coverage
+	@echo "正在删除日志..."
 	@rm -rf ~/Library/Logs/neuradock
+	@rm -rf ~/Library/Logs/com.neuradock.app
+	@echo "正在删除数据库文件..."
 	@rm -f *.db *.db-shm *.db-wal
+	@rm -f neuradock*.db neuradock*.db-shm neuradock*.db-wal
 	@echo "✅ 深度清理完成"
 
 # 代码检查
@@ -257,6 +295,9 @@ env-check:
 	@echo "npm:"
 	@npm --version 2>/dev/null || echo "  ❌ 未安装"
 	@echo ""
+	@echo "pnpm:"
+	@pnpm --version 2>/dev/null || echo "  ⚠️  未安装 (可选)"
+	@echo ""
 	@echo "Rust:"
 	@rustc --version 2>/dev/null || echo "  ❌ 未安装"
 	@echo ""
@@ -265,3 +306,75 @@ env-check:
 	@echo ""
 	@echo "SQLx CLI:"
 	@sqlx --version 2>/dev/null || echo "  ⚠️  未安装 (可选)"
+	@echo ""
+	@echo "cargo-tarpaulin:"
+	@cargo tarpaulin --version 2>/dev/null || echo "  ⚠️  未安装 (可选，用于测试覆盖率)"
+
+# 运行 Release 版本
+run-release:
+	@echo "🚀 运行 Release 版本..."
+	@if [ -f "apps/desktop/src-tauri/target/release/neuradock" ]; then \
+		./apps/desktop/src-tauri/target/release/neuradock; \
+	else \
+		echo "❌ Release 二进制文件不存在"; \
+		echo "请先运行: make build"; \
+		exit 1; \
+	fi
+
+# 显示版本信息
+version:
+	@echo "📋 NeuraDock 版本信息"
+	@echo ""
+	@echo "项目版本:"
+	@grep "version" apps/desktop/src-tauri/Cargo.toml | head -1 || echo "  未找到"
+	@echo ""
+	@echo "Tauri 版本:"
+	@grep "tauri" apps/desktop/src-tauri/Cargo.toml | grep "version" | head -1 || echo "  未找到"
+	@echo ""
+	@echo "React 版本:"
+	@grep '"react"' apps/desktop/package.json | head -1 || echo "  未找到"
+
+# 更新依赖
+update-deps:
+	@echo "📦 更新依赖..."
+	@echo "更新前端依赖..."
+	@cd apps/desktop && npm update --legacy-peer-deps
+	@echo ""
+	@echo "更新后端依赖..."
+	@cd apps/desktop/src-tauri && cargo update
+	@echo "✅ 依赖更新完成"
+
+# 检查过时的依赖
+outdated:
+	@echo "🔍 检查过时的依赖..."
+	@echo ""
+	@echo "前端依赖:"
+	@cd apps/desktop && npm outdated || true
+	@echo ""
+	@echo "后端依赖:"
+	@cd apps/desktop/src-tauri && cargo outdated 2>/dev/null || echo "  需要安装 cargo-outdated: cargo install cargo-outdated"
+
+# 安装 Rust 开发工具
+install-rust-tools:
+	@echo "🔧 安装 Rust 开发工具..."
+	@echo "安装 sqlx-cli..."
+	@cargo install sqlx-cli --no-default-features --features sqlite
+	@echo ""
+	@echo "安装 cargo-tarpaulin (测试覆盖率)..."
+	@cargo install cargo-tarpaulin
+	@echo ""
+	@echo "安装 cargo-outdated..."
+	@cargo install cargo-outdated
+	@echo "✅ Rust 工具安装完成"
+
+# 快速开发启动（跳过检查）
+dev-fast:
+	@echo "⚡ 快速启动开发模式（跳过依赖检查）..."
+	@cd apps/desktop && RUST_LOG=info npm run tauri:dev
+
+# 修复权限问题
+fix-permissions:
+	@echo "🔧 修复文件权限..."
+	@chmod +x apps/desktop/src-tauri/target/release/neuradock 2>/dev/null || true
+	@chmod -R u+w apps/desktop/node_modules 2>/dev/null || true
+	@echo "✅ 权限修复完成"

@@ -20,10 +20,10 @@ git clone https://github.com/i-rtfsc/NeuraDock.git
 cd NeuraDock
 
 # Install dependencies
-npm install
+make setup
 
 # Start development server
-npm run dev
+make dev
 ```
 
 ## Project Structure
@@ -50,24 +50,111 @@ neuradock/
 
 ## Development Commands
 
+### Quick Start
+
 ```bash
-# Start development server with hot reload
-npm run dev
+# First time - install all dependencies
+make setup
 
-# Run Rust tests
-cd apps/desktop/src-tauri && cargo test
+# Start development server (with hot reload)
+make dev
 
-# Run TypeScript type checking
-cd apps/desktop && npm run typecheck
+# Quick start (skip dependency check)
+make dev-fast
+```
 
-# Format Rust code
-cd apps/desktop/src-tauri && cargo fmt
+### Complete Command List
 
-# Lint Rust code
-cd apps/desktop/src-tauri && cargo clippy
+#### 📦 Installation and Dependencies
 
-# Build production binary
-npm run build
+```bash
+make setup              # Install all dependencies (first time)
+make install            # Same as setup
+make check-deps         # Check if dependencies are installed
+make update-deps        # Update all dependencies
+make outdated           # Check outdated dependencies
+make install-rust-tools # Install Rust development tools (sqlx-cli, tarpaulin, etc.)
+```
+
+#### 🚀 Development Mode
+
+```bash
+make dev                # Start development mode (RUST_LOG=info)
+make dev-debug          # Start development mode (RUST_LOG=debug - verbose logs)
+make dev-trace          # Start development mode (RUST_LOG=trace - performance tracing)
+make dev-warn           # Start development mode (RUST_LOG=warn - warnings only)
+make dev-fast           # Quick start (skip dependency check)
+make dev-first          # First run (auto install dependencies and start)
+make kill               # Kill all running processes
+```
+
+#### 📦 Build Commands
+
+```bash
+make build              # Build Release version (no packaging)
+make build-release      # Build and package Release version (generate installers)
+make build-release-fast # Quick build Release (no packaging)
+make build-frontend     # Build frontend only
+make build-backend      # Build backend only
+make run-release        # Run Release version
+make rebuild            # Clean and rebuild
+make bindings           # Generate TypeScript bindings
+```
+
+#### 🧪 Test Commands
+
+```bash
+make test               # Run all tests
+make test-backend       # Run backend tests
+make test-coverage      # Run tests and generate coverage report
+make coverage-report    # Open coverage report (HTML)
+```
+
+#### 🧹 Clean Commands
+
+```bash
+make clean              # Clean all build artifacts
+make clean-frontend     # Clean frontend build artifacts
+make clean-backend      # Clean backend build artifacts
+make clean-all          # Deep clean (including node_modules and all dependencies)
+```
+
+#### ✅ Code Quality
+
+```bash
+make check              # Check code format (rustfmt + clippy)
+make fix                # Auto-fix code format
+```
+
+#### 🔧 Tools and Information
+
+```bash
+make env-check          # Check development environment
+make version            # Show version information
+make status             # View project status
+make migrate            # Run database migrations
+make logs               # View today's logs
+make fix-permissions    # Fix file permissions
+make help               # Show help for all commands
+```
+
+### Common Command Combinations
+
+```bash
+# Restart development server
+make kill dev
+
+# Clean and rebuild
+make clean build
+
+# Test and view coverage
+make test-coverage
+make coverage-report
+
+# Complete release workflow
+make clean-all
+make setup
+make build-release
 ```
 
 ## Code Style Guidelines

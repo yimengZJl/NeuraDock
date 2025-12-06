@@ -9,9 +9,29 @@ NeuraDock 是一个现代化的自动签到管理系统，基于 **Tauri 2 + Rus
 - **多账号管理**：管理不同服务商的账号（AnyRouter、AgentRouter 等）
 - **自动签到**：在指定时间自动执行每日签到
 - **余额追踪**：监控配额使用情况和余额历史
+- **签到记录**：连续签到统计、日历视图、趋势分析
+- **Token 管理**：为 Claude Code/Codex 配置 API Token
 - **WAF 绕过**：使用浏览器自动化自动绕过 Cloudflare 保护
 - **会话缓存**：智能会话管理减少浏览器自动化开销
 - **跨平台**：支持 macOS、Windows 和 Linux
+
+## 界面预览
+
+### 仪表盘
+![仪表盘](./assets/app-dashboard-zh.png)
+*查看总体余额统计和各服务商的模型列表*
+
+### 账号管理
+![账号管理](./assets/app-accounts-zh.png)
+*管理多个服务商账号，执行签到和余额刷新*
+
+### 签到记录
+![签到记录](./assets/app-streak-zh.png)
+*查看连续签到统计、日历视图和趋势分析*
+
+### Token 管理
+![Token管理](./assets/app-token-zh.png)
+*为 AI 工具配置 API Token*
 
 ## 快速开始
 

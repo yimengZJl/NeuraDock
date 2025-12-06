@@ -41,10 +41,37 @@ NeuraDock 是一个基于 **Tauri 2 + Rust + React** 构建的现代桌面应用
 - 🔐 **多账号管理** - 支持多个服务商账号的统一管理
 - ⏰ **自动签到** - 可配置时间的每日自动签到调度
 - 📊 **余额追踪** - 配额使用情况监控与历史记录
+- 🔥 **签到记录** - 连续签到统计、日历视图、趋势分析
+- 🎯 **Token 管理** - Claude Code/Codex AI 工具的 Token 配置
 - 🛡️ **WAF 绕过** - 使用浏览器自动化绕过 Cloudflare 保护
 - 💾 **会话缓存** - 智能会话管理减少浏览器自动化开销
 - 🌐 **跨平台** - 支持 macOS、Windows 和 Linux
 - 🌍 **国际化** - 支持中文和英文界面
+
+### 📸 界面预览
+
+<table>
+<tr>
+<td width="50%">
+<img src="docs/assets/app-dashboard-zh.png" alt="仪表盘" />
+<p align="center"><b>仪表盘 - 余额统计与模型列表</b></p>
+</td>
+<td width="50%">
+<img src="docs/assets/app-accounts-zh.png" alt="账号管理" />
+<p align="center"><b>账号管理 - 多服务商账号</b></p>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="docs/assets/app-streak-zh.png" alt="签到记录" />
+<p align="center"><b>签到记录 - 连续签到与日历</b></p>
+</td>
+<td width="50%">
+<img src="docs/assets/app-token-zh.png" alt="Token管理" />
+<p align="center"><b>Token管理 - AI工具配置</b></p>
+</td>
+</tr>
+</table>
 
 ---
 
@@ -103,13 +130,21 @@ git clone https://github.com/i-rtfsc/NeuraDock.git
 cd NeuraDock
 
 # 安装依赖
-npm install
+make setup
 
 # 启动开发服务器
-npm run dev
+make dev
 
-# 构建生产版本
-npm run build
+# 构建并打包 Release 版本
+make build-release
+```
+
+**更多命令：**
+```bash
+make help              # 查看所有可用命令
+make dev-fast          # 快速启动开发（跳过检查）
+make test-backend      # 运行后端测试
+make clean-all         # 深度清理（包括依赖）
 ```
 
 ### 构建输出
@@ -245,9 +280,13 @@ NeuraDock 采用 **DDD 四层架构 + 多 Crate 组织**：
 - [x] 通知系统 (飞书 Webhook)
 - [x] 多语言支持 (i18n)
 - [x] 插件系统基础架构
-- [ ] 签到历史和统计
+- [x] Token 管理 (Claude Code/Codex)
+- [x] 签到历史和统计（连续签到、日历视图）
+- [x] 自定义节点管理
+- [x] 清除全局配置功能
 - [ ] 更多通知渠道 (邮件、Telegram 等)
 - [ ] 更多服务提供商支持
+- [ ] 模型使用统计和费用分析
 
 ### Phase 2: 增强功能 🔄 进行中
 
@@ -255,7 +294,6 @@ NeuraDock 采用 **DDD 四层架构 + 多 Crate 组织**：
 - [ ] 性能优化和监控
 - [ ] 错误处理和日志改进
 - [ ] UI/UX 优化
-- [ ] 插件市场
 
 ### Phase 3: VSCode 插件 🔮 未来
 

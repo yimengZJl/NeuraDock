@@ -17,10 +17,13 @@ Welcome to the NeuraDock documentation.
 - [User Guide Overview](./user_guide/README.md) - Complete usage documentation
 - [Account Management](./user_guide/account_management.md) - Managing accounts
 - [Check-In Operations](./user_guide/check_in_operations.md) - Manual and auto check-in
+- [Check-in Streaks & Statistics](./user_guide/check_in_streaks.md) - Streaks, calendar, and trends
+- [Token Management](./user_guide/token_management.md) - AI tool token configuration
 - [Balance Tracking](./user_guide/balance_tracking.md) - Monitoring quotas
 - [Troubleshooting](./user_guide/troubleshooting.md) - Common issues and solutions
 
 ### 🛠️ Development
+- [Development Guide](./development.md) - Complete command reference (⭐ Recommended)
 - [Contributing Guide](./contributing.md) - How to contribute to NeuraDock
 - [Code of Conduct](./code_of_conduct.md) - Community guidelines
 - [Changelog](./changelog.md) - Version history

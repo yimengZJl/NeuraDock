@@ -11,7 +11,7 @@
 | 名称 | 是 | 显示名称（通常是邮箱地址） |
 | 服务商 | 是 | 服务提供商（AnyRouter、AgentRouter） |
 | Cookies | 是 | JSON 格式的认证 cookies |
-| API 用户 | 否 | API 用户标识符（服务商特定） |
+| API 用户 | 是 | API 用户标识符（服务商特定） |
 | 自动签到 | 否 | 启用每日自动签到 |
 | 签到时间 | 否 | 自动签到时间（24小时制） |
 
@@ -27,10 +27,11 @@
 
 ```json
 {
-  "session": "your_session_token_here",
-  "cf_clearance": "cloudflare_cookie_if_needed"
+  "session": "your_session_token_here"
 }
 ```
+
+> **注意**：只需提供 `session` cookie，WAF 绕过所需的其他 cookies（如 `cf_clearance`）会在运行时自动获取。
 
 ## 编辑账号
 
@@ -77,7 +78,8 @@
     "provider": "agentrouter",
     "cookies": {
       "session": "token2"
-    }
+    },
+    "api_user": "user2"
   }
 ]
 ```
