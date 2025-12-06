@@ -27,6 +27,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { formatCurrency } from '@/lib/formatters';
 
 interface AccountCardProps {
   account: Account;
@@ -206,15 +207,15 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
                 <>
                   <div className="text-center">
                     <p className="text-muted-foreground mb-0.5">{t('accountCard.totalIncome')}</p>
-                    <p className="font-semibold text-blue-600">${balance.total_income.toFixed(2)}</p>
+                    <p className="font-semibold text-blue-600">{formatCurrency(balance.total_income)}</p>
                   </div>
                   <div className="text-center border-x">
                     <p className="text-muted-foreground mb-0.5">{t('accountCard.historicalConsumption')}</p>
-                    <p className="font-semibold text-orange-600">${balance.total_consumed.toFixed(2)}</p>
+                    <p className="font-semibold text-orange-600">{formatCurrency(balance.total_consumed)}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-muted-foreground mb-0.5">{t('accountCard.currentBalance')}</p>
-                    <p className="font-semibold text-green-600">${balance.current_balance.toFixed(2)}</p>
+                    <p className="font-semibold text-green-600">{formatCurrency(balance.current_balance)}</p>
                   </div>
                 </>
               ) : (balanceLoading || refreshBalanceMutation.isPending) ? (
