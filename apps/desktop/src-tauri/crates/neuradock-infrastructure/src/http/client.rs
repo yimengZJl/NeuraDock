@@ -1,9 +1,36 @@
 use anyhow::{Context, Result};
-use reqwest::{header, Client};
+use reqwest::{header, Client, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::time::Duration;
+use tokio::time::sleep;
+use log::{debug, warn};
 
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36";
+
+/// HTTP retry configuration
+#[derive(Debug, Clone)]
+pub struct RetryConfig {
+    /// Maximum number of retry attempts (default: 3)
+    pub max_retries: u32,
+    /// Initial backoff duration in milliseconds (default: 1000ms)
+    pub initial_backoff_ms: u64,
+    /// Maximum backoff duration in milliseconds (default: 10000ms)
+    pub max_backoff_ms: u64,
+    /// Backoff multiplier (default: 2.0 for exponential backoff)
+    pub backoff_multiplier: f64,
+}
+
+impl Default for RetryConfig {
+    fn default() -> Self {
+        Self {
+            max_retries: 3,
+            initial_backoff_ms: 1000,
+            max_backoff_ms: 10000,
+            backoff_multiplier: 2.0,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserInfo {
@@ -19,23 +46,138 @@ pub struct CheckInResult {
 
 pub struct HttpClient {
     client: Client,
+    retry_config: RetryConfig,
 }
 
 impl HttpClient {
     pub fn new() -> Result<Self> {
+        Self::with_retry_config(RetryConfig::default())
+    }
+
+    pub fn with_retry_config(retry_config: RetryConfig) -> Result<Self> {
         let client = Client::builder()
             .user_agent(USER_AGENT)
             .cookie_store(true)
-            .timeout(std::time::Duration::from_secs(30))
+            .timeout(Duration::from_secs(30))
             .build()
             .context("Failed to create HTTP client")?;
 
-        Ok(Self { client })
+        Ok(Self { client, retry_config })
     }
 
-    /// Get user info (quota and used quota)
+    /// Execute a request with retry logic
+    /// 
+    /// Retries on:
+    /// - Network errors (connection failures, timeouts)
+    /// - 5xx server errors
+    /// - 429 Too Many Requests
+    /// 
+    /// Does NOT retry on:
+    /// - 4xx client errors (except 429)
+    /// - Successful responses (2xx, 3xx)
+    async fn execute_with_retry<F, Fut, T>(
+        &self,
+        operation_name: &str,
+        mut request_fn: F,
+    ) -> Result<T>
+    where
+        F: FnMut() -> Fut,
+        Fut: std::future::Future<Output = Result<T>>,
+    {
+        let mut attempt = 0;
+        let mut backoff_ms = self.retry_config.initial_backoff_ms;
+
+        loop {
+            attempt += 1;
+            
+            match request_fn().await {
+                Ok(response) => {
+                    if attempt > 1 {
+                        debug!("✅ {} succeeded after {} attempts", operation_name, attempt);
+                    }
+                    return Ok(response);
+                }
+                Err(e) => {
+                    let should_retry = attempt <= self.retry_config.max_retries 
+                        && self.is_retryable_error(&e);
+
+                    if should_retry {
+                        warn!(
+                            "⚠️  {} failed (attempt {}/{}): {}. Retrying in {}ms...",
+                            operation_name,
+                            attempt,
+                            self.retry_config.max_retries,
+                            e,
+                            backoff_ms
+                        );
+
+                        sleep(Duration::from_millis(backoff_ms)).await;
+
+                        // Exponential backoff with cap
+                        backoff_ms = ((backoff_ms as f64 * self.retry_config.backoff_multiplier) as u64)
+                            .min(self.retry_config.max_backoff_ms);
+                    } else {
+                        if attempt > self.retry_config.max_retries {
+                            warn!(
+                                "❌ {} failed after {} attempts",
+                                operation_name,
+                                self.retry_config.max_retries
+                            );
+                        }
+                        return Err(e);
+                    }
+                }
+            }
+        }
+    }
+
+    /// Check if an error is retryable
+    fn is_retryable_error(&self, error: &anyhow::Error) -> bool {
+        // Check for reqwest errors
+        if let Some(reqwest_err) = error.downcast_ref::<reqwest::Error>() {
+            // Retry on network/connection errors
+            if reqwest_err.is_connect() || reqwest_err.is_timeout() || reqwest_err.is_request() {
+                return true;
+            }
+
+            // Retry on 5xx server errors and 429 Too Many Requests
+            if let Some(status) = reqwest_err.status() {
+                return status.is_server_error() || status == StatusCode::TOO_MANY_REQUESTS;
+            }
+        }
+
+        false
+    }
+
+    /// Get user info (quota and used quota) with retry
     pub async fn get_user_info(
         &self,
+        url: &str,
+        cookies: &HashMap<String, String>,
+        api_user_key: &str,
+        api_user_value: &str,
+    ) -> Result<UserInfo> {
+        let url = url.to_string();
+        let cookies = cookies.clone();
+        let api_user_key = api_user_key.to_string();
+        let api_user_value = api_user_value.to_string();
+
+        self.execute_with_retry("Get user info", move || {
+            let url = url.clone();
+            let cookies = cookies.clone();
+            let api_user_key = api_user_key.clone();
+            let api_user_value = api_user_value.clone();
+            let client = self.client.clone();
+            
+            async move {
+                Self::get_user_info_once(&client, &url, &cookies, &api_user_key, &api_user_value).await
+            }
+        }).await
+    }
+
+    /// Get user info (quota and used quota) - single attempt
+    async fn get_user_info_once(
+        client: &Client,
         url: &str,
         cookies: &HashMap<String, String>,
         api_user_key: &str,
@@ -65,7 +207,7 @@ impl HttpClient {
         }
 
         // Build request with cookies
-        let mut request = self.client.get(url).headers(headers);
+        let mut request = client.get(url).headers(headers);
 
         // Add cookies as header string
         let cookie_string = cookies
