@@ -6,15 +6,15 @@
   :root {
     /* macOS Light Theme - inspired by Raycast, Arc, Linear */
     /* Background: warm white with subtle warmth */
-    --background: 0 0% 99%;
+    --background: 40 20% 97%;
     --foreground: 220 13% 13%;
     
-    /* Cards: pure white with soft shadows */
-    --card: 0 0% 100%;
+    /* Cards: soft warm white (not pure white, more comfortable) */
+    --card: 40 15% 98%;
     --card-foreground: 220 13% 13%;
     
-    /* Popovers: elevated white */
-    --popover: 0 0% 100%;
+    /* Popovers: slightly elevated warm white */
+    --popover: 40 15% 99%;
     --popover-foreground: 220 13% 13%;
     
     /* Primary: modern blue (Raycast-inspired) */
@@ -22,11 +22,11 @@
     --primary-foreground: 0 0% 100%;
     
     /* Secondary: subtle gray with warmth */
-    --secondary: 220 14% 96%;
+    --secondary: 40 12% 96%;
     --secondary-foreground: 220 13% 13%;
     
-    /* Muted: light gray backgrounds */
-    --muted: 220 13% 95%;
+    /* Muted: light gray backgrounds with warmth */
+    --muted: 40 10% 94%;
     --muted-foreground: 220 9% 46%;
     
     /* Accent: vibrant blue */
@@ -37,16 +37,16 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    /* Borders: soft gray */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    /* Borders: softer warm gray */
+    --border: 40 10% 89%;
+    --input: 40 10% 90%;
     --ring: 221 83% 53%;
     --radius: 0.75rem;
     
-    /* macOS specific */
-    --sidebar: 0 0% 97.5%;
+    /* macOS specific - warm tones */
+    --sidebar: 40 15% 97%;
     --sidebar-foreground: 220 13% 13%;
-    --topbar: 0 0% 99%;
+    --topbar: 40 20% 97%;
     
     /* Success: fresh green */
     --success: 142 71% 45%;
