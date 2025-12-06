@@ -7,6 +7,10 @@ use crate::shared::DomainError;
 pub struct CheckInDomainService;
 
 impl CheckInDomainService {
+    /// Minimum interval between check-ins (23 hours)
+    /// This prevents abuse and respects provider's rate limits
+    const MIN_CHECK_IN_INTERVAL_HOURS: i64 = 23;
+
     /// Validate if account can perform check-in
     pub fn can_check_in(account: &Account) -> Result<(), DomainError> {
         if !account.is_enabled() {
@@ -15,8 +19,21 @@ impl CheckInDomainService {
             ));
         }
 
-        // Additional domain rules can be added here
-        // For example: check last check-in time, rate limiting, etc.
+        // Check if check-in is too frequent
+        if let Some(last_check_in) = account.last_check_in() {
+            let now = chrono::Utc::now();
+            let elapsed = now.signed_duration_since(last_check_in);
+            let hours_since_last = elapsed.num_hours();
+
+            if hours_since_last < Self::MIN_CHECK_IN_INTERVAL_HOURS {
+                let hours_remaining = Self::MIN_CHECK_IN_INTERVAL_HOURS - hours_since_last;
+                return Err(DomainError::Validation(format!(
+                    "Check-in too frequent. Please wait {} hour(s) before next check-in. Last check-in: {}",
+                    hours_remaining,
+                    last_check_in.format("%Y-%m-%d %H:%M:%S UTC")
+                )));
+            }
+        }
 
         Ok(())
     }
@@ -124,6 +141,84 @@ mod tests {
             }
             _ => panic!("Expected Validation error"),
         }
+    }
+
+    #[test]
+    fn test_cannot_check_in_too_frequent() {
+        use crate::account::Credentials;
+        use crate::shared::{AccountId, ProviderId};
+        use chrono::{Duration, Utc};
+        
+        let mut cookies = HashMap::new();
+        cookies.insert("session".to_string(), "test_session".to_string());
+        
+        // Create account with recent check-in (2 hours ago)
+        let last_check_in = Utc::now() - Duration::hours(2);
+        let account = Account::restore(
+            AccountId::new(),
+            "Test Account".to_string(),
+            ProviderId::new(),
+            Credentials::new(cookies, "test@user".to_string()),
+            true,
+            Some(last_check_in),
+            Utc::now() - Duration::days(1),
+            false,
+            9,
+            0,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        
+        let result = CheckInDomainService::can_check_in(&account);
+        assert!(result.is_err());
+        
+        match result {
+            Err(DomainError::Validation(msg)) => {
+                assert!(msg.contains("too frequent"));
+                assert!(msg.contains("21 hour")); // 23 - 2 = 21
+            }
+            _ => panic!("Expected Validation error for frequency check"),
+        }
+    }
+
+    #[test]
+    fn test_can_check_in_after_interval() {
+        use crate::account::Credentials;
+        use crate::shared::{AccountId, ProviderId};
+        use chrono::{Duration, Utc};
+        
+        let mut cookies = HashMap::new();
+        cookies.insert("session".to_string(), "test_session".to_string());
+        
+        // Create account with old check-in (24 hours ago - allowed)
+        let last_check_in = Utc::now() - Duration::hours(24);
+        let account = Account::restore(
+            AccountId::new(),
+            "Test Account".to_string(),
+            ProviderId::new(),
+            Credentials::new(cookies, "test@user".to_string()),
+            true,
+            Some(last_check_in),
+            Utc::now() - Duration::days(1),
+            false,
+            9,
+            0,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        
+        let result = CheckInDomainService::can_check_in(&account);
+        assert!(result.is_ok());
     }
 
     #[test]
