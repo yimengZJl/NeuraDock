@@ -131,21 +131,27 @@ export function TokenManagerPage() {
     },
   });
 
-  const handleRefresh = async () => {
-    if (selectedAccount) {
-      try {
-        await invoke('fetch_account_tokens', {
-          accountId: selectedAccount,
-          forceRefresh: true,
-        });
-        await refetch();
-        toast.success(t('token.refreshSuccess', 'Tokens refreshed successfully'));
-      } catch (error) {
-        console.error(error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        toast.error(errorMessage || t('token.refreshError', 'Failed to refresh tokens'));
-      }
-    }
+  // Refresh mutation
+  const refreshMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedAccount) throw new Error('No account selected');
+      await invoke('fetch_account_tokens', {
+        accountId: selectedAccount,
+        forceRefresh: true,
+      });
+    },
+    onSuccess: () => {
+      refetch();
+      toast.success(t('token.refreshSuccess', 'Tokens refreshed successfully'));
+    },
+    onError: (error: Error) => {
+      console.error(error);
+      toast.error(error.message || t('token.refreshError', 'Failed to refresh tokens'));
+    },
+  });
+
+  const handleRefresh = () => {
+    refreshMutation.mutate();
   };
 
   const handleConfigureToken = (token: TokenDto) => {
@@ -191,11 +197,11 @@ export function TokenManagerPage() {
           </Button>
           <Button
             onClick={handleRefresh}
-            disabled={!selectedAccount || isFetching}
+            disabled={!selectedAccount || refreshMutation.isPending}
             variant="outline"
             size="sm"
           >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`mr-2 h-4 w-4 ${refreshMutation.isPending ? 'animate-spin' : ''}`} />
             {t('common.refresh', 'Refresh')}
           </Button>
         </div>
