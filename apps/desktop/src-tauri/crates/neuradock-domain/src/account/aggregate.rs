@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::collections::HashMap;
@@ -28,6 +28,8 @@ pub struct Account {
 }
 
 impl Account {
+    pub const DEFAULT_SESSION_EXPIRATION_DAYS: i64 = 30;
+
     pub fn new(
         name: String,
         provider_id: ProviderId,
@@ -228,6 +230,17 @@ impl Account {
         self.session_token = Some(token);
         self.session_expires_at = Some(expires_at);
         self.last_login_at = Some(Utc::now());
+    }
+
+    pub fn refresh_session_with_default_expiration(&mut self, cookies: &HashMap<String, String>) {
+        let session_token = cookies
+            .values()
+            .next()
+            .cloned()
+            .unwrap_or_else(|| "session".to_string());
+
+        let expires_at = Utc::now() + Duration::days(Self::DEFAULT_SESSION_EXPIRATION_DAYS);
+        self.update_session(session_token, expires_at);
     }
 
     pub fn clear_session(&mut self) {
