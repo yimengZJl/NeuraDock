@@ -36,28 +36,27 @@ struct AccountRow {
 
 impl AccountRow {
     fn to_account(self, encryption: &EncryptionService) -> Result<Account, DomainError> {
-        // Try to decrypt cookies JSON, fall back to plaintext if decryption fails
-        // This provides backward compatibility with existing unencrypted data
-        let cookies_json = match encryption.decrypt(&self.cookies) {
-            Ok(decrypted) => decrypted,
-            Err(_) => {
-                // Assume it's plaintext (legacy data)
-                warn!("⚠️  Account {} has unencrypted cookies, will re-encrypt on next save", self.id);
-                self.cookies
-            }
-        };
+        // Decrypt cookies JSON - fail if decryption fails (no fallback to plaintext)
+        // This ensures all sensitive data is properly encrypted
+        let cookies_json = encryption.decrypt(&self.cookies)
+            .map_err(|e| {
+                DomainError::DataIntegrity(format!(
+                    "Failed to decrypt cookies for account {}: {}. Data may be corrupted or using wrong encryption key.",
+                    self.id, e
+                ))
+            })?;
         
         let cookies = serde_json::from_str(&cookies_json)
             .map_err(|e| RepositoryErrorMapper::map_json_error(e, "Deserialize account cookies"))?;
         
-        // Try to decrypt API user, fall back to plaintext if decryption fails
-        let api_user = match encryption.decrypt(&self.api_user) {
-            Ok(decrypted) => decrypted,
-            Err(_) => {
-                // Assume it's plaintext (legacy data)
-                self.api_user
-            }
-        };
+        // Decrypt API user - fail if decryption fails (no fallback to plaintext)
+        let api_user = encryption.decrypt(&self.api_user)
+            .map_err(|e| {
+                DomainError::DataIntegrity(format!(
+                    "Failed to decrypt api_user for account {}: {}. Data may be corrupted or using wrong encryption key.",
+                    self.id, e
+                ))
+            })?;
         
         let credentials = Credentials::new(cookies, api_user);
 
@@ -345,6 +344,94 @@ impl AccountRepository for SqliteAccountRepository {
             elapsed.as_secs_f64() * 1000.0
         );
 
+        Ok(())
+    }
+}
+
+// Additional utility methods for SqliteAccountRepository
+impl SqliteAccountRepository {
+    /// Migrate unencrypted accounts by attempting to detect and re-encrypt plaintext data
+    /// 
+    /// ⚠️ WARNING: This method is for migration purposes only and should be called once
+    /// during deployment. After migration, all accounts must be properly encrypted.
+    /// 
+    /// Returns the IDs of accounts that were successfully migrated.
+    pub async fn migrate_unencrypted_accounts(&self) -> Result<Vec<AccountId>, DomainError> {
+        info!("🔄 Starting migration of unencrypted accounts...");
+        
+        // Query all raw account rows directly
+        let query = "SELECT id, cookies, api_user FROM accounts";
+        let rows: Vec<(String, String, String)> = sqlx::query_as(query)
+            .fetch_all(&*self.pool)
+            .await
+            .map_err(|e| RepositoryErrorMapper::map_sqlx_error(e, "Fetch accounts for migration"))?;
+        
+        let mut migrated_ids = Vec::new();
+        let mut failed_accounts = Vec::new();
+        
+        for (id, cookies, api_user) in rows {
+            // Try to decrypt - if it fails, assume it's plaintext and needs migration
+            let needs_migration = self.encryption.decrypt(&cookies).is_err() 
+                || self.encryption.decrypt(&api_user).is_err();
+            
+            if needs_migration {
+                info!("🔐 Migrating account: {}", id);
+                
+                // Assume the data is plaintext and try to encrypt it
+                match self.encrypt_account_data(&id, &cookies, &api_user).await {
+                    Ok(_) => {
+                        migrated_ids.push(AccountId::from_string(&id));
+                        info!("✅ Successfully migrated account: {}", id);
+                    }
+                    Err(e) => {
+                        warn!("❌ Failed to migrate account {}: {}", id, e);
+                        failed_accounts.push((id.clone(), e.to_string()));
+                    }
+                }
+            }
+        }
+        
+        if !failed_accounts.is_empty() {
+            warn!("⚠️  Migration completed with {} failures:", failed_accounts.len());
+            for (id, error) in &failed_accounts {
+                warn!("  - Account {}: {}", id, error);
+            }
+        }
+        
+        info!("✅ Migration completed. Migrated {} accounts", migrated_ids.len());
+        Ok(migrated_ids)
+    }
+    
+    /// Encrypt plaintext account data
+    async fn encrypt_account_data(
+        &self,
+        account_id: &str,
+        plaintext_cookies: &str,
+        plaintext_api_user: &str,
+    ) -> Result<(), DomainError> {
+        // Validate that cookies is valid JSON
+        let _: serde_json::Value = serde_json::from_str(plaintext_cookies)
+            .map_err(|e| DomainError::Validation(format!("Invalid cookies JSON: {}", e)))?;
+        
+        // Encrypt the data
+        let encrypted_cookies = self.encryption
+            .encrypt(plaintext_cookies)
+            .map_err(|e| DomainError::DataIntegrity(format!("Failed to encrypt cookies: {}", e)))?;
+        
+        let encrypted_api_user = self.encryption
+            .encrypt(plaintext_api_user)
+            .map_err(|e| DomainError::DataIntegrity(format!("Failed to encrypt api_user: {}", e)))?;
+        
+        // Update the database
+        let update_query = "UPDATE accounts SET cookies = ?1, api_user = ?2 WHERE id = ?3";
+        sqlx::query(update_query)
+            .bind(encrypted_cookies)
+            .bind(encrypted_api_user)
+            .bind(account_id)
+            .execute(&*self.pool)
+            .await
+            .map_err(|e| RepositoryErrorMapper::map_sqlx_error(e, "Update encrypted account data"))?;
+        
         Ok(())
     }
 }
