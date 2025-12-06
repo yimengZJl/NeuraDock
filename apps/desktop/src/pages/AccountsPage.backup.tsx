@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Plus, Upload, Search, DollarSign, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useProviders } from '@/hooks/useProviders';
 import { useBalanceStatistics, useRefreshAllBalances } from '@/hooks/useBalance';
@@ -13,6 +12,7 @@ import { JsonImportDialog } from '@/components/account/JsonImportDialog';
 import { BatchUpdateDialog } from '@/components/account/BatchUpdateDialog';
 import { BatchCheckInButton } from '@/components/checkin/BatchCheckInButton';
 import { Account, AccountDetail } from '@/lib/tauri-commands';
+import { Badge } from '@/components/ui/badge';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
@@ -92,30 +92,28 @@ export function AccountsPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       {/* Header with Statistics */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {t('accounts.title')}
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('accounts.title')}</h1>
             {accounts && accounts.length > 0 && (
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="rounded-full text-base px-3 py-1">
                 {accounts.length} {accounts.length === 1 ? t('accounts.account') : t('accounts.accounts_plural')}
               </Badge>
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setBatchUpdateDialogOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setBatchUpdateDialogOpen(true)} className="rounded-full">
               <RefreshCw className="mr-2 h-4 w-4" />
               {t('accounts.batchUpdate')}
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => setJsonImportDialogOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setJsonImportDialogOpen(true)} className="rounded-full">
               <Upload className="mr-2 h-4 w-4" />
               {t('accounts.importJSON')}
             </Button>
-            <Button variant="default" size="sm" onClick={handleCreate}>
+            <Button variant="outline" size="sm" onClick={handleCreate} className="rounded-full">
               <Plus className="mr-2 h-4 w-4" />
               {t('accounts.addAccount')}
             </Button>
@@ -124,31 +122,25 @@ export function AccountsPage() {
 
         {/* Total Statistics at Top */}
         {statistics && (
-          <Card  className="border-2 border-blue-200 dark:border-blue-800">
-            <div className="p-6">
+          <Card className="bg-primary/5 rounded-2xl border-2">
+            <CardContent className="pt-6">
               <div className="flex items-center justify-around text-center">
                 <div className="flex flex-col gap-1">
-                  <span className="text-sm text-muted-foreground font-medium">{t('dashboard.stats.totalIncome')}</span>
-                  <span className="font-bold text-3xl bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
-                    ${statistics.total_income.toFixed(2)}
-                  </span>
+                  <span className="text-sm text-muted-foreground">{t('dashboard.stats.totalIncome')}</span>
+                  <span className="font-bold text-2xl text-blue-600">${statistics.total_income.toFixed(2)}</span>
                 </div>
-                <div className="h-12 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
+                <div className="h-12 w-px bg-border" />
                 <div className="flex flex-col gap-1">
-                  <span className="text-sm text-muted-foreground font-medium">{t('dashboard.stats.historicalConsumption')}</span>
-                  <span className="font-bold text-3xl bg-gradient-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent">
-                    ${statistics.total_consumed.toFixed(2)}
-                  </span>
+                  <span className="text-sm text-muted-foreground">{t('dashboard.stats.historicalConsumption')}</span>
+                  <span className="font-bold text-2xl text-orange-600">${statistics.total_consumed.toFixed(2)}</span>
                 </div>
-                <div className="h-12 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
+                <div className="h-12 w-px bg-border" />
                 <div className="flex flex-col gap-1">
-                  <span className="text-sm text-muted-foreground font-medium">{t('dashboard.stats.currentBalance')}</span>
-                  <span className="font-bold text-3xl bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
-                    ${statistics.total_current_balance.toFixed(2)}
-                  </span>
+                  <span className="text-sm text-muted-foreground">{t('dashboard.stats.currentBalance')}</span>
+                  <span className="font-bold text-2xl text-green-600">${statistics.total_current_balance.toFixed(2)}</span>
                 </div>
               </div>
-            </div>
+            </CardContent>
           </Card>
         )}
       </div>
@@ -156,25 +148,22 @@ export function AccountsPage() {
       {/* Search Bar */}
       {accounts && accounts.length > 0 && (
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground z-10" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t('accounts.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-11"
+            className="pl-9 rounded-full"
           />
         </div>
       )}
 
       {/* Accounts List - Grouped by Provider */}
       {isLoading ? (
-        <Card>
-          <div className="p-8">
-            <div className="flex flex-col items-center justify-center gap-4">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
-              <p className="text-center text-muted-foreground font-medium">{t('accounts.loading')}</p>
-            </div>
-          </div>
+        <Card className="rounded-2xl">
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">{t('accounts.loading')}</p>
+          </CardContent>
         </Card>
       ) : filteredAccounts && filteredAccounts.length > 0 ? (
         <>
@@ -187,16 +176,16 @@ export function AccountsPage() {
               const enabledCount = providerAccounts.filter(a => a.enabled).length;
               
               return (
-                <Card key={providerId} >
-                  <div className="p-6 space-y-4">
+                <Card key={providerId} className="border-2 rounded-2xl">
+                  <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <h2 className="text-2xl font-bold">{providerName}</h2>
-                        <Badge variant="outline">
+                        <CardTitle className="text-xl">{providerName}</CardTitle>
+                        <Badge variant="outline" className="rounded-full">
                           {providerAccounts.length} {providerAccounts.length === 1 ? t('accounts.account') : t('accounts.accounts_plural')}
                         </Badge>
                         {enabledCount > 0 && (
-                          <Badge variant="default">
+                          <Badge variant="secondary" className="rounded-full">
                             {enabledCount} {t('accounts.enabled')}
                           </Badge>
                         )}
@@ -205,10 +194,11 @@ export function AccountsPage() {
                         {enabledCount > 0 && (
                           <>
                             <Button
-                              variant="secondary"
+                              variant="outline"
                               size="sm"
                               onClick={() => handleRefreshProviderBalances(providerAccounts)}
                               disabled={refreshAllBalancesMutation.isPending}
+                              className="rounded-full"
                               title={t('accounts.refreshAllBalances') || 'Refresh all balances'}
                             >
                               <RefreshCw className={`mr-2 h-4 w-4 ${refreshAllBalancesMutation.isPending ? 'animate-spin' : ''}`} />
@@ -223,22 +213,24 @@ export function AccountsPage() {
                       </div>
                     </div>
                     {providerStats && (
-                      <div className="flex items-center gap-6 text-sm bg-muted/30 rounded-2xl p-4">
+                      <div className="flex items-center gap-6 pt-2 text-sm">
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-blue-600" />
-                          <span className="text-muted-foreground font-medium">{t('dashboard.stats.totalIncome')}:</span>
-                          <span className="font-bold text-blue-600">${providerStats.total_income.toFixed(2)}</span>
+                          <span className="text-muted-foreground">{t('dashboard.stats.totalIncome')}:</span>
+                          <span className="font-semibold text-blue-600">${providerStats.total_income.toFixed(2)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground font-medium">{t('dashboard.stats.historicalConsumption')}:</span>
-                          <span className="font-bold text-orange-600">${providerStats.total_consumed.toFixed(2)}</span>
+                          <span className="text-muted-foreground">{t('dashboard.stats.historicalConsumption')}:</span>
+                          <span className="font-semibold text-orange-600">${providerStats.total_consumed.toFixed(2)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground font-medium">{t('dashboard.stats.currentBalance')}:</span>
-                          <span className="font-bold text-green-600">${providerStats.current_balance.toFixed(2)}</span>
+                          <span className="text-muted-foreground">{t('dashboard.stats.currentBalance')}:</span>
+                          <span className="font-semibold text-green-600">${providerStats.current_balance.toFixed(2)}</span>
                         </div>
                       </div>
                     )}
+                  </CardHeader>
+                  <CardContent>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {providerAccounts.map((account) => (
                         <AccountCard
@@ -248,7 +240,7 @@ export function AccountsPage() {
                         />
                       ))}
                     </div>
-                  </div>
+                  </CardContent>
                 </Card>
               );
             })}
@@ -256,35 +248,30 @@ export function AccountsPage() {
         </>
       ) : accounts && accounts.length > 0 && searchQuery ? (
         <Card>
-          <div className="p-8">
+          <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">
-              {t('accounts.noResultsFor')} <span className="font-semibold">"{searchQuery}"</span>
+              {t('accounts.noResultsFor')} "{searchQuery}"
             </p>
-          </div>
+          </CardContent>
         </Card>
       ) : (
-        <Card  className="border-dashed">
-          <div className="p-12 text-center space-y-6">
-            <div className="flex flex-col items-center gap-3">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Plus className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold">{t('accounts.noAccounts')}</h3>
-              <p className="text-muted-foreground max-w-md">
-                {t('accounts.noAccountsDescription')}
-              </p>
-            </div>
-            <div className="flex gap-3 justify-center">
-              <Button variant="default" onClick={handleCreate}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t('accounts.addAccount')}
-              </Button>
-              <Button variant="secondary" onClick={() => setJsonImportDialogOpen(true)}>
-                <Upload className="mr-2 h-4 w-4" />
-                {t('accounts.importJSON')}
-              </Button>
-            </div>
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('accounts.noAccounts')}</CardTitle>
+            <CardDescription>
+              {t('accounts.noAccountsDescription')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex gap-2">
+            <Button onClick={handleCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('accounts.addAccount')}
+            </Button>
+            <Button variant="outline" onClick={() => setJsonImportDialogOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              {t('accounts.importJSON')}
+            </Button>
+          </CardContent>
         </Card>
       )}
 

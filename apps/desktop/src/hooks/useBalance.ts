@@ -29,6 +29,11 @@ export function useFetchAccountBalance(accountId: string, enabled = true) {
     queryKey: ['balance', accountId],
     queryFn: () => invoke<BalanceDto>('fetch_account_balance', { accountId, forceRefresh: false }),
     enabled: enabled && !!accountId,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    refetchOnMount: false, // Don't refetch on component mount if data is fresh
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    retry: 1, // Only retry once on failure
   });
 }
 
