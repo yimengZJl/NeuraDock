@@ -67,105 +67,25 @@ impl CheckInExecutor {
     ) -> Result<AccountCheckInResult> {
         let account_id_obj = AccountId::from_string(account_id);
 
-        // Load account
-        let account = self
-            .account_repo
-            .find_by_id(&account_id_obj)
-            .await
-            .context("Failed to load account")?
-            .ok_or_else(|| anyhow::anyhow!("Account not found"))?;
-
+        // 1. Load and validate account
+        let account = self.load_and_validate_account(&account_id_obj).await?;
         let account_name = account.name().to_string();
 
         info!("[{}] Starting check-in process", account_name);
 
-        // Use domain service to validate check-in eligibility
-        if let Err(e) = CheckInDomainService::can_check_in(&account) {
-            warn!("[{}] Check-in validation failed: {}", account_name, e);
-            return Ok(AccountCheckInResult {
-                account_id: account_id.to_string(),
-                account_name,
-                success: false,
-                message: e.to_string(),
-                user_info: None,
-            });
+        // 2. Validate using domain service
+        if let Some(error_result) = self.validate_check_in_eligibility(&account, provider, account_id, &account_name) {
+            return Ok(error_result);
         }
 
-        // Validate provider configuration
-        if let Err(e) = CheckInDomainService::validate_provider(provider) {
-            error!("[{}] Provider validation failed: {}", account_name, e);
-            return Ok(AccountCheckInResult {
-                account_id: account_id.to_string(),
-                account_name,
-                success: false,
-                message: e.to_string(),
-                user_info: None,
-            });
-        }
-
-        // Prepare cookies (with WAF cookies from cache or bypass)
-        let mut cookies = self
-            .prepare_cookies(&account_name, provider, account.credentials().cookies())
+        // 3. Prepare cookies and fetch user info with WAF handling
+        let (mut cookies, user_info) = self
+            .prepare_cookies_and_fetch_user_info(&account, provider, &account_name)
             .await?;
 
         let api_user = account.credentials().api_user();
 
-        // Get user info first
-        let user_info_result = self
-            .http_client
-            .get_user_info(
-                &provider.user_info_url(),
-                &cookies,
-                provider.api_user_key(),
-                api_user,
-            )
-            .await;
-
-        // Check if we got a WAF challenge and need to refresh cookies
-        let user_info = match &user_info_result {
-            Ok(info) => {
-                info!(
-                    "[{}] Current balance: ${:.2}, Used: ${:.2}",
-                    account_name, info.quota, info.used_quota
-                );
-                Some(info.clone())
-            }
-            Err(e) if self.is_waf_challenge_error(e) => {
-                warn!("[{}] WAF challenge detected, invalidating cache and retrying...", account_name);
-
-                // Invalidate WAF cache and get fresh cookies
-                cookies = self
-                    .refresh_waf_cookies_and_retry(&account_name, provider, account.credentials().cookies())
-                    .await?;
-
-                // Retry get user info
-                match self
-                    .http_client
-                    .get_user_info(
-                        &provider.user_info_url(),
-                        &cookies,
-                        provider.api_user_key(),
-                        api_user,
-                    )
-                    .await
-                {
-                    Ok(info) => {
-                        info!("[{}] Retry successful, balance: ${:.2}", account_name, info.quota);
-                        Some(info)
-                    }
-                    Err(e) => {
-                        warn!("[{}] Failed to get user info after retry: {}", account_name, e);
-                        None
-                    }
-                }
-            }
-            Err(e) => {
-                warn!("[{}] Failed to get user info: {}", account_name, e);
-                None
-            }
-        };
-
-        // Execute check-in if provider requires it
+        // 4. Execute check-in if provider requires it
         let check_in_result = if let Some(sign_in_url) = provider.sign_in_url() {
             info!(
                 "[{}] Executing check-in request to: {}",
@@ -452,6 +372,124 @@ impl CheckInExecutor {
         );
 
         Ok(user_info)
+    }
+
+    // ========== Private helper methods for execute_check_in ==========
+
+    /// Load and validate account exists
+    async fn load_and_validate_account(&self, account_id: &AccountId) -> Result<Account> {
+        self.account_repo
+            .find_by_id(account_id)
+            .await
+            .context("Failed to load account")?
+            .ok_or_else(|| anyhow::anyhow!("Account not found"))
+    }
+
+    /// Validate check-in eligibility using domain service
+    fn validate_check_in_eligibility(
+        &self,
+        account: &Account,
+        provider: &Provider,
+        account_id: &str,
+        account_name: &str,
+    ) -> Option<AccountCheckInResult> {
+        // Check account eligibility
+        if let Err(e) = CheckInDomainService::can_check_in(account) {
+            warn!("[{}] Check-in validation failed: {}", account_name, e);
+            return Some(AccountCheckInResult {
+                account_id: account_id.to_string(),
+                account_name: account_name.to_string(),
+                success: false,
+                message: e.to_string(),
+                user_info: None,
+            });
+        }
+
+        // Validate provider configuration
+        if let Err(e) = CheckInDomainService::validate_provider(provider) {
+            error!("[{}] Provider validation failed: {}", account_name, e);
+            return Some(AccountCheckInResult {
+                account_id: account_id.to_string(),
+                account_name: account_name.to_string(),
+                success: false,
+                message: e.to_string(),
+                user_info: None,
+            });
+        }
+
+        None
+    }
+
+    /// Prepare cookies and fetch user info with WAF handling
+    async fn prepare_cookies_and_fetch_user_info(
+        &self,
+        account: &Account,
+        provider: &Provider,
+        account_name: &str,
+    ) -> Result<(HashMap<String, String>, Option<UserInfo>)> {
+        // Prepare cookies (with WAF cookies from cache or bypass)
+        let mut cookies = self
+            .prepare_cookies(account_name, provider, account.credentials().cookies())
+            .await?;
+
+        let api_user = account.credentials().api_user();
+
+        // Get user info first
+        let user_info_result = self
+            .http_client
+            .get_user_info(
+                &provider.user_info_url(),
+                &cookies,
+                provider.api_user_key(),
+                api_user,
+            )
+            .await;
+
+        // Check if we got a WAF challenge and need to refresh cookies
+        let user_info = match &user_info_result {
+            Ok(info) => {
+                info!(
+                    "[{}] Current balance: ${:.2}, Used: ${:.2}",
+                    account_name, info.quota, info.used_quota
+                );
+                Some(info.clone())
+            }
+            Err(e) if self.is_waf_challenge_error(e) => {
+                warn!("[{}] WAF challenge detected, invalidating cache and retrying...", account_name);
+
+                // Invalidate WAF cache and get fresh cookies
+                cookies = self
+                    .refresh_waf_cookies_and_retry(account_name, provider, account.credentials().cookies())
+                    .await?;
+
+                // Retry get user info
+                match self
+                    .http_client
+                    .get_user_info(
+                        &provider.user_info_url(),
+                        &cookies,
+                        provider.api_user_key(),
+                        api_user,
+                    )
+                    .await
+                {
+                    Ok(info) => {
+                        info!("[{}] Retry successful, balance: ${:.2}", account_name, info.quota);
+                        Some(info)
+                    }
+                    Err(e) => {
+                        warn!("[{}] Failed to get user info after retry: {}", account_name, e);
+                        None
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("[{}] Failed to get user info: {}", account_name, e);
+                None
+            }
+        };
+
+        Ok((cookies, user_info))
     }
 
     /// Execute batch check-in for multiple accounts
