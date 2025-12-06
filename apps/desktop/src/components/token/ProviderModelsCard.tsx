@@ -30,12 +30,11 @@ export function ProviderModelsCard({ providerId, providerName, accountId }: Prov
     retry: 1,
   });
 
-  // Force refresh mutation
+  // Force refresh mutation - use WAF-aware version
   const refreshMutation = useMutation({
-    mutationFn: () => invoke<string[]>('fetch_provider_models', {
+    mutationFn: () => invoke<string[]>('refresh_provider_models_with_waf', {
       providerId,
       accountId,
-      forceRefresh: true,
     }),
     onSuccess: (newModels) => {
       // Update cache for this provider (shared across all accounts)

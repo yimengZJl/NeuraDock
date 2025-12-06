@@ -416,11 +416,37 @@ pub async fn fetch_provider_models(
     // Extract just the path from full URL
     let models_path = models_path.replace(provider.domain(), "");
 
+    // Prepare cookies - start with account cookies
+    let mut cookies = account.credentials().cookies().clone();
+
+    // Handle WAF bypass with caching (if provider requires it)
+    if provider.needs_waf_bypass() {
+        // Check for cached WAF cookies first
+        match state.waf_cookies_repo.get_valid(&provider_id).await {
+            Ok(Some(cached_waf)) => {
+                log::info!("Using cached WAF cookies for provider {} (expires at {})",
+                    provider_id, cached_waf.expires_at);
+                // Merge cached WAF cookies
+                for (k, v) in cached_waf.cookies {
+                    cookies.insert(k, v);
+                }
+            }
+            Ok(None) => {
+                log::warn!("No valid cached WAF cookies for provider {}, may encounter WAF challenge", provider_id);
+                // Note: We don't run WAF bypass here to avoid blocking
+                // User can use refresh_provider_models_with_waf if they encounter WAF
+            }
+            Err(e) => {
+                log::warn!("Failed to check WAF cookies cache: {}", e);
+            }
+        }
+    }
+
     // Create token client and fetch models
     let client = TokenClient::new().map_err(|e| e.to_string())?;
 
-    // Build cookie string from HashMap
-    let cookie_string: String = account.credentials().cookies()
+    // Build cookie string from merged cookies
+    let cookie_string: String = cookies
         .iter()
         .map(|(k, v)| format!("{}={}", k, v))
         .collect::<Vec<_>>()
@@ -429,15 +455,40 @@ pub async fn fetch_provider_models(
     // Get api_user from account credentials
     let api_user = account.credentials().api_user();
 
-    let models = client
+    // Try to fetch models
+    let models_result = client
         .fetch_provider_models(
             provider.domain(),
             &models_path,
             &cookie_string,
             Some(api_user),
         )
-        .await
-        .map_err(|e| e.to_string())?;
+        .await;
+
+    // Check if we got WAF challenge error
+    let models = match models_result {
+        Ok(models) => models,
+        Err(e) => {
+            // Check if it's a WAF challenge error
+            let error_msg = e.to_string();
+            if error_msg.contains("WAF_CHALLENGE:") {
+                log::warn!("WAF challenge detected despite cached cookies, deleting cache");
+                
+                // Delete cached WAF cookies
+                if let Err(inv_err) = state.waf_cookies_repo.delete(&provider_id).await {
+                    log::warn!("Failed to delete WAF cookies cache: {}", inv_err);
+                }
+                
+                // Return helpful error message
+                return Err(format!(
+                    "WAF challenge detected. Please use 'Refresh with WAF' button in account management to refresh cookies."
+                ));
+            }
+            
+            // Other error, just propagate
+            return Err(error_msg);
+        }
+    };
 
     // Cache the models
     state.provider_models_repo
@@ -560,17 +611,75 @@ pub async fn refresh_provider_models_with_waf(
     // Get api_user from account credentials (not from provider config!)
     let api_user = account.credentials().api_user();
 
-    // Fetch models
+    // Fetch models - with retry on WAF challenge
     let client = TokenClient::new().map_err(|e| e.to_string())?;
-    let models = client
+    let models_result = client
         .fetch_provider_models(
             provider.domain(),
             &models_path,
             &cookie_string,
             Some(api_user),
         )
-        .await
-        .map_err(|e| e.to_string())?;
+        .await;
+
+    // Check if we got WAF challenge - if so, retry with fresh cookies
+    let models = match models_result {
+        Ok(models) => models,
+        Err(e) => {
+            let error_msg = e.to_string();
+            if error_msg.contains("WAF_CHALLENGE:") {
+                log::warn!("WAF challenge detected despite cached cookies! Invalidating cache and retrying with WAF bypass...");
+                
+                // Delete invalid cached cookies
+                if let Err(del_err) = state.waf_cookies_repo.delete(&provider_id).await {
+                    log::warn!("Failed to delete invalid WAF cookies: {}", del_err);
+                }
+                
+                // Run WAF bypass to get fresh cookies
+                use neuradock_infrastructure::http::WafBypassService;
+                let waf_service = WafBypassService::new(true); // headless
+                let fresh_waf_cookies = waf_service
+                    .get_waf_cookies(&provider.login_url(), &account_id)
+                    .await
+                    .map_err(|e| format!("WAF bypass failed: {}", e))?;
+                
+                log::info!("WAF bypass successful, got {} fresh cookies", fresh_waf_cookies.len());
+                
+                // Save fresh cookies to cache
+                if let Err(save_err) = state.waf_cookies_repo.save(&provider_id, &fresh_waf_cookies).await {
+                    log::warn!("Failed to cache fresh WAF cookies: {}", save_err);
+                }
+                
+                // Merge fresh WAF cookies with account cookies
+                let mut fresh_cookies = account.credentials().cookies().clone();
+                for (k, v) in fresh_waf_cookies {
+                    fresh_cookies.insert(k, v);
+                }
+                
+                // Build new cookie string
+                let fresh_cookie_string: String = fresh_cookies
+                    .iter()
+                    .map(|(k, v)| format!("{}={}", k, v))
+                    .collect::<Vec<_>>()
+                    .join("; ");
+                
+                // Retry fetching models with fresh cookies
+                log::info!("Retrying model fetch with fresh WAF cookies...");
+                client
+                    .fetch_provider_models(
+                        provider.domain(),
+                        &models_path,
+                        &fresh_cookie_string,
+                        Some(api_user),
+                    )
+                    .await
+                    .map_err(|e| format!("Failed to fetch models even after WAF bypass: {}", e))?
+            } else {
+                // Not a WAF challenge, return original error
+                return Err(error_msg);
+            }
+        }
+    };
 
     // Save to database
     state.provider_models_repo
