@@ -2,6 +2,9 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use uuid::Uuid;
 
+pub mod transaction;
+pub use transaction::{TransactionContext, UnitOfWork, UnitOfWorkError};
+
 macro_rules! define_id {
     ($name:ident) => {
         #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Type)]
