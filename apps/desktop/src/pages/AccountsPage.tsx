@@ -146,33 +146,54 @@ export function AccountsPage() {
       className="space-y-6 max-w-[1600px]"
       title={
         <div className="flex items-center gap-3">
-          <span>{t('accounts.title')}</span>
+          <span className="text-2xl font-bold tracking-tight">{t('accounts.title')}</span>
           {accounts && accounts.length > 0 && (
-            <Badge variant="secondary" className="text-sm font-normal">
-              {accounts.length} {accounts.length === 1 ? t('accounts.account') : t('accounts.accounts_plural')}
+            <Badge variant="secondary" className="text-sm font-normal rounded-full px-2.5">
+              {accounts.length}
             </Badge>
           )}
         </div>
       }
       actions={
-        <>
-          <Button variant="outline" size="sm" onClick={() => setBatchUpdateDialogOpen(true)}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            {t('accounts.batchUpdate')}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setJsonImportDialogOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            {t('accounts.importJSON')}
-          </Button>
-          <Button size="sm" onClick={handleCreate} className="shadow-sm">
-            <Plus className="mr-2 h-4 w-4" />
-            {t('accounts.addAccount')}
-          </Button>
-        </>
+        <div className="flex items-center gap-3 flex-1 justify-end w-full">
+          {/* Provider Tabs */}
+          {allProviders.length > 0 && (
+            <Tabs value={selectedProvider} onValueChange={setSelectedProvider} className="hidden xl:block">
+              <TabsList className="bg-muted/50 h-9">
+                <TabsTrigger value="all" className="text-xs px-3">All</TabsTrigger>
+                {allProviders.map(p => (
+                  <TabsTrigger key={p.id} value={p.id} className="text-xs px-3">{p.name}</TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          )}
+
+          {/* Search Bar */}
+          <div className="relative w-48 transition-all focus-within:w-64 hidden md:block">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t('accounts.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-9 bg-muted/50 border-muted-foreground/20 text-sm"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setBatchUpdateDialogOpen(true)} title={t('accounts.batchUpdate')}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setJsonImportDialogOpen(true)} title={t('accounts.importJSON')}>
+              <Upload className="h-4 w-4" />
+            </Button>
+            <Button size="sm" onClick={handleCreate} className="h-9 px-4 shadow-sm">
+              <Plus className="mr-2 h-4 w-4" />
+              {t('accounts.addAccount')}
+            </Button>
+          </div>
+        </div>
       }
     >
-      {/* Header Section Removed - Moved to PageContainer */}
-
       {/* Statistics Cards */}
       {filteredStatistics && (
         <div className="grid gap-4 md:grid-cols-3">
@@ -218,35 +239,7 @@ export function AccountsPage() {
         </div>
       )}
 
-      {/* Toolbar & Filters */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between py-2">
-        <div className="flex items-center gap-4 flex-1 w-full">
-          {/* Provider Tabs - Now on the Left */}
-          {allProviders.length > 0 && (
-            <Tabs value={selectedProvider} onValueChange={setSelectedProvider} className="w-full md:w-auto">
-              <TabsList className="bg-muted/50 w-full md:w-auto overflow-x-auto justify-start">
-                <TabsTrigger value="all">All</TabsTrigger>
-                {allProviders.map(p => (
-                  <TabsTrigger key={p.id} value={p.id}>{p.name}</TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          )}
-
-          <div className="flex-1 hidden md:block" />
-
-          {/* Search Bar - Now on the Right */}
-          <div className="relative w-full md:max-w-xs">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t('accounts.searchPlaceholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-muted/50 border-muted-foreground/20"
-            />
-          </div>
-        </div>
-      </div>
+      {/* Toolbar & Filters Removed - Moved to Header */}
 
       {/* Accounts List */}
       {isLoading ? (

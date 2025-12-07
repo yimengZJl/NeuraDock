@@ -20,8 +20,12 @@ export function PageContainer({ children, className, title, actions }: PageConta
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10">
-        <div className="flex items-center gap-4 min-w-0">
+      <div className={cn(
+        "flex items-center justify-between px-6 py-4 shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 gap-4",
+        // Optional: Add a shadow or subtle border only when scrolling if needed, but user asked to remove line.
+        // We'll keep it clean for now.
+      )}>
+        <div className="flex items-center gap-4 min-w-0 shrink-0">
           {typeof title === 'string' ? (
             <h1 className="text-2xl font-bold tracking-tight truncate">{title}</h1>
           ) : (
@@ -29,31 +33,33 @@ export function PageContainer({ children, className, title, actions }: PageConta
           )}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Page Actions */}
+        <div className="flex items-center gap-4 flex-1 justify-end min-w-0">
+          {/* Page Actions (Search, Tabs, Buttons) */}
           {actions}
 
           {/* Separator */}
-          <div className="w-px h-6 bg-border mx-2" />
+          <div className="w-px h-6 bg-border shrink-0" />
 
           {/* Global Actions */}
-          <LanguageSwitcher />
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full hover:bg-muted"
-            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-            title={t('settings.theme')}
-          >
-            {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            <span className="sr-only">Toggle theme</span>
-          </Button>
+          <div className="flex items-center gap-1 shrink-0">
+            <LanguageSwitcher />
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full hover:bg-muted"
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              title={t('settings.theme')}
+            >
+              {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              <span className="sr-only">Toggle theme</span>
+            </Button>
 
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-muted">
-            <Bell className="h-4 w-4" />
-            <span className="sr-only">Notifications</span>
-          </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-muted">
+              <Bell className="h-4 w-4" />
+              <span className="sr-only">Notifications</span>
+            </Button>
+          </div>
         </div>
       </div>
 
