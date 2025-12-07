@@ -43,16 +43,9 @@ export function DashboardPage() {
   };
 
   return (
-    <PageContainer className="space-y-8">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.title')}</h1>
-          <p className="text-muted-foreground mt-1">
-            {t('dashboard.description')}
-          </p>
-        </div>
-      </div>
-
+    <PageContainer className="space-y-8" title={t('dashboard.title')}>
+      {/* Header Section Removed */}
+      
       {/* Bento Grid Overview */}
       <motion.div 
         variants={container}

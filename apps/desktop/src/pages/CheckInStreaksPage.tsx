@@ -97,7 +97,7 @@ export function CheckInStreaksPage() {
 
   if (isLoadingStreaks) {
     return (
-      <PageContainer>
+      <PageContainer title={t('streaks.pageTitle')}>
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
@@ -108,7 +108,7 @@ export function CheckInStreaksPage() {
   // If no accounts have data, show empty state
   if (!allStreaks || allStreaks.length === 0) {
     return (
-      <PageContainer>
+      <PageContainer title={t('streaks.pageTitle')}>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <p className="text-muted-foreground">{t('streaks.emptyTitle')}</p>
           <p className="text-sm text-muted-foreground">{t('streaks.emptyDescription')}</p>
@@ -118,23 +118,27 @@ export function CheckInStreaksPage() {
   }
 
   return (
-    <PageContainer className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+    <PageContainer 
+      className="space-y-6"
+      title={
         <div>
-          <h1 className="text-3xl font-bold">{t('streaks.pageTitle')}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('streaks.pageTitle')}</h1>
           {selectedAccount && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground font-normal mt-1">
               {selectedAccount.account_name} · {selectedAccount.provider_name}
             </p>
           )}
         </div>
+      }
+      actions={
         <AccountStreakSelector
           accounts={allStreaks || []}
           selectedAccountId={selectedAccountId}
           onAccountChange={setSelectedAccountId}
         />
-      </div>
+      }
+    >
+      {/* Header Removed */}
 
       {selectedAccountId === 'all' ? (
         /* Show all accounts overview */

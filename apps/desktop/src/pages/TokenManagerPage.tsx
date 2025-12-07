@@ -169,18 +169,11 @@ export function TokenManagerPage() {
   };
 
   return (
-    <PageContainer className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">
-            {t('token.title', 'Token Manager')}
-          </h1>
-          <p className="text-muted-foreground">
-            {t('token.description', 'Manage API tokens for Claude Code and other AI tools')}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <PageContainer 
+      className="space-y-6"
+      title={t('token.title', 'Token Manager')}
+      actions={
+        <>
           <Button
             variant="outline"
             size="sm"
@@ -206,8 +199,10 @@ export function TokenManagerPage() {
             <RefreshCw className={`mr-2 h-4 w-4 ${refreshMutation.isPending ? 'animate-spin' : ''}`} />
             {t('common.refresh', 'Refresh')}
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
+      {/* Header Removed */}
 
       {/* Account Selector */}
       <AccountSelector

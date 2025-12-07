@@ -374,12 +374,11 @@ export function SettingsPage() {
   };
 
   return (
-    <PageContainer className="space-y-6 w-full">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('settings.title')}</h1>
-        <p className="text-muted-foreground mt-2">{t('settings.description')}</p>
-      </div>
+    <PageContainer 
+      className="space-y-6 w-full"
+      title={t('settings.title')}
+    >
+      {/* Header Removed */}
 
       {/* Main Layout: Sidebar + Content */}
       <div className="flex gap-6">

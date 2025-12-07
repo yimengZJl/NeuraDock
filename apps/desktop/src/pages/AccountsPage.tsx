@@ -142,16 +142,20 @@ export function AccountsPage() {
   };
 
   return (
-    <PageContainer className="space-y-6 max-w-[1600px]">
-      {/* Header Section */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-1.5">
-          <h1 className="text-3xl font-bold tracking-tight">{t('accounts.title')}</h1>
-          <p className="text-muted-foreground">
-            {t('accounts.description')}
-          </p>
+    <PageContainer 
+      className="space-y-6 max-w-[1600px]"
+      title={
+        <div className="flex items-center gap-3">
+          <span>{t('accounts.title')}</span>
+          {accounts && accounts.length > 0 && (
+            <Badge variant="secondary" className="text-sm font-normal">
+              {accounts.length} {accounts.length === 1 ? t('accounts.account') : t('accounts.accounts_plural')}
+            </Badge>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+      }
+      actions={
+        <>
           <Button variant="outline" size="sm" onClick={() => setBatchUpdateDialogOpen(true)}>
             <RefreshCw className="mr-2 h-4 w-4" />
             {t('accounts.batchUpdate')}
@@ -164,8 +168,10 @@ export function AccountsPage() {
             <Plus className="mr-2 h-4 w-4" />
             {t('accounts.addAccount')}
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
+      {/* Header Section Removed - Moved to PageContainer */}
 
       {/* Statistics Cards */}
       {filteredStatistics && (
