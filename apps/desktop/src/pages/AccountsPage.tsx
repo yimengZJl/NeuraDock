@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { PageContainer } from '@/components/layout/PageContainer';
+import { AccountListSkeleton } from '@/components/skeletons/AccountListSkeleton';
 
 export function AccountsPage() {
   const { data: accounts, isLoading } = useAccounts();
@@ -155,14 +156,7 @@ export function AccountsPage() {
 
       {/* Accounts List - Grouped by Provider */}
       {isLoading ? (
-        <Card>
-          <div className="p-8">
-            <div className="flex flex-col items-center justify-center gap-4">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
-              <p className="text-center text-muted-foreground font-medium">{t('accounts.loading')}</p>
-            </div>
-          </div>
-        </Card>
+        <AccountListSkeleton />
       ) : filteredAccounts && filteredAccounts.length > 0 ? (
         <>
           {/* Group by Provider */}

@@ -8,11 +8,20 @@ import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/formatters';
 
 import { PageContainer } from '@/components/layout/PageContainer';
+import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
 
 export function DashboardPage() {
   const { data: accounts, isLoading } = useAccounts();
   const { data: statistics, isLoading: statsLoading } = useBalanceStatistics();
   const { t } = useTranslation();
+
+  if (isLoading || statsLoading) {
+    return (
+      <PageContainer>
+        <DashboardSkeleton />
+      </PageContainer>
+    );
+  }
 
   const enabledAccounts = accounts?.filter(a => a.enabled).length || 0;
   const totalAccounts = accounts?.length || 0;
