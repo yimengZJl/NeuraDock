@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react';
 import { Plus, Upload, Search, DollarSign, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { useAccounts } from '@/hooks/useAccounts';
 import { useProviders } from '@/hooks/useProviders';
 import { useBalanceStatistics, useRefreshAllBalances } from '@/hooks/useBalance';
@@ -36,12 +38,44 @@ export function AccountsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [jsonImportDialogOpen, setJsonImportDialogOpen] = useState(false);
   const [batchUpdateDialogOpen, setBatchUpdateDialogOpen] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<string>('all');
 
-  // Filter accounts by search query
-  const filteredAccounts = accounts?.filter((account) =>
-    account.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    account.provider_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter accounts
+  const filteredAccounts = useMemo(() => {
+    if (!accounts) return [];
+    let result = accounts;
+    
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (account) =>
+          account.name.toLowerCase().includes(query) ||
+          account.provider_name.toLowerCase().includes(query)
+      );
+    }
+
+    // Filter by selected provider tab
+    if (selectedProvider !== 'all') {
+      result = result.filter(a => a.provider_id === selectedProvider);
+    }
+    
+    return result;
+  }, [accounts, searchQuery, selectedProvider]);
+
+  // Get all unique providers from the *original* accounts list for the tabs
+  const allProviders = useMemo(() => {
+    if (!accounts) return [];
+    const uniqueIds = new Set(accounts.map(a => a.provider_id));
+    return Array.from(uniqueIds).map(id => {
+      const account = accounts.find(a => a.provider_id === id);
+      const provider = providers?.find(p => p.id === id);
+      return {
+        id,
+        name: provider?.name || account?.provider_name || 'Unknown'
+      };
+    });
+  }, [accounts, providers]);
 
   // Group accounts by provider
   const accountsByProvider = useMemo(() => {
@@ -59,9 +93,7 @@ export function AccountsPage() {
 
 
 
-  const getProviderStats = (providerId: string) => {
-    return statistics?.providers.find(p => p.provider_id === providerId);
-  };
+
 
   const handleRefreshProviderBalances = async (providerAccounts: Account[]) => {
     const enabledAccountIds = providerAccounts.filter(a => a.enabled).map(a => a.id);
@@ -80,178 +112,184 @@ export function AccountsPage() {
   };
 
   return (
-    <PageContainer className="space-y-6">
-      {/* Header with Statistics */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {t('accounts.title')}
-            </h1>
-            {accounts && accounts.length > 0 && (
-              <Badge variant="secondary">
-                {accounts.length} {accounts.length === 1 ? t('accounts.account') : t('accounts.accounts_plural')}
-              </Badge>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setBatchUpdateDialogOpen(true)}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              {t('accounts.batchUpdate')}
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => setJsonImportDialogOpen(true)}>
-              <Upload className="mr-2 h-4 w-4" />
-              {t('accounts.importJSON')}
-            </Button>
-            <Button variant="default" size="sm" onClick={handleCreate}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('accounts.addAccount')}
-            </Button>
-          </div>
+    <PageContainer className="space-y-6 max-w-[1600px]">
+      {/* Header Section */}
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-1.5">
+          <h1 className="text-3xl font-bold tracking-tight">{t('accounts.title')}</h1>
+          <p className="text-muted-foreground">
+            {t('accounts.description')}
+          </p>
         </div>
-
-        {/* Total Statistics at Top */}
-        {statistics && (
-          <Card  className="border-2 border-blue-200 dark:border-blue-800">
-            <div className="p-6">
-              <div className="flex items-center justify-around text-center">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-muted-foreground font-medium">{t('dashboard.stats.totalIncome')}</span>
-                  <span className="font-bold text-3xl bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
-                    ${statistics.total_income.toFixed(2)}
-                  </span>
-                </div>
-                <div className="h-12 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-muted-foreground font-medium">{t('dashboard.stats.historicalConsumption')}</span>
-                  <span className="font-bold text-3xl bg-gradient-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent">
-                    ${statistics.total_consumed.toFixed(2)}
-                  </span>
-                </div>
-                <div className="h-12 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-muted-foreground font-medium">{t('dashboard.stats.currentBalance')}</span>
-                  <span className="font-bold text-3xl bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
-                    ${statistics.total_current_balance.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Card>
-        )}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setBatchUpdateDialogOpen(true)}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {t('accounts.batchUpdate')}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setJsonImportDialogOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            {t('accounts.importJSON')}
+          </Button>
+          <Button size="sm" onClick={handleCreate} className="shadow-sm">
+            <Plus className="mr-2 h-4 w-4" />
+            {t('accounts.addAccount')}
+          </Button>
+        </div>
       </div>
 
-      {/* Search Bar */}
-      {accounts && accounts.length > 0 && (
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground z-10" />
-          <Input
-            placeholder={t('accounts.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-11"
-          />
+      {/* Statistics Cards */}
+      {statistics && (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="bg-gradient-to-br from-blue-50 to-transparent dark:from-blue-950/20 border-blue-100 dark:border-blue-900/50">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.totalIncome')}</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  ${statistics.total_income.toFixed(2)}
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-orange-50 to-transparent dark:from-orange-950/20 border-orange-100 dark:border-orange-900/50">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.historicalConsumption')}</p>
+                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  ${statistics.total_consumed.toFixed(2)}
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+                <RefreshCw className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-green-50 to-transparent dark:from-green-950/20 border-green-100 dark:border-green-900/50">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.currentBalance')}</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  ${statistics.total_current_balance.toFixed(2)}
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      {/* Accounts List - Grouped by Provider */}
+      {/* Toolbar & Filters */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 -mx-2 px-2">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t('accounts.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 bg-muted/50 border-muted-foreground/20"
+            />
+          </div>
+          
+          {/* Provider Tabs */}
+          {allProviders.length > 0 && (
+            <Tabs value={selectedProvider} onValueChange={setSelectedProvider} className="hidden md:block">
+              <TabsList className="bg-muted/50">
+                <TabsTrigger value="all">All</TabsTrigger>
+                {allProviders.map(p => (
+                  <TabsTrigger key={p.id} value={p.id}>{p.name}</TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          )}
+        </div>
+      </div>
+
+      {/* Accounts List */}
       {isLoading ? (
         <AccountListSkeleton />
       ) : filteredAccounts && filteredAccounts.length > 0 ? (
-        <>
-          {/* Group by Provider */}
-          <div className="space-y-6">
-            {Object.entries(accountsByProvider).map(([providerId, providerAccounts]) => {
-              const providerInfo = providers?.find(p => p.id === providerId);
-              const providerStats = getProviderStats(providerId);
-              const providerName = providerInfo?.name || providerAccounts[0]?.provider_name || 'Unknown';
-              const enabledCount = providerAccounts.filter(a => a.enabled).length;
-              
-              return (
-                <Card key={providerId} >
-                  <div className="p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-2xl font-bold">{providerName}</h2>
-                        <Badge variant="outline">
-                          {providerAccounts.length} {providerAccounts.length === 1 ? t('accounts.account') : t('accounts.accounts_plural')}
-                        </Badge>
-                        {enabledCount > 0 && (
-                          <Badge variant="default">
-                            {enabledCount} {t('accounts.enabled')}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        {enabledCount > 0 && (
-                          <>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleRefreshProviderBalances(providerAccounts)}
-                              disabled={refreshAllBalancesMutation.isPending}
-                              title={t('accounts.refreshAllBalances') || 'Refresh all balances'}
-                            >
-                              <RefreshCw className={`mr-2 h-4 w-4 ${refreshAllBalancesMutation.isPending ? 'animate-spin' : ''}`} />
-                              {t('accounts.refreshBalances') || 'Refresh Balances'}
-                            </Button>
-                            <BatchCheckInButton
-                              accountIds={providerAccounts.filter(a => a.enabled).map(a => a.id)}
-                              onComplete={() => {}}
-                            />
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {providerStats && (
-                      <div className="flex items-center gap-6 text-sm bg-muted/30 rounded-2xl p-4">
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-blue-600" />
-                          <span className="text-muted-foreground font-medium">{t('dashboard.stats.totalIncome')}:</span>
-                          <span className="font-bold text-blue-600">${providerStats.total_income.toFixed(2)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground font-medium">{t('dashboard.stats.historicalConsumption')}:</span>
-                          <span className="font-bold text-orange-600">${providerStats.total_consumed.toFixed(2)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground font-medium">{t('dashboard.stats.currentBalance')}:</span>
-                          <span className="font-bold text-green-600">${providerStats.current_balance.toFixed(2)}</span>
-                        </div>
-                      </div>
+        <div className="space-y-8">
+          {Object.entries(accountsByProvider).map(([providerId, providerAccounts]) => {
+            const providerInfo = providers?.find(p => p.id === providerId);
+            const providerName = providerInfo?.name || providerAccounts[0]?.provider_name || 'Unknown';
+            const enabledCount = providerAccounts.filter(a => a.enabled).length;
+            
+            return (
+              <div key={providerId} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Provider Header */}
+                <div className="flex items-center justify-between border-b pb-2">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-semibold tracking-tight">{providerName}</h2>
+                    <Badge variant="secondary" className="rounded-full px-2.5">
+                      {providerAccounts.length}
+                    </Badge>
+                    {enabledCount > 0 && enabledCount !== providerAccounts.length && (
+                      <Badge variant="outline" className="text-xs">
+                        {enabledCount} {t('accounts.enabled')}
+                      </Badge>
                     )}
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {providerAccounts.map((account) => (
-                        <AccountCard
-                          key={account.id}
-                          account={account}
-                          onEdit={handleEdit}
-                        />
-                      ))}
-                    </div>
                   </div>
-                </Card>
-              );
-            })}
-          </div>
-        </>
+                  <div className="flex items-center gap-2">
+                    {enabledCount > 0 && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => handleRefreshProviderBalances(providerAccounts)}
+                          disabled={refreshAllBalancesMutation.isPending}
+                        >
+                          <RefreshCw className={`mr-2 h-3.5 w-3.5 ${refreshAllBalancesMutation.isPending ? 'animate-spin' : ''}`} />
+                          <span className="text-xs">{t('accounts.refreshBalances')}</span>
+                        </Button>
+                        <BatchCheckInButton
+                          accountIds={providerAccounts.filter(a => a.enabled).map(a => a.id)}
+                          onComplete={() => {}}
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Accounts Grid */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {providerAccounts.map((account) => (
+                    <AccountCard
+                      key={account.id}
+                      account={account}
+                      onEdit={handleEdit}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       ) : accounts && accounts.length > 0 && searchQuery ? (
-        <Card>
-          <div className="p-8">
-            <p className="text-center text-muted-foreground">
-              {t('accounts.noResultsFor')} <span className="font-semibold">"{searchQuery}"</span>
-            </p>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+            <Search className="h-6 w-6 text-muted-foreground" />
           </div>
-        </Card>
+          <h3 className="text-lg font-semibold">{t('accounts.noResultsFor')} "{searchQuery}"</h3>
+          <p className="text-muted-foreground mt-1">{t('accounts.tryDifferentSearch')}</p>
+          <Button variant="link" onClick={() => setSearchQuery('')} className="mt-2">
+            {t('accounts.clearSearch')}
+          </Button>
+        </div>
       ) : (
-        <Card  className="border-dashed">
+        <Card className="border-dashed bg-muted/30">
           <div className="p-12 text-center space-y-6">
             <div className="flex flex-col items-center gap-3">
               <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
                 <Plus className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-2xl font-bold">{t('accounts.noAccounts')}</h3>
-              <p className="text-muted-foreground max-w-md">
+              <p className="text-muted-foreground max-w-md mx-auto">
                 {t('accounts.noAccountsDescription')}
               </p>
             </div>
