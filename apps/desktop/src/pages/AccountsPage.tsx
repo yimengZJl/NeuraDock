@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Upload, Search, DollarSign, RefreshCw, Layers, Box } from 'lucide-react';
+import { Plus, Upload, Search, RefreshCw, Layers, Box } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -122,10 +122,6 @@ export function AccountsPage() {
     };
   }, [statistics, selectedProvider]);
 
-
-
-
-
   const handleRefreshProviderBalances = async (providerAccounts: Account[]) => {
     const enabledAccountIds = providerAccounts.filter(a => a.enabled).map(a => a.id);
     if (enabledAccountIds.length === 0) {
@@ -144,7 +140,7 @@ export function AccountsPage() {
 
   return (
     <PageContainer 
-      className="flex flex-row gap-0 p-0 overflow-hidden h-full"
+      className="flex flex-row gap-6 h-full overflow-hidden"
       title={
         <div className="flex items-center gap-3">
           <span className="text-2xl font-bold tracking-tight">{t('accounts.title')}</span>
@@ -170,113 +166,111 @@ export function AccountsPage() {
         </div>
       }
     >
-      {/* Left Sidebar - Provider List */}
-      <div className="w-64 border-r bg-muted/10 flex flex-col shrink-0">
-        <div className="p-4 border-b bg-background/50 backdrop-blur-sm">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t('accounts.searchPlaceholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-9 bg-background border-muted-foreground/20 text-sm"
-            />
-          </div>
+      {/* Left Sidebar - Search & Provider List */}
+      <div className="w-60 flex flex-col shrink-0 gap-4">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={t('accounts.searchPlaceholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 h-9 bg-background shadow-sm border-border/50 text-sm"
+          />
         </div>
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
-            <button
-              onClick={() => setSelectedProvider('all')}
-              className={cn(
-                "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                selectedProvider === 'all' 
-                  ? "bg-primary/10 text-primary" 
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4" />
-                <span>All Providers</span>
+        
+        <Card className="flex-1 border-border/50 shadow-sm bg-background/50 backdrop-blur-sm overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-2 space-y-1">
+              <button
+                onClick={() => setSelectedProvider('all')}
+                className={cn(
+                  "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  selectedProvider === 'all' 
+                    ? "bg-primary text-primary-foreground shadow-sm" 
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4" />
+                  <span>{t('accounts.allProviders')}</span>
+                </div>
+                <span className={cn("text-xs", selectedProvider === 'all' ? "opacity-90" : "opacity-70")}>
+                  {accounts?.length || 0}
+                </span>
+              </button>
+              
+              <div className="my-2 px-3 text-xs font-semibold text-muted-foreground/50 uppercase tracking-wider">
+                {t('accounts.providersLabel')}
               </div>
-              <span className="text-xs opacity-70">{accounts?.length || 0}</span>
-            </button>
-            
-            <div className="my-2 px-3 text-xs font-semibold text-muted-foreground/50 uppercase tracking-wider">
-              Providers
-            </div>
 
-            {allProviders.map(p => {
-              const count = accounts?.filter(a => a.provider_id === p.id).length || 0;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedProvider(p.id)}
-                  className={cn(
-                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    selectedProvider === p.id 
-                      ? "bg-primary/10 text-primary" 
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <Box className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{p.name}</span>
-                  </div>
-                  <span className="text-xs opacity-70">{count}</span>
-                </button>
-              );
-            })}
-          </div>
-        </ScrollArea>
+              {allProviders.map(p => {
+                const count = accounts?.filter(a => a.provider_id === p.id).length || 0;
+                const isActive = selectedProvider === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setSelectedProvider(p.id)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      isActive 
+                        ? "bg-primary text-primary-foreground shadow-sm" 
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <Box className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{p.name}</span>
+                    </div>
+                    <span className={cn("text-xs", isActive ? "opacity-90" : "opacity-70")}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </Card>
       </div>
 
       {/* Right Content - Stats & Grid */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-background">
-        <ScrollArea className="flex-1">
-          <div className="p-6 space-y-6 max-w-[1400px]">
-            {/* Statistics Cards */}
+      <div className="flex-1 flex flex-col overflow-hidden gap-6">
+        <ScrollArea className="flex-1 -mr-4 pr-4">
+          <div className="space-y-6 pb-6">
+            {/* Statistics - Single Card Design */}
             {filteredStatistics && (
-              <div className="grid gap-4 md:grid-cols-3">
-                <Card className="bg-gradient-to-br from-blue-50 to-transparent dark:from-blue-950/20 border-blue-100 dark:border-blue-900/50">
-                  <CardContent className="p-6 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.totalIncome')}</p>
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <Card className="border-border/50 shadow-sm bg-gradient-to-br from-background to-muted/20">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-3 gap-8 divide-x divide-border/0">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-blue-500" />
+                        {t('dashboard.stats.totalIncome')}
+                      </span>
+                      <span className="text-3xl font-bold tracking-tight text-foreground">
                         ${filteredStatistics.total_income.toFixed(2)}
-                      </p>
+                      </span>
                     </div>
-                    <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-                      <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-orange-50 to-transparent dark:from-orange-950/20 border-orange-100 dark:border-orange-900/50">
-                  <CardContent className="p-6 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.historicalConsumption')}</p>
-                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-orange-500" />
+                        {t('dashboard.stats.historicalConsumption')}
+                      </span>
+                      <span className="text-3xl font-bold tracking-tight text-foreground">
                         ${filteredStatistics.total_consumed.toFixed(2)}
-                      </p>
+                      </span>
                     </div>
-                    <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
-                      <RefreshCw className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-green-50 to-transparent dark:from-green-950/20 border-green-100 dark:border-green-900/50">
-                  <CardContent className="p-6 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.currentBalance')}</p>
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                        {t('dashboard.stats.currentBalance')}
+                      </span>
+                      <span className="text-3xl font-bold tracking-tight text-foreground">
                         ${filteredStatistics.total_current_balance.toFixed(2)}
-                      </p>
+                      </span>
                     </div>
-                    <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-                      <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Accounts List */}
@@ -292,17 +286,12 @@ export function AccountsPage() {
                   return (
                     <div key={providerId} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       {/* Provider Header */}
-                      <div className="flex items-center justify-between border-b pb-2">
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <h2 className="text-xl font-semibold tracking-tight">{providerName}</h2>
-                          <Badge variant="secondary" className="rounded-full px-2.5">
+                          <h2 className="text-lg font-semibold tracking-tight">{providerName}</h2>
+                          <Badge variant="secondary" className="rounded-full px-2.5 text-xs">
                             {providerAccounts.length}
                           </Badge>
-                          {enabledCount > 0 && enabledCount !== providerAccounts.length && (
-                            <Badge variant="outline" className="text-xs">
-                              {enabledCount} {t('accounts.enabled')}
-                            </Badge>
-                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           {enabledCount > 0 && (

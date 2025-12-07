@@ -56,6 +56,8 @@
     "noAccountsDescription": "Get started by adding your first account or importing from JSON",
     "noResults": "No accounts found",
     "noResultsFor": "No accounts found matching",
+    "allProviders": "All Providers",
+    "providersLabel": "Providers",
     "found": "found",
     "account": "account",
     "accounts_plural": "accounts",

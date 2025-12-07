@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Account } from '@/lib/tauri-commands';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CheckInButton } from '@/components/checkin/CheckInButton';
-import { ProviderModelsSection } from '@/components/account/ProviderModelsSection';
 import { AccountBalanceDisplay } from '@/components/account/AccountBalanceDisplay';
 import { useSmartAccountBalance } from '@/hooks/account/useSmartAccountBalance';
 import { useAccountOperations } from '@/hooks/account/useAccountOperations';
@@ -22,10 +20,10 @@ import {
   Power,
   PowerOff,
   Clock,
-  AlertTriangle,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface AccountCardProps {
   account: Account;
@@ -70,47 +68,26 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
       whileHover={{ y: -2 }}
-      className="h-full"
+      className="h-full group"
     >
-      <Card className={`relative h-full transition-shadow duration-300 rounded-2xl border-border/50 bg-card/50 backdrop-blur-sm ${!account.enabled ? 'opacity-60' : ''} hover:shadow-lg`}>
-        <CardHeader className="pb-3">
+      <Card className={`relative h-full transition-all duration-300 rounded-xl border-border/40 bg-card/50 backdrop-blur-sm ${!account.enabled ? 'opacity-60 grayscale-[0.5]' : ''} hover:shadow-md hover:border-border/80 hover:bg-card/80`}>
+        <div className="p-4 flex flex-col h-full gap-4">
+          {/* Header: Name & Status */}
           <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              {/* 邮箱单独一行 */}
-              <h3 className="font-medium text-sm truncate mb-2" title={account.name}>
+            <div className="flex-1 min-w-0 space-y-1">
+              <h3 className="font-semibold text-sm truncate" title={account.name}>
                 {account.name}
               </h3>
-              {/* 状态和Session过期信息在第二行 */}
-              <div className="flex items-center gap-2 text-xs">
-                <Badge variant={account.enabled ? 'default' : 'secondary'} className="text-xs rounded-full">
-                  {account.enabled ? t('accountCard.active') : t('accountCard.disabled')}
-                </Badge>
-                {/* Session过期提醒 */}
-                {account.session_expires_at ? (
-                  account.session_expires_soon ? (
-                    <span className="flex items-center gap-1 text-amber-600">
-                      <AlertTriangle className="h-3 w-3" />
-                      {account.session_days_remaining !== undefined && account.session_days_remaining <= 0
-                        ? t('accountCard.sessionExpired')
-                        : t('accountCard.sessionExpiresSoon', { days: account.session_days_remaining })}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      {t('accountCard.sessionValidDays', { days: account.session_days_remaining })}
-                    </span>
-                  )
-                ) : (
-                  <span className="text-muted-foreground/50">
-                    {t('accountCard.sessionUnknown')}
-                  </span>
-                )}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className={cn("flex h-2 w-2 rounded-full", account.enabled ? "bg-green-500" : "bg-muted-foreground")} />
+                <span className="truncate opacity-80">{account.provider_name}</span>
               </div>
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full">
-                  <MoreVertical className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity -mr-2 -mt-2">
+                  <MoreVertical className="h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-xl">
@@ -142,57 +119,47 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </CardHeader>
 
-        <CardContent className="space-y-3">
-          {/* 余额信息 */}
-          {account.enabled && (
-            <AccountBalanceDisplay
-              balance={balance}
-              isLoading={isBalanceLoading}
-              isRefreshing={isRefreshingBalance || isBalanceFetching}
-              onRefresh={handleRefreshBalance}
-            />
-          )}
+          {/* Balance Section */}
+          <div className="flex-1">
+            {account.enabled ? (
+              <AccountBalanceDisplay
+                balance={balance}
+                isLoading={isBalanceLoading}
+                isRefreshing={isRefreshingBalance || isBalanceFetching}
+                onRefresh={handleRefreshBalance}
+              />
+            ) : (
+              <div className="h-12 flex items-center text-muted-foreground text-sm italic">
+                {t('accountCard.disabled')}
+              </div>
+            )}
+          </div>
 
-          {/* 自动签到信息和手动签到按钮 */}
+          {/* Footer: Auto Checkin & Manual Action */}
           {account.enabled && (
-            <div className="flex items-center justify-between gap-2">
-              {/* 左侧：自动签到信息 */}
+            <div className="flex items-center justify-between pt-2 border-t border-border/30">
               {autoCheckinEnabled ? (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>{t('accountCard.autoAt')} {autoCheckinTime}</span>
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full">
+                  <Clock className="h-3 w-3" />
+                  <span>{autoCheckinTime}</span>
                 </div>
               ) : (
-                <div className="text-xs text-muted-foreground">
-                  {t('accountCard.autoDisabled')}
-                </div>
+                <div />
               )}
 
-              {/* 右侧：手动签到按钮（小圆形） */}
               <CheckInButton
                 accountId={account.id}
                 accountName={account.name}
                 size="sm"
-                variant="outline"
-                className="rounded-full h-7 px-3 text-xs"
+                variant="ghost"
+                className="h-7 px-2 text-xs hover:bg-primary/10 hover:text-primary"
               />
             </div>
           )}
+        </div>
 
-          {/* 模型列表 */}
-          {account.enabled && (
-            <ProviderModelsSection
-              providerId={account.provider_id}
-              providerName={account.provider_name}
-              accountId={account.id}
-              compact={true}
-            />
-          )}
-        </CardContent>
-
-        {/* 删除确认对话框 */}
+        {/* Delete Confirm Overlay */}
         {showDeleteConfirm && (
           <div className="absolute inset-0 bg-background/95 backdrop-blur-sm rounded-2xl flex items-center justify-center p-4 z-10">
             <div className="text-center space-y-3 w-full">

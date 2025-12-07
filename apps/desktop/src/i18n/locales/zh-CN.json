@@ -56,6 +56,8 @@
     "noAccountsDescription": "开始添加您的第一个账号或从 JSON 导入",
     "noResults": "没有找到匹配的账号",
     "noResultsFor": "没有找到匹配",
+    "allProviders": "全部中转站",
+    "providersLabel": "中转站列表",
     "found": "找到",
     "account": "账号",
     "accounts_plural": "账号",
