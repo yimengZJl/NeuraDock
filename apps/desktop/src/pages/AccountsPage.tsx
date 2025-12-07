@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Upload, Search, RefreshCw, Layers, Box } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { PageContainer } from '@/components/layout/PageContainer';
+import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { AccountListSkeleton } from '@/components/skeletons/AccountListSkeleton';
 
 export function AccountsPage() {
@@ -138,9 +139,76 @@ export function AccountsPage() {
     }
   };
 
+  const sidebarContent = (
+    <>
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder={t('accounts.searchPlaceholder')}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-8 h-9 bg-background shadow-sm border-border/50 text-sm"
+        />
+      </div>
+      
+      <Card className="flex-1 border-border/50 shadow-sm bg-background/50 backdrop-blur-sm overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="p-2 space-y-1">
+            <button
+              onClick={() => setSelectedProvider('all')}
+              className={cn(
+                "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                selectedProvider === 'all' 
+                  ? "bg-primary text-primary-foreground shadow-sm" 
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4" />
+                <span>{t('accounts.allProviders')}</span>
+              </div>
+              <span className={cn("text-xs", selectedProvider === 'all' ? "opacity-90" : "opacity-70")}>
+                {accounts?.length || 0}
+              </span>
+            </button>
+            
+            <div className="my-2 px-3 text-xs font-semibold text-muted-foreground/50 uppercase tracking-wider">
+              {t('accounts.providersLabel')}
+            </div>
+
+            {allProviders.map(p => {
+              const count = accounts?.filter(a => a.provider_id === p.id).length || 0;
+              const isActive = selectedProvider === p.id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedProvider(p.id)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    isActive 
+                      ? "bg-primary text-primary-foreground shadow-sm" 
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <Box className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{p.name}</span>
+                  </div>
+                  <span className={cn("text-xs", isActive ? "opacity-90" : "opacity-70")}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      </Card>
+    </>
+  );
+
   return (
     <PageContainer 
-      className="flex flex-row gap-6 h-full overflow-hidden"
+      className="h-full overflow-hidden"
       title={
         <div className="flex items-center gap-3">
           <span className="text-2xl font-bold tracking-tight">{t('accounts.title')}</span>
@@ -166,208 +234,132 @@ export function AccountsPage() {
         </div>
       }
     >
-      {/* Left Sidebar - Search & Provider List */}
-      <div className="w-60 flex flex-col shrink-0 gap-4">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={t('accounts.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 h-9 bg-background shadow-sm border-border/50 text-sm"
-          />
-        </div>
-        
-        <Card className="flex-1 border-border/50 shadow-sm bg-background/50 backdrop-blur-sm overflow-hidden">
-          <ScrollArea className="h-full">
-            <div className="p-2 space-y-1">
-              <button
-                onClick={() => setSelectedProvider('all')}
-                className={cn(
-                  "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                  selectedProvider === 'all' 
-                    ? "bg-primary text-primary-foreground shadow-sm" 
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <Layers className="h-4 w-4" />
-                  <span>{t('accounts.allProviders')}</span>
-                </div>
-                <span className={cn("text-xs", selectedProvider === 'all' ? "opacity-90" : "opacity-70")}>
-                  {accounts?.length || 0}
+      <SidebarPageLayout sidebar={sidebarContent}>
+        <div className="space-y-8">
+          {/* Statistics - Clean Band Design */}
+          {filteredStatistics && (
+            <div className="flex items-center justify-between px-1 py-2">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                  {t('dashboard.stats.totalIncome')}
                 </span>
-              </button>
-              
-              <div className="my-2 px-3 text-xs font-semibold text-muted-foreground/50 uppercase tracking-wider">
-                {t('accounts.providersLabel')}
+                <span className="text-2xl font-bold tracking-tight text-blue-600 dark:text-blue-400">
+                  ${filteredStatistics.total_income.toFixed(2)}
+                </span>
               </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                  {t('dashboard.stats.historicalConsumption')}
+                </span>
+                <span className="text-2xl font-bold tracking-tight text-orange-600 dark:text-orange-400">
+                  ${filteredStatistics.total_consumed.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1 text-right">
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                  {t('dashboard.stats.currentBalance')}
+                </span>
+                <span className="text-2xl font-bold tracking-tight text-green-600 dark:text-green-400">
+                  ${filteredStatistics.total_current_balance.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
 
-              {allProviders.map(p => {
-                const count = accounts?.filter(a => a.provider_id === p.id).length || 0;
-                const isActive = selectedProvider === p.id;
+          {/* Accounts List */}
+          {isLoading ? (
+            <AccountListSkeleton />
+          ) : filteredAccounts && filteredAccounts.length > 0 ? (
+            <div className="space-y-8">
+              {Object.entries(accountsByProvider).map(([providerId, providerAccounts]) => {
+                const providerInfo = providers?.find(p => p.id === providerId);
+                const providerName = providerInfo?.name || providerAccounts[0]?.provider_name || 'Unknown';
+                const enabledCount = providerAccounts.filter(a => a.enabled).length;
+                
                 return (
-                  <button
-                    key={p.id}
-                    onClick={() => setSelectedProvider(p.id)}
-                    className={cn(
-                      "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                      isActive 
-                        ? "bg-primary text-primary-foreground shadow-sm" 
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <Box className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{p.name}</span>
+                  <div key={providerId} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {/* Provider Header */}
+                    <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-lg font-semibold tracking-tight">{providerName}</h2>
+                        <Badge variant="secondary" className="rounded-full px-2.5 text-xs">
+                          {providerAccounts.length}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {enabledCount > 0 && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 text-muted-foreground hover:text-foreground"
+                              onClick={() => handleRefreshProviderBalances(providerAccounts)}
+                              disabled={refreshAllBalancesMutation.isPending}
+                            >
+                              <RefreshCw className={`mr-2 h-3.5 w-3.5 ${refreshAllBalancesMutation.isPending ? 'animate-spin' : ''}`} />
+                              <span className="text-xs">{t('accounts.refreshBalances')}</span>
+                            </Button>
+                            <BatchCheckInButton
+                              accountIds={providerAccounts.filter(a => a.enabled).map(a => a.id)}
+                              onComplete={() => {}}
+                            />
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <span className={cn("text-xs", isActive ? "opacity-90" : "opacity-70")}>
-                      {count}
-                    </span>
-                  </button>
+
+                    {/* Accounts Grid */}
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
+                      {providerAccounts.map((account) => (
+                        <AccountCard
+                          key={account.id}
+                          account={account}
+                          onEdit={handleEdit}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 );
               })}
             </div>
-          </ScrollArea>
-        </Card>
-      </div>
-
-      {/* Right Content - Stats & Grid */}
-      <div className="flex-1 flex flex-col overflow-hidden gap-6">
-        <ScrollArea className="flex-1 -mr-4 pr-4">
-          <div className="space-y-6 pb-6">
-            {/* Statistics - Single Card Design */}
-            {filteredStatistics && (
-              <Card className="border-border/50 shadow-sm bg-gradient-to-br from-background to-muted/20">
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-3 gap-8 divide-x divide-border/0">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-blue-500" />
-                        {t('dashboard.stats.totalIncome')}
-                      </span>
-                      <span className="text-3xl font-bold tracking-tight text-foreground">
-                        ${filteredStatistics.total_income.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-orange-500" />
-                        {t('dashboard.stats.historicalConsumption')}
-                      </span>
-                      <span className="text-3xl font-bold tracking-tight text-foreground">
-                        ${filteredStatistics.total_consumed.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-green-500" />
-                        {t('dashboard.stats.currentBalance')}
-                      </span>
-                      <span className="text-3xl font-bold tracking-tight text-foreground">
-                        ${filteredStatistics.total_current_balance.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Accounts List */}
-            {isLoading ? (
-              <AccountListSkeleton />
-            ) : filteredAccounts && filteredAccounts.length > 0 ? (
-              <div className="space-y-8">
-                {Object.entries(accountsByProvider).map(([providerId, providerAccounts]) => {
-                  const providerInfo = providers?.find(p => p.id === providerId);
-                  const providerName = providerInfo?.name || providerAccounts[0]?.provider_name || 'Unknown';
-                  const enabledCount = providerAccounts.filter(a => a.enabled).length;
-                  
-                  return (
-                    <div key={providerId} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      {/* Provider Header */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <h2 className="text-lg font-semibold tracking-tight">{providerName}</h2>
-                          <Badge variant="secondary" className="rounded-full px-2.5 text-xs">
-                            {providerAccounts.length}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {enabledCount > 0 && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 text-muted-foreground hover:text-foreground"
-                                onClick={() => handleRefreshProviderBalances(providerAccounts)}
-                                disabled={refreshAllBalancesMutation.isPending}
-                              >
-                                <RefreshCw className={`mr-2 h-3.5 w-3.5 ${refreshAllBalancesMutation.isPending ? 'animate-spin' : ''}`} />
-                                <span className="text-xs">{t('accounts.refreshBalances')}</span>
-                              </Button>
-                              <BatchCheckInButton
-                                accountIds={providerAccounts.filter(a => a.enabled).map(a => a.id)}
-                                onComplete={() => {}}
-                              />
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Accounts Grid */}
-                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
-                        {providerAccounts.map((account) => (
-                          <AccountCard
-                            key={account.id}
-                            account={account}
-                            onEdit={handleEdit}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+          ) : accounts && accounts.length > 0 && searchQuery ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Search className="h-6 w-6 text-muted-foreground" />
               </div>
-            ) : accounts && accounts.length > 0 && searchQuery ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <Search className="h-6 w-6 text-muted-foreground" />
+              <h3 className="text-lg font-semibold">{t('accounts.noResultsFor')} "{searchQuery}"</h3>
+              <p className="text-muted-foreground mt-1">{t('accounts.tryDifferentSearch')}</p>
+              <Button variant="link" onClick={() => setSearchQuery('')} className="mt-2">
+                {t('accounts.clearSearch')}
+              </Button>
+            </div>
+          ) : (
+            <Card className="border-dashed bg-muted/30">
+              <div className="p-12 text-center space-y-6">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Plus className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold">{t('accounts.noAccounts')}</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    {t('accounts.noAccountsDescription')}
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold">{t('accounts.noResultsFor')} "{searchQuery}"</h3>
-                <p className="text-muted-foreground mt-1">{t('accounts.tryDifferentSearch')}</p>
-                <Button variant="link" onClick={() => setSearchQuery('')} className="mt-2">
-                  {t('accounts.clearSearch')}
-                </Button>
+                <div className="flex gap-3 justify-center">
+                  <Button variant="default" onClick={handleCreate}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {t('accounts.addAccount')}
+                  </Button>
+                  <Button variant="secondary" onClick={() => setJsonImportDialogOpen(true)}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    {t('accounts.importJSON')}
+                  </Button>
+                </div>
               </div>
-            ) : (
-              <Card className="border-dashed bg-muted/30">
-                <div className="p-12 text-center space-y-6">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Plus className="h-8 w-8 text-primary" />
-                    </div>
-                    <h3 className="text-2xl font-bold">{t('accounts.noAccounts')}</h3>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                      {t('accounts.noAccountsDescription')}
-                    </p>
-                  </div>
-                  <div className="flex gap-3 justify-center">
-                    <Button variant="default" onClick={handleCreate}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      {t('accounts.addAccount')}
-                    </Button>
-                    <Button variant="secondary" onClick={() => setJsonImportDialogOpen(true)}>
-                      <Upload className="mr-2 h-4 w-4" />
-                      {t('accounts.importJSON')}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            )}
-          </div>
-        </ScrollArea>
-      </div>
+            </Card>
+          )}
+        </div>
+      </SidebarPageLayout>
 
       {/* Dialogs */}
       <AccountDialog

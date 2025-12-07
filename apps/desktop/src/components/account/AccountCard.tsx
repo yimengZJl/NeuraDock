@@ -139,14 +139,18 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
           {/* Footer: Auto Checkin & Manual Action */}
           {account.enabled && (
             <div className="flex items-center justify-between pt-2 border-t border-border/30">
-              {autoCheckinEnabled ? (
-                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full">
-                  <Clock className="h-3 w-3" />
+              <button 
+                onClick={() => onEdit(account)}
+                className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 px-2 py-1 rounded-md transition-colors"
+                title={t('accountCard.configureAutoCheckin')}
+              >
+                <Clock className="h-3 w-3" />
+                {autoCheckinEnabled ? (
                   <span>{autoCheckinTime}</span>
-                </div>
-              ) : (
-                <div />
-              )}
+                ) : (
+                  <span className="opacity-70">{t('accountCard.autoDisabled')}</span>
+                )}
+              </button>
 
               <CheckInButton
                 accountId={account.id}

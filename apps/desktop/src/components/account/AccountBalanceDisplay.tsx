@@ -24,12 +24,12 @@ export function AccountBalanceDisplay({
   }
 
   return (
-    <div className="relative">
-      {/* Refresh Button */}
+    <div className="relative group/balance">
+      {/* Refresh Button - Only visible on hover */}
       <Button
         variant="ghost"
         size="icon"
-        className="absolute -top-1 -right-1 h-6 w-6 rounded-full z-10"
+        className="absolute -top-2 -right-2 h-6 w-6 rounded-full z-10 opacity-0 group-hover/balance:opacity-100 transition-opacity"
         onClick={(e) => {
           e.stopPropagation();
           onRefresh();
@@ -40,25 +40,31 @@ export function AccountBalanceDisplay({
         <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
       </Button>
 
-      <div className="grid grid-cols-3 gap-2 text-xs bg-muted/30 rounded-xl p-3">
+      <div className="space-y-2">
         {balance ? (
           <>
-            <div className="text-center">
-              <p className="text-muted-foreground mb-0.5">{t('accountCard.totalIncome')}</p>
-              <p className="font-semibold text-blue-600">{formatCurrency(balance.total_income)}</p>
+            <div className="flex justify-between items-baseline">
+              <span className="text-xs text-muted-foreground">{t('accountCard.currentBalance')}</span>
+              <span className="font-bold text-sm text-green-600 dark:text-green-400 truncate max-w-[120px]" title={formatCurrency(balance.current_balance)}>
+                {formatCurrency(balance.current_balance)}
+              </span>
             </div>
-            <div className="text-center border-x">
-              <p className="text-muted-foreground mb-0.5">{t('accountCard.historicalConsumption')}</p>
-              <p className="font-semibold text-orange-600">{formatCurrency(balance.total_consumed)}</p>
+            <div className="flex justify-between items-baseline">
+              <span className="text-xs text-muted-foreground">{t('accountCard.totalIncome')}</span>
+              <span className="font-medium text-xs text-blue-600 dark:text-blue-400 truncate max-w-[120px]" title={formatCurrency(balance.total_income)}>
+                {formatCurrency(balance.total_income)}
+              </span>
             </div>
-            <div className="text-center">
-              <p className="text-muted-foreground mb-0.5">{t('accountCard.currentBalance')}</p>
-              <p className="font-semibold text-green-600">{formatCurrency(balance.current_balance)}</p>
+            <div className="flex justify-between items-baseline">
+              <span className="text-xs text-muted-foreground">{t('accountCard.historicalConsumption')}</span>
+              <span className="font-medium text-xs text-orange-600 dark:text-orange-400 truncate max-w-[120px]" title={formatCurrency(balance.total_consumed)}>
+                {formatCurrency(balance.total_consumed)}
+              </span>
             </div>
           </>
         ) : (
-          <div className="col-span-3 flex items-center justify-center py-2">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         )}
       </div>
