@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Account } from '@/lib/tauri-commands';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,13 +25,14 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 
 interface AccountCardProps {
   account: Account;
   onEdit: (account: Account) => void;
 }
 
-export function AccountCard({ account, onEdit }: AccountCardProps) {
+export const AccountCard = memo(function AccountCard({ account, onEdit }: AccountCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { t } = useTranslation();
 
@@ -62,158 +63,168 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
   const autoCheckinTime = `${String(account.auto_checkin_hour || 9).padStart(2, '0')}:${String(account.auto_checkin_minute || 0).padStart(2, '0')}`;
 
   return (
-    <Card className={`relative hover:shadow-lg transition-all rounded-2xl ${!account.enabled ? 'opacity-60' : ''}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            {/* 邮箱单独一行 */}
-            <h3 className="font-medium text-sm truncate mb-2" title={account.name}>
-              {account.name}
-            </h3>
-            {/* 状态和Session过期信息在第二行 */}
-            <div className="flex items-center gap-2 text-xs">
-              <Badge variant={account.enabled ? 'default' : 'secondary'} className="text-xs rounded-full">
-                {account.enabled ? t('accountCard.active') : t('accountCard.disabled')}
-              </Badge>
-              {/* Session过期提醒 */}
-              {account.session_expires_at ? (
-                account.session_expires_soon ? (
-                  <span className="flex items-center gap-1 text-amber-600">
-                    <AlertTriangle className="h-3 w-3" />
-                    {account.session_days_remaining !== undefined && account.session_days_remaining <= 0
-                      ? t('accountCard.sessionExpired')
-                      : t('accountCard.sessionExpiresSoon', { days: account.session_days_remaining })}
-                  </span>
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      whileHover={{ y: -2 }}
+      className="h-full"
+    >
+      <Card className={`relative h-full transition-shadow duration-300 rounded-2xl border-border/50 bg-card/50 backdrop-blur-sm ${!account.enabled ? 'opacity-60' : ''} hover:shadow-lg`}>
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              {/* 邮箱单独一行 */}
+              <h3 className="font-medium text-sm truncate mb-2" title={account.name}>
+                {account.name}
+              </h3>
+              {/* 状态和Session过期信息在第二行 */}
+              <div className="flex items-center gap-2 text-xs">
+                <Badge variant={account.enabled ? 'default' : 'secondary'} className="text-xs rounded-full">
+                  {account.enabled ? t('accountCard.active') : t('accountCard.disabled')}
+                </Badge>
+                {/* Session过期提醒 */}
+                {account.session_expires_at ? (
+                  account.session_expires_soon ? (
+                    <span className="flex items-center gap-1 text-amber-600">
+                      <AlertTriangle className="h-3 w-3" />
+                      {account.session_days_remaining !== undefined && account.session_days_remaining <= 0
+                        ? t('accountCard.sessionExpired')
+                        : t('accountCard.sessionExpiresSoon', { days: account.session_days_remaining })}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {t('accountCard.sessionValidDays', { days: account.session_days_remaining })}
+                    </span>
+                  )
                 ) : (
-                  <span className="text-muted-foreground">
-                    {t('accountCard.sessionValidDays', { days: account.session_days_remaining })}
+                  <span className="text-muted-foreground/50">
+                    {t('accountCard.sessionUnknown')}
                   </span>
-                )
-              ) : (
-                <span className="text-muted-foreground/50">
-                  {t('accountCard.sessionUnknown')}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded-xl">
-              <DropdownMenuItem onClick={() => onEdit(account)} className="rounded-lg">
-                <Edit className="h-4 w-4 mr-2" />
-                {t('accountCard.edit')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleToggle} className="rounded-lg">
-                {account.enabled ? (
-                  <>
-                    <PowerOff className="h-4 w-4 mr-2" />
-                    {t('accountCard.disable')}
-                  </>
-                ) : (
-                  <>
-                    <Power className="h-4 w-4 mr-2" />
-                    {t('accountCard.enable')}
-                  </>
                 )}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setShowDeleteConfirm(true)}
-                className="text-destructive focus:text-destructive rounded-lg"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                {t('accountCard.delete')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-3">
-        {/* 余额信息 */}
-        {account.enabled && (
-          <AccountBalanceDisplay
-            balance={balance}
-            isLoading={isBalanceLoading}
-            isRefreshing={isRefreshingBalance || isBalanceFetching}
-            onRefresh={handleRefreshBalance}
-          />
-        )}
-
-        {/* 自动签到信息和手动签到按钮 */}
-        {account.enabled && (
-          <div className="flex items-center justify-between gap-2">
-            {/* 左侧：自动签到信息 */}
-            {autoCheckinEnabled ? (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Clock className="h-3.5 w-3.5" />
-                <span>{t('accountCard.autoAt')} {autoCheckinTime}</span>
               </div>
-            ) : (
-              <div className="text-xs text-muted-foreground">
-                {t('accountCard.autoDisabled')}
-              </div>
-            )}
+            </div>
 
-            {/* 右侧：手动签到按钮（小圆形） */}
-            <CheckInButton
-              accountId={account.id}
-              accountName={account.name}
-              size="sm"
-              variant="outline"
-              className="rounded-full h-7 px-3 text-xs"
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="rounded-xl">
+                <DropdownMenuItem onClick={() => onEdit(account)} className="rounded-lg">
+                  <Edit className="h-4 w-4 mr-2" />
+                  {t('accountCard.edit')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleToggle} className="rounded-lg">
+                  {account.enabled ? (
+                    <>
+                      <PowerOff className="h-4 w-4 mr-2" />
+                      {t('accountCard.disable')}
+                    </>
+                  ) : (
+                    <>
+                      <Power className="h-4 w-4 mr-2" />
+                      {t('accountCard.enable')}
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="text-destructive focus:text-destructive rounded-lg"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {t('accountCard.delete')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-3">
+          {/* 余额信息 */}
+          {account.enabled && (
+            <AccountBalanceDisplay
+              balance={balance}
+              isLoading={isBalanceLoading}
+              isRefreshing={isRefreshingBalance || isBalanceFetching}
+              onRefresh={handleRefreshBalance}
             />
-          </div>
-        )}
+          )}
 
-        {/* 模型列表 */}
-        {account.enabled && (
-          <ProviderModelsSection
-            providerId={account.provider_id}
-            providerName={account.provider_name}
-            accountId={account.id}
-            compact={true}
-          />
-        )}
-      </CardContent>
+          {/* 自动签到信息和手动签到按钮 */}
+          {account.enabled && (
+            <div className="flex items-center justify-between gap-2">
+              {/* 左侧：自动签到信息 */}
+              {autoCheckinEnabled ? (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>{t('accountCard.autoAt')} {autoCheckinTime}</span>
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground">
+                  {t('accountCard.autoDisabled')}
+                </div>
+              )}
 
-      {/* 删除确认对话框 */}
-      {showDeleteConfirm && (
-        <div className="absolute inset-0 bg-background/95 backdrop-blur-sm rounded-2xl flex items-center justify-center p-4 z-10">
-          <div className="text-center space-y-3 w-full">
-            <div>
-              <h4 className="font-semibold text-sm">{t('accountCard.deleteConfirm')}</h4>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('accountCard.deleteWarning')}
-              </p>
-            </div>
-            <div className="flex gap-2 justify-center">
-              <Button
+              {/* 右侧：手动签到按钮（小圆形） */}
+              <CheckInButton
+                accountId={account.id}
+                accountName={account.name}
+                size="sm"
                 variant="outline"
-                size="sm"
-                onClick={() => setShowDeleteConfirm(false)}
-                className="rounded-full"
-              >
-                {t('accountCard.cancel')}
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={confirmDelete}
-                disabled={isDeleting}
-                className="rounded-full"
-              >
-                {isDeleting ? t('accountCard.deleting') : t('accountCard.delete')}
-              </Button>
+                className="rounded-full h-7 px-3 text-xs"
+              />
+            </div>
+          )}
+
+          {/* 模型列表 */}
+          {account.enabled && (
+            <ProviderModelsSection
+              providerId={account.provider_id}
+              providerName={account.provider_name}
+              accountId={account.id}
+              compact={true}
+            />
+          )}
+        </CardContent>
+
+        {/* 删除确认对话框 */}
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 bg-background/95 backdrop-blur-sm rounded-2xl flex items-center justify-center p-4 z-10">
+            <div className="text-center space-y-3 w-full">
+              <div>
+                <h4 className="font-semibold text-sm">{t('accountCard.deleteConfirm')}</h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t('accountCard.deleteWarning')}
+                </p>
+              </div>
+              <div className="flex gap-2 justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="rounded-full"
+                >
+                  {t('accountCard.cancel')}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={confirmDelete}
+                  disabled={isDeleting}
+                  className="rounded-full"
+                >
+                  {isDeleting ? t('accountCard.deleting') : t('accountCard.delete')}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </Card>
+        )}
+      </Card>
+    </motion.div>
   );
-}
+});
