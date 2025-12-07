@@ -158,6 +158,7 @@ export function CheckInStreaksPage() {
                       <button
                         key={account.account_id}
                         onClick={() => setSelectedAccountId(account.account_id)}
+                        title={account.account_name}
                         className={cn(
                           "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                           isActive 

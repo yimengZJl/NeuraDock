@@ -114,22 +114,23 @@ export function SettingsPage() {
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
+                  "w-full flex items-start gap-3 px-3 py-3 rounded-lg text-left transition-colors",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
+                title={t(item.descKey)}
               >
-                <Icon className="h-5 w-5 shrink-0" />
+                <Icon className="h-5 w-5 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <div className={cn(
-                    "text-sm font-medium truncate",
+                    "text-sm font-medium leading-none",
                     isActive && "font-semibold"
                   )}>
                     {t(item.labelKey)}
                   </div>
                   <div className={cn(
-                    "text-xs truncate mt-0.5",
+                    "text-xs mt-1.5 line-clamp-2 leading-tight break-words",
                     isActive
                       ? "text-primary-foreground/80"
                       : "text-muted-foreground/70"
@@ -138,7 +139,7 @@ export function SettingsPage() {
                   </div>
                 </div>
                 {isActive && (
-                  <ChevronRight className="h-4 w-4 shrink-0" />
+                  <ChevronRight className="h-4 w-4 shrink-0 mt-1" />
                 )}
               </button>
             );
