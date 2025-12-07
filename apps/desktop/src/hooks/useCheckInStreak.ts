@@ -58,6 +58,7 @@ export function useCheckInStreak(accountId: string, enabled = true) {
     queryKey: ['checkInStreak', accountId],
     queryFn: () => invoke<CheckInStreakDto>('get_check_in_streak', { accountId }),
     enabled: enabled && !!accountId,
+    staleTime: 60000, // 1 minute
   });
 }
 
@@ -66,6 +67,7 @@ export function useAllCheckInStreaks() {
   return useQuery({
     queryKey: ['checkInStreaks'],
     queryFn: () => invoke<CheckInStreakDto[]>('get_all_check_in_streaks'),
+    staleTime: 60000, // 1 minute
   });
 }
 
@@ -85,6 +87,7 @@ export function useCheckInCalendar(
         month,
       }),
     enabled: enabled && !!accountId,
+    staleTime: 60000, // 1 minute
   });
 }
 
@@ -98,6 +101,7 @@ export function useCheckInTrend(accountId: string, days: number = 30, enabled = 
         days,
       }),
     enabled: enabled && !!accountId,
+    staleTime: 60000, // 1 minute
   });
 }
 

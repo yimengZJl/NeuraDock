@@ -1,4 +1,4 @@
-import { useState, memo } from 'react';
+import { useState } from 'react';
 import { Account } from '@/lib/tauri-commands';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +32,7 @@ interface AccountCardProps {
   onEdit: (account: Account) => void;
 }
 
-export const AccountCard = memo(function AccountCard({ account, onEdit }: AccountCardProps) {
+export function AccountCard({ account, onEdit }: AccountCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { t } = useTranslation();
 
@@ -227,4 +227,4 @@ export const AccountCard = memo(function AccountCard({ account, onEdit }: Accoun
       </Card>
     </motion.div>
   );
-});
+}

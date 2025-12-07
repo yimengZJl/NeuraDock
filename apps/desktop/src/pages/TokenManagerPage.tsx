@@ -26,6 +26,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { TokenDto, AccountDto, ProviderNode } from '@/types/token';
 
+import { PageContainer } from '@/components/layout/PageContainer';
+
 export function TokenManagerPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -167,7 +169,7 @@ export function TokenManagerPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <PageContainer className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -378,6 +380,6 @@ export function TokenManagerPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

@@ -17,6 +17,8 @@ import { Account } from '@/lib/tauri-commands';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+import { PageContainer } from '@/components/layout/PageContainer';
+
 export function AccountsPage() {
   const { data: accounts, isLoading } = useAccounts();
   const { data: providers } = useProviders();
@@ -77,7 +79,7 @@ export function AccountsPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <PageContainer className="space-y-6">
       {/* Header with Statistics */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -299,6 +301,6 @@ export function AccountsPage() {
         open={batchUpdateDialogOpen}
         onOpenChange={setBatchUpdateDialogOpen}
       />
-    </div>
+    </PageContainer>
   );
 }

@@ -9,23 +9,26 @@ import { AccountsPage } from './pages/AccountsPage';
 import { CheckInStreaksPage } from './pages/CheckInStreaksPage';
 import { TokenManagerPage } from './pages/TokenManagerPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <BrowserRouter>
-          <MainLayout>
-            <Routes>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/accounts" element={<AccountsPage />} />
-              <Route path="/streaks" element={<CheckInStreaksPage />} />
-              <Route path="/tokens" element={<TokenManagerPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Routes>
-          </MainLayout>
-          <Toaster />
-        </BrowserRouter>
+        <TooltipProvider delayDuration={0}>
+          <BrowserRouter>
+            <MainLayout>
+              <Routes>
+                <Route path="/" element={<DashboardPage />} />
+                <Route path="/accounts" element={<AccountsPage />} />
+                <Route path="/streaks" element={<CheckInStreaksPage />} />
+                <Route path="/tokens" element={<TokenManagerPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Routes>
+            </MainLayout>
+            <Toaster />
+          </BrowserRouter>
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

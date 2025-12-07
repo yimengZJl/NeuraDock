@@ -15,6 +15,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { NotificationChannelList } from '@/components/notification/NotificationChannelList';
 import { useNotificationChannels } from '@/hooks/useNotificationChannels';
 import { cn } from '@/lib/utils';
+import { PageContainer } from '@/components/layout/PageContainer';
 
 type SettingSection = 'appearance' | 'performance' | 'notifications' | 'developer' | 'about';
 
@@ -373,7 +374,7 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 w-full">
+    <PageContainer className="space-y-6 w-full">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{t('settings.title')}</h1>
@@ -433,6 +434,6 @@ export function SettingsPage() {
           {renderContent()}
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

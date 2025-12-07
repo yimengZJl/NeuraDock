@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Select,
   SelectContent,
@@ -22,19 +23,22 @@ export function AccountStreakSelector({
   onAccountChange,
 }: AccountStreakSelectorProps) {
   const { t } = useTranslation();
-  const accountsByProvider = accounts.reduce<Record<string, {
-    providerName: string;
-    accounts: CheckInStreakDto[];
-  }>>((acc, account) => {
-    if (!acc[account.provider_id]) {
-      acc[account.provider_id] = {
-        providerName: account.provider_name,
-        accounts: [],
-      };
-    }
-    acc[account.provider_id].accounts.push(account);
-    return acc;
-  }, {});
+  
+  const accountsByProvider = useMemo(() => {
+    return accounts.reduce<Record<string, {
+      providerName: string;
+      accounts: CheckInStreakDto[];
+    }>>((acc, account) => {
+      if (!acc[account.provider_id]) {
+        acc[account.provider_id] = {
+          providerName: account.provider_name,
+          accounts: [],
+        };
+      }
+      acc[account.provider_id].accounts.push(account);
+      return acc;
+    }, {});
+  }, [accounts]);
 
   return (
     <Select value={selectedAccountId} onValueChange={onAccountChange}>

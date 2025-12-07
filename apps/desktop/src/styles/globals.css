@@ -43,14 +43,23 @@
     --ring: 221 83% 53%;
     
     /* Radius Tokens */
-    --radius-sm: 0.5rem;    /* 8px - Badges, Small Inputs */
-    --radius-md: 0.75rem;   /* 12px - Buttons, Inputs, Popovers */
-    --radius-lg: 1rem;      /* 16px - Cards, Dialogs */
-    --radius-full: 9999px;  /* Pills, Avatars */
+    --radius-sm: 0.5rem;    /* 8px */
+    --radius-md: 0.75rem;   /* 12px */
+    --radius-lg: 1rem;      /* 16px */
+    --radius-full: 9999px;
+    
+    /* Layout Colors - Light */
+    /* Sidebar: Slightly warmer/darker than content to push it back */
+    --sidebar-background: 40 15% 96%; 
+    --sidebar-foreground: 220 13% 13%;
+    --sidebar-border: 40 10% 90%;
+    
+    /* Content Canvas: Pure white for maximum focus */
+    --background: 0 0% 100%; 
+    --foreground: 220 13% 13%;
     
     /* macOS specific - warm tones */
     --sidebar: 40 15% 97%;
-    --sidebar-foreground: 220 13% 13%;
     --topbar: 40 20% 97%;
     
     /* Success: fresh green */
@@ -105,9 +114,18 @@
     --input: 222 47% 25%;
     --ring: 217 91% 60%;
     
+    /* Layout Colors - Dark */
+    /* Sidebar: Deep dark, slightly transparent feel */
+    --sidebar-background: 222 47% 10%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-border: 222 47% 15%;
+    
+    /* Content Canvas: Slightly lighter/elevated surface */
+    --background: 222 47% 12%;
+    --foreground: 210 40% 98%;
+    
     /* macOS specific */
     --sidebar: 222 47% 12%;
-    --sidebar-foreground: 210 40% 98%;
     --topbar: 222 47% 11%;
     
     /* Success: vibrant green */

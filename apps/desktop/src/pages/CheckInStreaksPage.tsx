@@ -15,59 +15,69 @@ import {
 } from '@/hooks/useCheckInStreak';
 import { useTranslation } from 'react-i18next';
 
+import { PageContainer } from '@/components/layout/PageContainer';
+
 export function CheckInStreaksPage() {
   const { t } = useTranslation();
   const [selectedAccountId, setSelectedAccountId] = useState<string>('all');
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [calendarDate, setCalendarDate] = useState({
-    year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1,
-  });
-
   const { data: allStreaks, isLoading: isLoadingStreaks } = useAllCheckInStreaks();
-  const { data: streak } = useCheckInStreak(
-    selectedAccountId !== 'all' ? selectedAccountId : '',
-    selectedAccountId !== 'all'
-  );
-  const { data: calendar } = useCheckInCalendar(
-    selectedAccountId !== 'all' ? selectedAccountId : '',
-    calendarDate.year,
-    calendarDate.month,
-    selectedAccountId !== 'all'
-  );
-  const { data: trend } = useCheckInTrend(
-    selectedAccountId !== 'all' ? selectedAccountId : '',
-    30,
-    selectedAccountId !== 'all'
-  );
+  const [calendarDate, setCalendarDate] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  });
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  const selectedAccount =
-    selectedAccountId !== 'all'
-      ? allStreaks?.find((account) => account.account_id === selectedAccountId) ?? null
-      : null;
-
-  const providerGroups = useMemo(() => {
-    if (!allStreaks) return [] as Array<{
-      providerId: string;
-      providerName: string;
-      accounts: CheckInStreakDto[];
-    }>;
-
-    const map = new Map<string, { providerId: string; providerName: string; accounts: CheckInStreakDto[] }>();
-
-    for (const account of allStreaks) {
-      if (!map.has(account.provider_id)) {
-        map.set(account.provider_id, {
-          providerId: account.provider_id,
-          providerName: account.provider_name,
-          accounts: [],
-        });
-      }
-      map.get(account.provider_id)!.accounts.push(account);
+  const selectedAccount = useMemo<CheckInStreakDto | undefined>(() => {
+    if (!allStreaks || selectedAccountId === 'all') {
+      return undefined;
     }
 
-    return Array.from(map.values());
-  }, [allStreaks]);
+    return allStreaks.find((streak) => streak.account_id === selectedAccountId);
+  }, [allStreaks, selectedAccountId]);
+
+  const accountIdForDetails =
+    selectedAccountId === 'all' ? selectedAccount?.account_id ?? null : selectedAccountId;
+  const detailsEnabled = !!accountIdForDetails;
+
+  const { data: streak } = useCheckInStreak(accountIdForDetails ?? '', detailsEnabled);
+  const { data: calendar } = useCheckInCalendar(
+    accountIdForDetails ?? '',
+    calendarDate.year,
+    calendarDate.month,
+    detailsEnabled
+  );
+  const { data: trend } = useCheckInTrend(accountIdForDetails ?? '', 90, detailsEnabled);
+
+  const providerGroups = useMemo(
+    () => {
+      if (!allStreaks) {
+        return [] as {
+          providerId: string;
+          providerName: string;
+          accounts: CheckInStreakDto[];
+        }[];
+      }
+
+      const groupsMap = new Map<
+        string,
+        { providerId: string; providerName: string; accounts: CheckInStreakDto[] }
+      >();
+
+      allStreaks.forEach((streakItem) => {
+        if (!groupsMap.has(streakItem.provider_id)) {
+          groupsMap.set(streakItem.provider_id, {
+            providerId: streakItem.provider_id,
+            providerName: streakItem.provider_name,
+            accounts: [],
+          });
+        }
+        groupsMap.get(streakItem.provider_id)!.accounts.push(streakItem);
+      });
+
+      return Array.from(groupsMap.values());
+    },
+    [allStreaks]
+  );
 
   const handleDateClick = (date: string) => {
     setSelectedDate(date);
@@ -77,32 +87,38 @@ export function CheckInStreaksPage() {
     setCalendarDate({ year, month });
   };
 
-  const selectedDayData = calendar?.days.find((d) => d.date === selectedDate) || null;
+  const selectedDayData = useMemo(() => {
+    if (!calendar || !selectedDate) {
+      return null;
+    }
+
+    return calendar.days.find((day) => day.date === selectedDate) ?? null;
+  }, [calendar, selectedDate]);
 
   if (isLoadingStreaks) {
     return (
-      <div className="container mx-auto p-6">
+      <PageContainer>
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   // If no accounts have data, show empty state
   if (!allStreaks || allStreaks.length === 0) {
     return (
-      <div className="container mx-auto p-6">
+      <PageContainer>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <p className="text-muted-foreground">{t('streaks.emptyTitle')}</p>
           <p className="text-sm text-muted-foreground">{t('streaks.emptyDescription')}</p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <PageContainer className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
@@ -127,12 +143,12 @@ export function CheckInStreaksPage() {
           {/* Group accounts by provider similar to Accounts page */}
           <div className="space-y-6">
             {providerGroups.map((group) => (
-              <Card key={group.providerId} className="border-2 rounded-2xl">
+              <Card key={group.providerId} className="border-none shadow-sm bg-muted/20">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <CardTitle className="text-xl font-semibold">{group.providerName}</CardTitle>
-                      <Badge variant="outline" className="rounded-full">
+                      <Badge variant="outline" className="rounded-full bg-background">
                         {t('streaks.accountCount', { count: group.accounts.length })}
                       </Badge>
                     </div>
@@ -152,7 +168,7 @@ export function CheckInStreaksPage() {
                             setSelectedAccountId(accountStreak.account_id);
                           }
                         }}
-                        className="rounded-2xl border transition-all hover:border-primary/50 cursor-pointer"
+                        className="rounded-xl border-none shadow-sm bg-background transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer active:scale-95"
                       >
                         <CardContent className="p-4 space-y-3">
                           <div className="flex items-start justify-between">
@@ -352,6 +368,6 @@ export function CheckInStreaksPage() {
         onOpenChange={(open) => !open && setSelectedDate(null)}
         dayData={selectedDayData}
       />
-    </div>
+    </PageContainer>
   );
 }
