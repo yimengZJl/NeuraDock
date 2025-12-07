@@ -6,7 +6,7 @@
   "nav": {
     "dashboard": "Home",
     "accounts": "Accounts",
-    "streaks": "Streaks",
+    "streaks": "Check-in",
     "tokens": "Tokens",
     "settings": "Settings"
   },
@@ -228,7 +228,7 @@
     "balance": "Balance"
   },
   "streaks": {
-    "pageTitle": "Check-in Streaks",
+    "pageTitle": "Check-in",
     "emptyTitle": "No check-in data",
     "emptyDescription": "Run a check-in to start building streak statistics.",
     "allAccountsNotice": "Showing all accounts. Select one to view detailed check-in data.",
@@ -347,7 +347,7 @@
     "add": "Add"
   },
   "token": {
-    "title": "Token Manager",
+    "title": "Tokens",
     "description": "Manage API tokens for AnyRouter and AgentRouter accounts",
     "selectAccount": "Select Account",
     "chooseAccount": "Choose an account...",

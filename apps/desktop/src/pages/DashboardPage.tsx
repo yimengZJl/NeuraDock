@@ -143,7 +143,7 @@ export function DashboardPage() {
                 <Card key={provider.provider_id} className="overflow-hidden border-none shadow-sm bg-card/50">
                   <CardContent className="p-0">
                     {/* Provider Header */}
-                    <div className="p-6 bg-muted/20 border-b border-border/50 flex items-center justify-between">
+                    <div className="p-6 bg-muted/20 flex items-center justify-between">
                       <div>
                         <h3 className="text-lg font-semibold">{provider.provider_name}</h3>
                         <p className="text-sm text-muted-foreground">

@@ -5,9 +5,9 @@
   },
   "nav": {
     "dashboard": "主页",
-    "accounts": "账号管理",
-    "streaks": "签到统计",
-    "tokens": "令牌管理",
+    "accounts": "账号",
+    "streaks": "签到",
+    "tokens": "令牌",
     "settings": "设置"
   },
   "sidebar": {
@@ -46,7 +46,7 @@
     "remaining": "剩余"
   },
   "accounts": {
-    "title": "账号管理",
+    "title": "账号",
     "description": "管理您的签到账号和凭据",
     "addAccount": "添加账号",
     "importJSON": "导入 JSON",
@@ -228,7 +228,7 @@
     "balance": "余额"
   },
   "streaks": {
-    "pageTitle": "连续签到统计",
+    "pageTitle": "签到",
     "emptyTitle": "暂无签到数据",
     "emptyDescription": "执行签到操作后，系统会自动记录签到统计。",
     "allAccountsNotice": "当前显示所有账户。请选择一个账户查看详细签到数据。",
@@ -347,7 +347,7 @@
     "add": "添加"
   },
   "token": {
-    "title": "令牌管理",
+    "title": "令牌",
     "description": "管理 AnyRouter 和 AgentRouter 账号的 API 令牌",
     "selectAccount": "选择账号",
     "chooseAccount": "选择一个账号...",
