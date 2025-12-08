@@ -391,6 +391,8 @@
     "copyToClipboard": "复制到剪贴板",
     "configError": "配置失败：",
     "generateError": "生成命令失败：",
+    "tokenRestrictedNoCompatibleModels": "此令牌受限于特定模型，不支持所选工具。",
+    "providerNoCompatibleModels": "此中转站不支持与所选工具兼容的模型。",
     "copied": "命令已复制到剪贴板",
     "copyError": "复制失败",
     "refreshSuccess": "令牌刷新成功",

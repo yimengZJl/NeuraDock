@@ -139,49 +139,35 @@ export function ConfigDialog({
 
     if (availableModels.length === 0) {
       setIsCompatible(false);
-      setCompatibilityWarning(t('token.configDialog.noCompatibleModels', '未找到可用模型'));
+      setCompatibilityWarning(t('token.configDialog.noCompatibleModels', 'No available models found'));
       return;
     }
 
     const modelsLower = availableModels.map(m => m.toLowerCase());
+    let hasCompatible = false;
 
     if (selectedTool === 'claude') {
-      const hasCompatible = modelsLower.some(m =>
+      hasCompatible = modelsLower.some(m =>
         m.includes('claude') || m.includes('glm') || m.includes('deepseek')
       );
-
-      if (!hasCompatible) {
-        setIsCompatible(false);
-        setCompatibilityWarning(t('token.noCompatibleModelsForClaude', '中转站可能不支持 Claude 兼容模型'));
-      } else {
-        setIsCompatible(true);
-        setCompatibilityWarning('');
-      }
     } else if (selectedTool === 'codex') {
-      const hasGPT = modelsLower.some(m => m.includes('gpt'));
-
-      if (!hasGPT) {
-        setIsCompatible(false);
-        setCompatibilityWarning(t('token.noGPTModels', '中转站可能不支持 GPT 模型'));
-      } else {
-        setIsCompatible(true);
-        setCompatibilityWarning('');
-      }
+      hasCompatible = modelsLower.some(m => m.includes('gpt'));
     } else if (selectedTool === 'gemini') {
-      const hasGemini = modelsLower.some(m => m.includes('gemini'));
+      hasCompatible = modelsLower.some(m => m.includes('gemini'));
+    }
 
-      if (!hasGemini) {
-        setIsCompatible(false);
-        setCompatibilityWarning(t('token.noGeminiModels', '中转站可能不支持 Gemini 模型'));
+    if (!hasCompatible) {
+      setIsCompatible(false);
+      if (modelLimitsEnabled) {
+        setCompatibilityWarning(t('token.tokenRestrictedNoCompatibleModels', 'This token is restricted to specific models and does not support the selected tool.'));
       } else {
-        setIsCompatible(true);
-        setCompatibilityWarning('');
+        setCompatibilityWarning(t('token.providerNoCompatibleModels', 'This provider does not support models compatible with the selected tool.'));
       }
     } else {
       setIsCompatible(true);
       setCompatibilityWarning('');
     }
-  }, [token, selectedTool, open, availableModels, t, isModelListLoading]);
+  }, [token, selectedTool, open, availableModels, t, isModelListLoading, modelLimitsEnabled]);
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -327,10 +313,22 @@ export function ConfigDialog({
         <div className="flex h-full">
           {/* Left Sidebar - Tool Selection */}
           <div className="w-64 bg-background/80 border-r flex flex-col shrink-0 backdrop-blur-sm">
-            <div className="p-5 border-b">
-              <h2 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                {t('token.selectTool', 'Integrations')}
-              </h2>
+            <div className="p-5 border-b space-y-3">
+              <div>
+                <h2 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                  {t('token.selectTool', 'Integrations')}
+                </h2>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="font-medium text-primary truncate max-w-[140px]" title={token.name}>
+                    {token.name}
+                  </span>
+                  {modelLimitsEnabled && (
+                    <Badge variant="secondary" className="h-4 px-1 text-[9px] rounded-sm">
+                      Limits
+                    </Badge>
+                  )}
+                </div>
+              </div>
               <p className="text-[10px] text-muted-foreground/70">
                 {t('token.configDialog.toolDescription', 'Select the tool you want to configure')}
               </p>

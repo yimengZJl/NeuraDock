@@ -391,6 +391,8 @@
     "copyToClipboard": "Copy to Clipboard",
     "configError": "Configuration failed: ",
     "generateError": "Failed to generate commands: ",
+    "tokenRestrictedNoCompatibleModels": "This token is restricted to specific models and does not support the selected tool.",
+    "providerNoCompatibleModels": "This provider does not support models compatible with the selected tool.",
     "copied": "Commands copied to clipboard",
     "copyError": "Failed to copy",
     "refreshSuccess": "Tokens refreshed successfully",

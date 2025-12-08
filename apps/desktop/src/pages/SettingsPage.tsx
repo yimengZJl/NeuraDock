@@ -46,12 +46,9 @@ const navigationItems: NavigationItem[] = [
 const AppearanceSettings = () => {
   const { theme, setTheme } = useTheme();
   const { t, i18n } = useTranslation();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
-
-  useEffect(() => {
-    const sidebarStored = localStorage.getItem('sidebarCollapsed');
-    setSidebarCollapsed(sidebarStored === 'true');
-  }, []);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebarCollapsed') === 'true';
+  });
 
   const handleSidebarToggle = (checked: boolean) => {
     setSidebarCollapsed(checked);
@@ -67,7 +64,7 @@ const AppearanceSettings = () => {
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-10">
       {/* Header */}
       <div className="space-y-1">
         <h2 className="text-2xl font-bold tracking-tight">{t('settings.appearance')}</h2>

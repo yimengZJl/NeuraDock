@@ -47,8 +47,8 @@ export function Sidebar() {
   return (
     <aside 
       className={cn(
-        "flex flex-col h-full items-center pt-10 pb-4 transition-all duration-300 select-none bg-sidebar/50 backdrop-blur-sm border-r border-sidebar-border/50",
-        collapsed ? "w-[72px]" : "w-64"
+        "flex flex-col h-full items-center pt-10 pb-4 transition-all duration-300 select-none bg-sidebar/50 backdrop-blur-sm",
+        collapsed ? "w-[72px]" : "w-32"
       )}
       data-tauri-drag-region
     >
