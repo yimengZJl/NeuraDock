@@ -319,10 +319,15 @@
     "sidebarMode": "Sidebar Mode",
     "sidebarModeDescription": "Toggle sidebar text labels",
     "sidebarIconOnly": "Icon Only",
-    "sidebarIconWithText": "Icon + Text"
+    "sidebarIconWithText": "Icon + Text",
+    "sidebarExpandedDesc": "Show icon and text label",
+    "sidebarCollapsedDesc": "Show icon only to save space",
+    "cacheControl": "Cache Control",
+    "systemInfo": "System Information"
   },
   "common": {
     "loading": "Loading...",
+    "active": "Active",
     "error": "Error",
     "success": "Success",
     "confirm": "Confirm",

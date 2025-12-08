@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Trash2, TestTube2, Plus, Check, X, Mail, MessageSquare, Send } from 'lucide-react';
+import { Bell, Trash2, TestTube2, Plus, Mail, MessageSquare, Send, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -119,12 +119,12 @@ export function NotificationChannelList({ channels, onUpdate }: NotificationChan
     return t(`notification.channel.${type}`, type);
   };
 
-  const getChannelTypeColor = (type: string) => {
+  const getChannelStyle = (type: string) => {
     switch (type) {
       case 'feishu':
-        return 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400';
+        return 'bg-[#3370ff]/10 text-[#3370ff] dark:bg-[#3370ff]/20 dark:text-[#5c8dff]';
       case 'dingtalk':
-        return 'bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400';
+        return 'bg-[#007fff]/10 text-[#007fff] dark:bg-[#007fff]/20 dark:text-[#4da6ff]';
       case 'email':
         return 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400';
       default:
@@ -144,7 +144,7 @@ export function NotificationChannelList({ channels, onUpdate }: NotificationChan
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between pb-2">
-        <Button onClick={handleAddNew} className="rounded-full ml-auto">
+        <Button onClick={handleAddNew} className="rounded-full shadow-sm ml-auto">
           <Plus className="h-4 w-4 mr-2" />
           {t('notification.addChannel')}
         </Button>
@@ -167,91 +167,115 @@ export function NotificationChannelList({ channels, onUpdate }: NotificationChan
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3">
+        <div className="space-y-3">
           {channels.map((channel) => {
             const config = parseConfig(channel.config);
             const Icon = getChannelTypeIcon(channel.channel_type);
+            const styleClass = getChannelStyle(channel.channel_type);
             
             return (
               <Card 
                 key={channel.id} 
                 className={cn(
-                  "rounded-xl border-none shadow-sm transition-all duration-200",
-                  channel.enabled 
-                    ? "bg-primary/5 ring-1 ring-primary/20" 
-                    : "bg-muted/30 hover:bg-muted/50"
+                  "border shadow-sm transition-all duration-200 overflow-hidden",
+                  channel.enabled ? "bg-card" : "bg-muted/30 opacity-90"
                 )}
               >
-                <CardContent className="py-4">
-                  <div className="flex items-center gap-4">
-                    {/* Icon */}
+                <CardContent className="p-4 flex flex-col md:flex-row md:items-center gap-4">
+                  {/* Left: Icon & Main Info */}
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
                     <div className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
-                      getChannelTypeColor(channel.channel_type)
+                      "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mt-1 md:mt-0",
+                      styleClass
                     )}>
                       <Icon className="h-6 w-6" />
                     </div>
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
                         <h4 className="font-semibold text-base">
                           {getChannelTypeName(channel.channel_type)}
                         </h4>
-                        {channel.enabled ? (
-                          <Badge variant="default" className="rounded-full px-2 py-0.5 text-[10px] h-5">
-                            <Check className="h-3 w-3 mr-1" />
-                            {t('notification.enabled')}
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px] h-5">
-                            <X className="h-3 w-3 mr-1" />
+                        {!channel.enabled && (
+                          <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
                             {t('notification.disabled')}
                           </Badge>
                         )}
                       </div>
 
-                      <div className="text-sm text-muted-foreground truncate">
+                      <div className="text-sm text-muted-foreground font-mono truncate max-w-md">
                         {channel.channel_type === 'feishu' && config.webhook_key && (
-                          <span>{t('notification.webhookKey')}: {config.webhook_key.substring(0, 24)}...</span>
+                          <span className="flex items-center gap-2">
+                            <span className="text-xs uppercase tracking-wider opacity-70">Webhook</span>
+                            {config.webhook_key}
+                          </span>
                         )}
                         {channel.channel_type === 'dingtalk' && config.webhook_key && (
-                          <span>{t('notification.webhookKey')}: {config.webhook_key.substring(0, 24)}...</span>
+                          <span className="flex items-center gap-2">
+                            <span className="text-xs uppercase tracking-wider opacity-70">Token</span>
+                            {config.webhook_key}
+                          </span>
                         )}
                         {channel.channel_type === 'email' && config.from && (
-                          <span>{t('notification.sender')}: {config.from}</span>
+                          <span className="flex items-center gap-2">
+                            <span className="text-xs uppercase tracking-wider opacity-70">From</span>
+                            {config.from}
+                          </span>
                         )}
                       </div>
                     </div>
+                  </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Switch
-                        checked={channel.enabled}
-                        onCheckedChange={() => handleToggle(channel)}
-                      />
+                  {/* Right: Actions */}
+                  <div className="flex items-center justify-between md:justify-end gap-3 md:gap-4 pt-2 md:pt-0 border-t md:border-t-0 border-border/50">
+                     <div className="flex items-center gap-2 mr-2">
+                        <span className="text-sm text-muted-foreground hidden lg:inline-block">
+                          {channel.enabled ? t('common.active') : t('common.disabled')}
+                        </span>
+                        <Switch
+                          checked={channel.enabled}
+                          onCheckedChange={() => handleToggle(channel)}
+                        />
+                     </div>
+                     
+                     <div className="h-8 w-px bg-border hidden md:block" />
 
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="rounded-full h-9 w-9"
-                        onClick={() => handleTest(channel.id)}
-                        disabled={testingId === channel.id}
-                        title={t('notification.test')}
-                      >
-                        <TestTube2 className="h-4 w-4" />
-                      </Button>
+                     <div className="flex items-center gap-2">
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => handleTest(channel.id)}
+                         disabled={testingId === channel.id}
+                         className="h-8 px-2 lg:px-3 text-muted-foreground hover:text-foreground"
+                       >
+                         {testingId === channel.id ? (
+                            <span className="animate-spin mr-2">⟳</span>
+                         ) : (
+                            <TestTube2 className="h-4 w-4 mr-2" />
+                         )}
+                         {t('notification.test')}
+                       </Button>
 
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="rounded-full h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(channel.id)}
-                        title={t('common.delete')}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => handleEdit(channel)}
+                         className="h-8 px-2 lg:px-3 text-muted-foreground hover:text-foreground"
+                       >
+                         <Edit2 className="h-4 w-4 mr-2" />
+                         {t('common.edit')}
+                       </Button>
+
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => handleDelete(channel.id)}
+                         className="h-8 px-2 lg:px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+                       >
+                         <Trash2 className="h-4 w-4 mr-2" />
+                         {t('common.delete')}
+                       </Button>
+                     </div>
                   </div>
                 </CardContent>
               </Card>

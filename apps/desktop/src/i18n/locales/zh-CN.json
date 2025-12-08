@@ -319,10 +319,15 @@
     "sidebarMode": "侧边栏模式",
     "sidebarModeDescription": "切换侧边栏显示文字标签",
     "sidebarIconOnly": "仅图标",
-    "sidebarIconWithText": "图标+文字"
+    "sidebarIconWithText": "图标+文字",
+    "sidebarExpandedDesc": "显示图标和文字标签",
+    "sidebarCollapsedDesc": "仅显示图标以节省空间",
+    "cacheControl": "缓存控制",
+    "systemInfo": "系统信息"
   },
   "common": {
     "loading": "加载中...",
+    "active": "当前",
     "error": "错误",
     "success": "成功",
     "confirm": "确认",
