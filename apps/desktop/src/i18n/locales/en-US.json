@@ -712,6 +712,16 @@
     "confirmDelete": "Confirm Delete"
   },
   "providers": {
+    "title": "Provider Management",
+    "searchPlaceholder": "Search provider name or domain...",
+    "addButton": "Add Provider",
+    "addFirstButton": "Add Provider",
+    "builtinSection": "Built-in Providers",
+    "customSection": "Custom Providers",
+    "noMatchFound": "No matching providers found",
+    "noProviders": "No custom providers",
+    "tryDifferentSearch": "Try different search terms",
+    "addFirstProvider": "Click \"Add Provider\" button to create your first custom provider",
     "toast": {
       "createSuccess": "Provider created successfully",
       "createError": "Create failed: {{error}}",

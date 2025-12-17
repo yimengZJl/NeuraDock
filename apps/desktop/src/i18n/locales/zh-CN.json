@@ -713,6 +713,16 @@
     "confirmDelete": "确认删除"
   },
   "providers": {
+    "title": "中转站管理",
+    "searchPlaceholder": "搜索中转站名称或域名...",
+    "addButton": "添加中转站",
+    "addFirstButton": "添加中转站",
+    "builtinSection": "内置中转站",
+    "customSection": "自定义中转站",
+    "noMatchFound": "未找到匹配的中转站",
+    "noProviders": "暂无自定义中转站",
+    "tryDifferentSearch": "尝试使用其他关键词搜索",
+    "addFirstProvider": "点击\"添加中转站\"按钮创建您的第一个自定义中转站",
     "toast": {
       "createSuccess": "中转站创建成功",
       "createError": "创建失败: {{error}}",

@@ -81,14 +81,14 @@ export function RelayStationsPage() {
 
   return (
     <PageContainer
-      title="中转站管理"
+      title={t('providers.title', '中转站管理')}
       actions={
         <div className="flex items-center gap-3">
           {/* Search */}
           <div className="relative w-64">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="搜索中转站名称或域名..."
+              placeholder={t('providers.searchPlaceholder', '搜索中转站名称或域名...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 h-9 bg-background shadow-sm border-border/50 text-sm"
@@ -100,7 +100,7 @@ export function RelayStationsPage() {
           {/* Add Provider Button */}
           <Button onClick={handleCreate} size="sm" className="shadow-sm">
             <Plus className="mr-2 h-4 w-4" />
-            添加中转站
+            {t('providers.addButton', '添加中转站')}
           </Button>
         </div>
       }
@@ -122,7 +122,7 @@ export function RelayStationsPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Server className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">内置中转站</h2>
+                <h2 className="text-lg font-semibold">{t('providers.builtinSection', '内置中转站')}</h2>
                 <span className="text-sm text-muted-foreground">
                   ({builtinProviders.length})
                 </span>
@@ -146,7 +146,7 @@ export function RelayStationsPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Server className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">自定义中转站</h2>
+                <h2 className="text-lg font-semibold">{t('providers.customSection', '自定义中转站')}</h2>
                 <span className="text-sm text-muted-foreground">
                   ({customProviders.length})
                 </span>
@@ -170,17 +170,19 @@ export function RelayStationsPage() {
             <div className="text-center py-12">
               <Server className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
               <h3 className="text-lg font-medium mb-2">
-                {searchQuery ? '未找到匹配的中转站' : '暂无自定义中转站'}
+                {searchQuery 
+                  ? t('providers.noMatchFound', '未找到匹配的中转站')
+                  : t('providers.noProviders', '暂无自定义中转站')}
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
                 {searchQuery
-                  ? '尝试使用其他关键词搜索'
-                  : '点击"添加中转站"按钮创建您的第一个自定义中转站'}
+                  ? t('providers.tryDifferentSearch', '尝试使用其他关键词搜索')
+                  : t('providers.addFirstProvider', '点击"添加中转站"按钮创建您的第一个自定义中转站')}
               </p>
               {!searchQuery && (
                 <Button onClick={handleCreate} variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
-                  添加中转站
+                  {t('providers.addFirstButton', '添加中转站')}
                 </Button>
               )}
             </div>
