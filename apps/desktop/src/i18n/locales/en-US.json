@@ -688,5 +688,16 @@
     "deleteConfirmMessage": "Are you sure you want to delete provider \"{{name}}\"?",
     "deleteWarning": "Warning: This provider has {{count}} account(s). Deleting it will make these accounts unusable.",
     "confirmDelete": "Confirm Delete"
+  },
+  "providers": {
+    "toast": {
+      "createSuccess": "Provider created successfully",
+      "createError": "Create failed: {{error}}",
+      "updateSuccess": "Provider updated successfully",
+      "updateError": "Update failed: {{error}}",
+      "deleteSuccess": "Provider deleted successfully",
+      "deleteError": "Delete failed: {{error}}",
+      "unknownError": "Unknown error"
+    }
   }
 }

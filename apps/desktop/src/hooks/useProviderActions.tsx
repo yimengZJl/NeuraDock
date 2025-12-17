@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { ProviderDto } from './useProviders';
 
 export function useProviderActions() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProvider, setEditingProvider] = useState<ProviderDto | null>(null);
@@ -27,11 +29,13 @@ export function useProviderActions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['providers'] });
-      toast.success('中转站创建成功');
+      toast.success(t('providers.toast.createSuccess'));
     },
     onError: (error: any) => {
       console.error('Failed to create provider:', error);
-      toast.error(`创建失败: ${error.message || '未知错误'}`);
+      toast.error(t('providers.toast.createError', {
+        error: error.message || t('providers.toast.unknownError')
+      }));
     },
   });
 
@@ -54,11 +58,13 @@ export function useProviderActions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['providers'] });
-      toast.success('中转站更新成功');
+      toast.success(t('providers.toast.updateSuccess'));
     },
     onError: (error: any) => {
       console.error('Failed to update provider:', error);
-      toast.error(`更新失败: ${error.message || '未知错误'}`);
+      toast.error(t('providers.toast.updateError', {
+        error: error.message || t('providers.toast.unknownError')
+      }));
     },
   });
 
@@ -70,11 +76,13 @@ export function useProviderActions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['providers'] });
-      toast.success('中转站删除成功');
+      toast.success(t('providers.toast.deleteSuccess'));
     },
     onError: (error: any) => {
       console.error('Failed to delete provider:', error);
-      toast.error(`删除失败: ${error.message || '未知错误'}`);
+      toast.error(t('providers.toast.deleteError', {
+        error: error.message || t('providers.toast.unknownError')
+      }));
     },
   });
 
