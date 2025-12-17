@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { cacheInvalidators } from '@/lib/cacheInvalidators';
 
 // Types for check-in
 export interface CheckInResult {
@@ -40,10 +41,7 @@ export function useCheckIn() {
   return useMutation({
     mutationFn: executeCheckIn,
     onSuccess: (data, accountId) => {
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['account', accountId] });
-      queryClient.invalidateQueries({ queryKey: ['balance', accountId] });
-      queryClient.invalidateQueries({ queryKey: ['balance-statistics'] });
+      cacheInvalidators.invalidateAfterCheckIn(queryClient, accountId);
 
       if (data.success) {
         const balanceInfo = data.balance
@@ -86,9 +84,8 @@ export function useBatchCheckIn() {
   return useMutation({
     mutationFn: executeBatchCheckIn,
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['balance'] });
-      queryClient.invalidateQueries({ queryKey: ['balance-statistics'] });
+      cacheInvalidators.invalidateAllAccounts(queryClient);
+      queryClient.invalidateQueries({ queryKey: ['check-in-streak'] });
 
       if (data.succeeded > 0) {
         toast.success(

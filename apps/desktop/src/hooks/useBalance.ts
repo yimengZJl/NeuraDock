@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { cacheInvalidators } from '@/lib/cacheInvalidators';
 
 export interface BalanceDto {
   current_balance: number;
@@ -49,9 +50,8 @@ export function useRefreshAccountBalance() {
       invoke<BalanceDto>('fetch_account_balance', { accountId, forceRefresh: true }),
     onSuccess: (data, accountId) => {
       queryClient.setQueryData(['balance', accountId], data);
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['account', accountId] });
-      queryClient.invalidateQueries({ queryKey: ['balance-statistics'] });
+      cacheInvalidators.invalidateAccount(queryClient, accountId);
+      cacheInvalidators.invalidateAllAccounts(queryClient);
       toast.success(t('accountCard.balanceRefreshed', '余额已刷新'));
     },
     onError: (error: any) => {
@@ -83,8 +83,7 @@ export function useRefreshAllBalances() {
           queryClient.setQueryData(['balance', accountId], balance);
         }
       });
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['balance-statistics'] });
+      cacheInvalidators.invalidateAllAccounts(queryClient);
       toast.success(t('accounts.balancesRefreshed', '所有余额已刷新'));
     },
     onError: (error: any) => {

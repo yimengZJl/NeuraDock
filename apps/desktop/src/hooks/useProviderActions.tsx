@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { ProviderDto } from './useProviders';
+import { cacheInvalidators } from '@/lib/cacheInvalidators';
 
 export function useProviderActions() {
   const { t } = useTranslation();
@@ -28,7 +29,7 @@ export function useProviderActions() {
       return await invoke<string>('create_provider', { input: input });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['providers'] });
+      cacheInvalidators.invalidateProvider(queryClient);
       toast.success(t('providers.toast.createSuccess'));
     },
     onError: (error: any) => {
@@ -56,8 +57,8 @@ export function useProviderActions() {
     }) => {
       return await invoke<boolean>('update_provider', { input: input });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['providers'] });
+    onSuccess: (_, variables) => {
+      cacheInvalidators.invalidateProvider(queryClient, variables.provider_id);
       toast.success(t('providers.toast.updateSuccess'));
     },
     onError: (error: any) => {
@@ -74,8 +75,8 @@ export function useProviderActions() {
         input: { provider_id: providerId }
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['providers'] });
+    onSuccess: (_, providerId) => {
+      cacheInvalidators.invalidateProvider(queryClient, providerId);
       toast.success(t('providers.toast.deleteSuccess'));
     },
     onError: (error: any) => {

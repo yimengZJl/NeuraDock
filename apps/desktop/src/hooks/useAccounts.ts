@@ -1,15 +1,9 @@
-import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { accountCommands } from '@/lib/tauri-commands';
 import type { CreateAccountInput, UpdateAccountInput } from '@/lib/tauri-commands';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-
-export function invalidateAccountCaches(queryClient: QueryClient) {
-  queryClient.invalidateQueries({ queryKey: ['accounts'], exact: false });
-  queryClient.refetchQueries({ queryKey: ['accounts'], type: 'active' });
-  queryClient.invalidateQueries({ queryKey: ['balance-statistics'], exact: false });
-  queryClient.refetchQueries({ queryKey: ['balance-statistics'], type: 'active' });
-}
+import { cacheInvalidators } from '@/lib/cacheInvalidators';
 
 // Query: Get all accounts
 export function useAccounts(enabledOnly: boolean = false) {
@@ -36,7 +30,7 @@ export function useCreateAccount() {
   return useMutation({
     mutationFn: (input: CreateAccountInput) => accountCommands.create(input),
     onSuccess: () => {
-      invalidateAccountCaches(queryClient);
+      cacheInvalidators.invalidateAllAccounts(queryClient);
       toast.success(t('accounts.createSuccess', '账号创建成功'));
     },
     onError: (error: any) => {
@@ -59,8 +53,8 @@ export function useUpdateAccount() {
   return useMutation({
     mutationFn: (input: UpdateAccountInput) => accountCommands.update(input),
     onSuccess: (_, variables) => {
-      invalidateAccountCaches(queryClient);
-      queryClient.invalidateQueries({ queryKey: ['account', variables.account_id] });
+      cacheInvalidators.invalidateAccount(queryClient, variables.account_id);
+      cacheInvalidators.invalidateAllAccounts(queryClient);
       toast.success(t('accounts.updateSuccess', '账号已更新'));
     },
     onError: (error: any) => {
@@ -83,8 +77,8 @@ export function useDeleteAccount() {
   return useMutation({
     mutationFn: (accountId: string) => accountCommands.delete(accountId),
     onSuccess: (_, accountId) => {
-      invalidateAccountCaches(queryClient);
-      queryClient.invalidateQueries({ queryKey: ['account', accountId] });
+      cacheInvalidators.invalidateAccount(queryClient, accountId);
+      cacheInvalidators.invalidateAllAccounts(queryClient);
       toast.success(t('accountCard.deleted', '账号已删除'));
     },
     onError: (error: any) => {
@@ -108,8 +102,8 @@ export function useToggleAccount() {
     mutationFn: ({ accountId, enabled }: { accountId: string; enabled: boolean }) =>
       accountCommands.toggle(accountId, enabled),
     onSuccess: (_, variables) => {
-      invalidateAccountCaches(queryClient);
-      queryClient.invalidateQueries({ queryKey: ['account', variables.accountId] });
+      cacheInvalidators.invalidateAccount(queryClient, variables.accountId);
+      cacheInvalidators.invalidateAllAccounts(queryClient);
       toast.success(
         variables.enabled
           ? t('accountCard.enabled', '账号已启用')
@@ -136,7 +130,7 @@ export function useImportAccountFromJson() {
   return useMutation({
     mutationFn: (jsonData: string) => accountCommands.importFromJson(jsonData),
     onSuccess: () => {
-      invalidateAccountCaches(queryClient);
+      cacheInvalidators.invalidateAllAccounts(queryClient);
       toast.success(t('accounts.importSuccess', '账号导入成功'));
     },
     onError: (error: any) => {
@@ -159,7 +153,7 @@ export function useImportAccountsBatch() {
   return useMutation({
     mutationFn: (jsonData: string) => accountCommands.importBatch(jsonData),
     onSuccess: (accountIds) => {
-      invalidateAccountCaches(queryClient);
+      cacheInvalidators.invalidateAllAccounts(queryClient);
       toast.success(
         t('accounts.batchImportSuccess', {
           defaultValue: '成功导入 {{count}} 个账号',
