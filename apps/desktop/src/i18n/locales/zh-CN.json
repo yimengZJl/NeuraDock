@@ -8,6 +8,7 @@
     "accounts": "账号",
     "streaks": "记录",
     "tokens": "令牌",
+    "providers": "中转站",
     "settings": "设置"
   },
   "sidebar": {
@@ -374,7 +375,8 @@
     "clearing": "清除中...",
     "adding": "添加中...",
     "add": "添加",
-    "default": "默认"
+    "default": "默认",
+    "collapse": "收起"
   },
   "token": {
     "title": "令牌",

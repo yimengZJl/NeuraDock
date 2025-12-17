@@ -8,6 +8,7 @@
     "accounts": "Accounts",
     "streaks": "Records",
     "tokens": "Tokens",
+    "providers": "Providers",
     "settings": "Settings"
   },
   "sidebar": {
@@ -373,7 +374,8 @@
     "clearing": "Clearing...",
     "adding": "Adding...",
     "add": "Add",
-    "default": "Default"
+    "default": "Default",
+    "collapse": "Collapse"
   },
   "token": {
     "title": "Tokens",
