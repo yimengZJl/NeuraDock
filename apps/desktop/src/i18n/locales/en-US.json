@@ -372,7 +372,8 @@
     "copied": "Copied!",
     "clearing": "Clearing...",
     "adding": "Adding...",
-    "add": "Add"
+    "add": "Add",
+    "default": "Default"
   },
   "token": {
     "title": "Tokens",
@@ -561,6 +562,10 @@
     "tabs": {
       "basic": "Basic Information",
       "advanced": "API Configuration (Optional)"
+    },
+    "advancedNote": {
+      "title": "Default Values Note",
+      "description": "The following configuration items are optional and use new-api standard default values. If your relay follows the new-api standard, you can leave them blank."
     },
     "fields": {
       "name": {

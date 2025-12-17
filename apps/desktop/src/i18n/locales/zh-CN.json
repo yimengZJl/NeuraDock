@@ -373,7 +373,8 @@
     "copied": "已复制！",
     "clearing": "清除中...",
     "adding": "添加中...",
-    "add": "添加"
+    "add": "添加",
+    "default": "默认"
   },
   "token": {
     "title": "令牌",
@@ -562,6 +563,10 @@
     "tabs": {
       "basic": "基本信息",
       "advanced": "API配置（可选）"
+    },
+    "advancedNote": {
+      "title": "默认值说明",
+      "description": "以下配置项都是可选的，使用new-api标准默认值。如果你的中转站遵循new-api标准，可以不填写。"
     },
     "fields": {
       "name": {
