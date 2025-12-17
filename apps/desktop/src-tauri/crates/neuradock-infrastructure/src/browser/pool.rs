@@ -82,8 +82,8 @@ impl BrowserPool {
         }
 
         let browser = if let Some(idx) = reusable_idx {
-            // Reuse existing browser
-            let mut instance = pool.remove(idx);
+            // Reuse existing browser - update stats WITHOUT removing from pool
+            let instance = &mut pool[idx];
             instance.last_used = now;
             instance.usage_count += 1;
 
