@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +46,7 @@ export function ProviderCard({
   onDelete,
   isDeleting = false,
 }: ProviderCardProps) {
+  const { t } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleDelete = async () => {
@@ -80,7 +82,7 @@ export function ProviderCard({
                   </h3>
                   {provider.is_builtin && (
                     <Badge variant="secondary" className="shrink-0">
-                      内置
+                      {t('providerCard.builtin')}
                     </Badge>
                   )}
                 </div>
@@ -104,7 +106,7 @@ export function ProviderCard({
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem onClick={() => onEdit(provider)}>
                     <Edit className="h-4 w-4 mr-2" />
-                    编辑
+                    {t('common.edit')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -113,7 +115,7 @@ export function ProviderCard({
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    删除
+                    {t('common.delete')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -124,7 +126,7 @@ export function ProviderCard({
               <div className="flex items-center gap-2 text-sm">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">
-                  {provider.account_count || 0} 个账号
+                  {t('providerCard.accountCount', { count: provider.account_count || 0 })}
                 </span>
               </div>
 
@@ -132,12 +134,12 @@ export function ProviderCard({
                 {needsWafBypass ? (
                   <>
                     <Shield className="h-4 w-4 text-yellow-500" />
-                    <span className="text-muted-foreground">WAF保护</span>
+                    <span className="text-muted-foreground">{t('providerCard.wafProtected')}</span>
                   </>
                 ) : (
                   <>
                     <ShieldOff className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">无WAF</span>
+                    <span className="text-muted-foreground">{t('providerCard.noWaf')}</span>
                   </>
                 )}
               </div>
@@ -150,23 +152,23 @@ export function ProviderCard({
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogTitle>{t('providerCard.deleteConfirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除中转站 "{provider.name}" 吗？
+              {t('providerCard.deleteConfirmMessage', { name: provider.name })}
               {provider.account_count && provider.account_count > 0 && (
                 <span className="block mt-2 text-destructive font-medium">
-                  警告：该中转站下还有 {provider.account_count} 个账号，删除后这些账号将无法继续使用。
+                  {t('providerCard.deleteWarning', { count: provider.account_count })}
                 </span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              确认删除
+              {t('providerCard.confirmDelete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

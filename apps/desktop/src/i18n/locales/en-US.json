@@ -678,5 +678,15 @@
       "saving": "Saving..."
     },
     "requiredField": "*"
+  },
+  "providerCard": {
+    "builtin": "Built-in",
+    "accountCount": "{{count}} account(s)",
+    "wafProtected": "WAF Protected",
+    "noWaf": "No WAF",
+    "deleteConfirmTitle": "Confirm Delete",
+    "deleteConfirmMessage": "Are you sure you want to delete provider \"{{name}}\"?",
+    "deleteWarning": "Warning: This provider has {{count}} account(s). Deleting it will make these accounts unusable.",
+    "confirmDelete": "Confirm Delete"
   }
 }
