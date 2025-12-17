@@ -5,9 +5,45 @@ use log::{info, warn};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
+use tokio::task::JoinHandle;
 
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36";
 const REQUIRED_WAF_COOKIES: &[&str] = &["acw_tc", "cdn_sec_tc", "acw_sc__v2"];
+const BROWSER_CLOSE_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Helper to clean up browser resources with timeout
+async fn cleanup_browser(
+    mut browser: Browser,
+    handler_task: JoinHandle<()>,
+    temp_dir: PathBuf,
+    account_name: &str,
+) {
+    // Abort the handler task first
+    handler_task.abort();
+    
+    // Try to close browser with timeout
+    match tokio::time::timeout(BROWSER_CLOSE_TIMEOUT, browser.close()).await {
+        Ok(Ok(_)) => {
+            info!("[{}] Browser closed successfully", account_name);
+        }
+        Ok(Err(e)) => {
+            warn!("[{}] Failed to close browser: {}, will force cleanup", account_name, e);
+        }
+        Err(_) => {
+            warn!("[{}] Browser close timed out, continuing with cleanup", account_name);
+        }
+    }
+    
+    // Give Chrome a moment to fully exit
+    tokio::time::sleep(Duration::from_secs(1)).await;
+    
+    // Clean up temp directory
+    if let Err(e) = std::fs::remove_dir_all(&temp_dir) {
+        warn!("[{}] Failed to clean up temp directory: {}", account_name, e);
+    } else {
+        info!("[{}] Cleaned up temp profile directory", account_name);
+    }
+}
 
 /// Find available Chromium-based browser on the system
 fn find_browser() -> Option<PathBuf> {
@@ -235,8 +271,8 @@ impl WafBypassService {
 
         info!("[{}] Browser launched successfully", account_name);
 
-        // Spawn handler task
-        let _handler_task = tokio::spawn(async move {
+        // Spawn handler task and keep the handle for cleanup
+        let handler_task = tokio::spawn(async move {
             while let Some(_event) = handler.next().await {
                 // Handle events if needed
             }
@@ -315,21 +351,8 @@ impl WafBypassService {
             REQUIRED_WAF_COOKIES.len()
         );
 
-        // Close browser
-        if let Err(e) = browser.close().await {
-            warn!("[{}] Failed to close browser cleanly: {}", account_name, e);
-        }
-
-        // Clean up temp directory
-        tokio::time::sleep(Duration::from_secs(1)).await; // Give Chrome time to exit
-        if let Err(e) = std::fs::remove_dir_all(&temp_dir) {
-            warn!(
-                "[{}] Failed to clean up temp directory: {}",
-                account_name, e
-            );
-        } else {
-            info!("[{}] Cleaned up temp profile directory", account_name);
-        }
+        // Clean up browser resources properly
+        cleanup_browser(browser, handler_task, temp_dir, account_name).await;
 
         // Check if we got any cookies
         if waf_cookies.is_empty() {
