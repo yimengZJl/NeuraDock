@@ -35,6 +35,14 @@ impl AccountRepository for MockAccountRepository {
         Ok(accounts.get(id.as_str()).cloned())
     }
 
+    async fn find_by_ids(&self, ids: &[AccountId]) -> Result<Vec<Account>, DomainError> {
+        let accounts = self.accounts.read().await;
+        Ok(ids
+            .iter()
+            .filter_map(|id| accounts.get(id.as_str()).cloned())
+            .collect())
+    }
+
     async fn find_all(&self) -> Result<Vec<Account>, DomainError> {
         let accounts = self.accounts.read().await;
         Ok(accounts.values().cloned().collect())

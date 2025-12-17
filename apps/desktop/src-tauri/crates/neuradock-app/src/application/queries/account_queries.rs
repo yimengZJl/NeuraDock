@@ -154,6 +154,18 @@ mod tests {
             Ok(self.accounts.iter().find(|a| a.id() == id).cloned())
         }
 
+        async fn find_by_ids(
+            &self,
+            ids: &[crate::domain::shared::AccountId],
+        ) -> Result<Vec<Account>, DomainError> {
+            Ok(self
+                .accounts
+                .iter()
+                .filter(|a| ids.iter().any(|id| a.id() == id))
+                .cloned()
+                .collect())
+        }
+
         async fn save(&self, _account: &Account) -> Result<(), DomainError> {
             Ok(())
         }
