@@ -78,7 +78,16 @@
     "noEnabledAccounts": "No enabled accounts",
     "tryDifferentSearch": "Try different search criteria",
     "clearFilters": "Clear filters",
-    "accountNotFound": "Account not found"
+    "accountNotFound": "Account not found",
+    "createSuccess": "Account created successfully",
+    "createFailed": "Failed to create account: {{message}}",
+    "updateSuccess": "Account updated",
+    "updateFailed": "Failed to update account: {{message}}",
+    "importSuccess": "Account imported successfully",
+    "importFailed": "Failed to import account: {{message}}",
+    "batchImportSuccess": "Successfully imported {{count}} account(s)",
+    "batchImportFailed": "Batch import failed: {{message}}",
+    "refreshFailed": "Batch refresh failed: {{message}}"
   },
   "batchUpdate": {
     "title": "Batch Update Cookies",
@@ -138,7 +147,12 @@
     "noModels": "No models, click refresh to fetch",
     "refreshModels": "Refresh models (with WAF bypass)",
     "modelsRefreshed": "Models refreshed successfully",
-    "modelsRefreshError": "Failed to refresh models"
+    "modelsRefreshError": "Failed to refresh models",
+    "balanceRefreshFailed": "Failed to refresh balance: {{message}}",
+    "deleteFailed": "Failed to delete account: {{message}}",
+    "toggleFailed": "Failed to toggle account status: {{message}}",
+    "enabled": "Account enabled",
+    "disabled": "Account disabled"
   },
   "accountDialog": {
     "createTitle": "Add New Account",

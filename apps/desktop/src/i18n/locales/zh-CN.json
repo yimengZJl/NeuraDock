@@ -78,7 +78,16 @@
     "noEnabledAccounts": "没有启用的账号",
     "tryDifferentSearch": "尝试其他搜索条件",
     "clearFilters": "清除筛选",
-    "accountNotFound": "账号不存在"
+    "accountNotFound": "账号不存在",
+    "createSuccess": "账号创建成功",
+    "createFailed": "创建账号失败: {{message}}",
+    "updateSuccess": "账号已更新",
+    "updateFailed": "更新账号失败: {{message}}",
+    "importSuccess": "账号导入成功",
+    "importFailed": "导入账号失败: {{message}}",
+    "batchImportSuccess": "成功导入 {{count}} 个账号",
+    "batchImportFailed": "批量导入账号失败: {{message}}",
+    "refreshFailed": "批量刷新失败：{{message}}"
   },
   "batchUpdate": {
     "title": "批量更新 Cookies",
@@ -138,7 +147,12 @@
     "noModels": "暂无模型，点击刷新获取",
     "refreshModels": "刷新模型列表（含 WAF 绕过）",
     "modelsRefreshed": "模型列表已刷新",
-    "modelsRefreshError": "刷新模型列表失败"
+    "modelsRefreshError": "刷新模型列表失败",
+    "balanceRefreshFailed": "刷新余额失败：{{message}}",
+    "deleteFailed": "删除账号失败: {{message}}",
+    "toggleFailed": "切换账号状态失败: {{message}}",
+    "enabled": "账号已启用",
+    "disabled": "账号已停用"
   },
   "accountDialog": {
     "createTitle": "添加新账号",
