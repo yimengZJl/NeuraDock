@@ -21,6 +21,28 @@ pub mod token;
 pub use independent_key::*;
 pub use token::*;
 
+const DEFAULT_SESSION_EXPIRATION_DAYS: i64 = 30;
+
+/// Helper function to create and save a default session for an account
+async fn create_and_save_default_session(
+    account_id: AccountId,
+    cookies: &HashMap<String, String>,
+    session_repo: &Arc<dyn SessionRepository>,
+) -> Result<(), String> {
+    let session_token = cookies
+        .values()
+        .next()
+        .cloned()
+        .unwrap_or_else(|| "session".to_string());
+    
+    let expires_at = Utc::now() + Duration::days(DEFAULT_SESSION_EXPIRATION_DAYS);
+    let session = Session::new(account_id, session_token, expires_at)
+        .map_err(|e| e.to_string())?;
+    
+    session_repo.save(&session).await.map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn create_account(
@@ -151,21 +173,7 @@ pub async fn import_account_from_json(
         .await
         .map_err(|e| e.to_string())?;
 
-    // Create and save session with 30-day expiration
-    const DEFAULT_SESSION_EXPIRATION_DAYS: i64 = 30;
-    let session_token = cookies
-        .values()
-        .next()
-        .cloned()
-        .unwrap_or_else(|| "session".to_string());
-    let expires_at = Utc::now() + Duration::days(DEFAULT_SESSION_EXPIRATION_DAYS);
-    let session =
-        Session::new(account_id.clone(), session_token, expires_at).map_err(|e| e.to_string())?;
-    state
-        .session_repo
-        .save(&session)
-        .await
-        .map_err(|e| e.to_string())?;
+    create_and_save_default_session(account_id.clone(), &cookies, &state.session_repo).await?;
 
     let account_id_str = account_id.as_str().to_string();
     if let Err(err) = fetch_account_balance(account_id_str.clone(), Some(true), state.clone()).await
@@ -252,16 +260,7 @@ async fn import_single_account(
     let account_id = account.id().clone();
     account_repo.save(&account).await?;
 
-    // Create and save session with 30-day expiration
-    const DEFAULT_SESSION_EXPIRATION_DAYS: i64 = 30;
-    let session_token = cookies
-        .values()
-        .next()
-        .cloned()
-        .unwrap_or_else(|| "session".to_string());
-    let expires_at = Utc::now() + Duration::days(DEFAULT_SESSION_EXPIRATION_DAYS);
-    let session = Session::new(account_id.clone(), session_token, expires_at)?;
-    session_repo.save(&session).await?;
+    create_and_save_default_session(account_id.clone(), &cookies, session_repo).await?;
 
     Ok(account_id.as_str().to_string())
 }
@@ -452,16 +451,7 @@ async fn update_account_cookies(
     account.update_credentials(credentials)?;
     account_repo.save(&account).await?;
 
-    // Create and save session with 30-day expiration
-    const DEFAULT_SESSION_EXPIRATION_DAYS: i64 = 30;
-    let session_token = cookies
-        .values()
-        .next()
-        .cloned()
-        .unwrap_or_else(|| "session".to_string());
-    let expires_at = Utc::now() + Duration::days(DEFAULT_SESSION_EXPIRATION_DAYS);
-    let session = Session::new(account_id.clone(), session_token, expires_at)?;
-    session_repo.save(&session).await?;
+    create_and_save_default_session(account_id.clone(), &cookies, session_repo).await?;
 
     Ok(())
 }
