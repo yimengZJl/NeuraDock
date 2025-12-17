@@ -224,6 +224,11 @@
     "checking": "签到中...",
     "success": "签到成功！",
     "failed": "签到失败",
+    "balanceInfo": " 余额: ${{amount}}",
+    "failedWithReason": "签到失败: {{reason}}",
+    "batchSummary": "批量签到完成：{{succeeded}}/{{total}} 成功",
+    "batchFailedCount": "{{failed}} 个账号签到失败，请查看详情。",
+    "batchFailed": "批量签到失败：{{reason}}",
     "batchTitle": "批量签到结果",
     "batchDescription": "查看批量签到操作的详细结果",
     "batchSuccess": "批量签到成功",
@@ -376,7 +381,8 @@
     "adding": "添加中...",
     "add": "添加",
     "default": "默认",
-    "collapse": "收起"
+    "collapse": "收起",
+    "unknownError": "未知错误"
   },
   "token": {
     "title": "令牌",

@@ -224,6 +224,11 @@
     "checking": "Checking in...",
     "success": "Check-in successful!",
     "failed": "Check-in failed",
+    "balanceInfo": " Balance: ${{amount}}",
+    "failedWithReason": "Check-in failed: {{reason}}",
+    "batchSummary": "Batch check-in completed: {{succeeded}}/{{total}} succeeded",
+    "batchFailedCount": "{{failed}} account(s) failed. Please check details.",
+    "batchFailed": "Batch check-in failed: {{reason}}",
     "batchTitle": "Batch Check-in Results",
     "batchDescription": "View detailed results of the batch check-in operation",
     "batchSuccess": "Batch check-in successful",
@@ -375,7 +380,8 @@
     "adding": "Adding...",
     "add": "Add",
     "default": "Default",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "unknownError": "Unknown error"
   },
   "token": {
     "title": "Tokens",
