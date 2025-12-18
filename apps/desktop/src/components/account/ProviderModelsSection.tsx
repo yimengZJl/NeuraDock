@@ -56,9 +56,9 @@ export function ProviderModelsSection({
   };
 
   if (compact) {
-    // 紧凑模式：用于账号卡片
+    // 紧凑模式：用于主页网格卡片
     return (
-      <div className="space-y-2">
+      <div className="space-y-3 h-full flex flex-col">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Package className="h-3.5 w-3.5" />
@@ -66,46 +66,33 @@ export function ProviderModelsSection({
               {isLoading ? (
                 t('accountCard.loadingModels') || 'Loading...'
               ) : models.length > 0 ? (
-                <>
-                  {t('accountCard.supportedModels') || 'Supported Models'}: {models.length}
-                </>
+                t('accountCard.supportedModels') || 'Models'
               ) : (
-                t('accountCard.noModels') || 'No models cached'
+                t('accountCard.noModels') || 'No models'
               )}
             </span>
           </div>
-          <div className="flex items-center gap-1">
-            {models.length > 0 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 rounded-full"
-                onClick={() => setIsExpanded(!isExpanded)}
-              >
-                {isExpanded ? (
-                  <ChevronUp className="h-3 w-3" />
-                ) : (
-                  <ChevronDown className="h-3 w-3" />
-                )}
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 rounded-full"
-              onClick={handleRefresh}
-              disabled={refreshMutation.isPending}
-              title={t('accountCard.refreshModels') || 'Refresh models (with WAF bypass)'}
-            >
-              <RefreshCw className={`h-3 w-3 ${refreshMutation.isPending ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 rounded-full opacity-50 hover:opacity-100 transition-opacity"
+            onClick={handleRefresh}
+            disabled={refreshMutation.isPending}
+            title={t('accountCard.refreshModels') || 'Refresh models'}
+          >
+            <RefreshCw className={`h-3 w-3 ${refreshMutation.isPending ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
 
-        {isExpanded && models.length > 0 && (
-          <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto bg-muted/20 rounded-lg p-2">
+        {/* Always show models, filling available space */}
+        {models.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 content-start">
             {models.map((model) => (
-              <Badge key={model} variant="secondary" className="text-xs py-0 px-1.5">
+              <Badge 
+                key={model} 
+                variant="secondary" 
+                className="text-[10px] px-1.5 py-0 h-5 bg-muted/50 hover:bg-muted transition-colors border-transparent text-muted-foreground font-normal"
+              >
                 {model}
               </Badge>
             ))}

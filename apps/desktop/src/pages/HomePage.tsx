@@ -1,4 +1,4 @@
-import { Users, DollarSign, TrendingUp, Wallet, Activity } from 'lucide-react';
+import { Users, DollarSign, TrendingUp, Wallet, Activity, ExternalLink, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBalanceStatistics } from '@/hooks/useBalance';
@@ -11,6 +11,8 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { PageContent, Section } from '@/components/layout/PageContent';
 import { BentoGrid } from '@/components/layout/CardGrid';
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 export function HomePage() {
   const { data: accounts, isLoading } = useAccounts();
@@ -28,21 +30,34 @@ export function HomePage() {
   const enabledAccounts = accounts?.filter(a => a.enabled).length || 0;
   const totalAccounts = accounts?.length || 0;
 
-  // Animation variants
+  // Improved animation variants
   const container = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.05,
+        delayChildren: 0.1
       }
     }
   };
 
   const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
+    hidden: { opacity: 0, y: 10, scale: 0.98 },
+    show: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: { 
+        type: "spring",
+        stiffness: 260,
+        damping: 20
+      } 
+    }
   };
+
+  // Common card interactive styles
+  const interactiveCardClass = "bg-card border shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98] cursor-pointer";
 
   return (
     <PageContainer title={t('dashboard.title')}>
@@ -56,18 +71,26 @@ export function HomePage() {
           <BentoGrid>
             {/* Main Balance Card - Spans 2 cols on large screens */}
             <motion.div variants={item} className="md:col-span-2">
-              <Card className="h-full bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
+              <Card className={cn(
+                "h-full relative overflow-hidden border-primary/20 shadow-md",
+                "bg-gradient-to-br from-background via-background to-primary/5 dark:from-background dark:via-background dark:to-primary/10",
+                "transition-all duration-200 hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] cursor-pointer"
+              )}>
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Wallet className="w-24 h-24 text-primary" />
+                </div>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
-                    <Wallet className="h-4 w-4" />
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Wallet className="h-4 w-4 text-primary" />
                     {t('dashboard.stats.currentBalance')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-4xl font-bold tracking-tight tabular-nums text-primary">
+                  <div className="text-4xl font-bold tracking-tight tabular-nums text-foreground">
                     {statsLoading ? '...' : statistics ? formatCurrency(statistics.total_current_balance) : '$0.00'}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                    <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                     {t('dashboard.stats.availableBalance')}
                   </p>
                 </CardContent>
@@ -75,25 +98,29 @@ export function HomePage() {
             </motion.div>
 
             {/* Income & Consumption Stack */}
-            <motion.div variants={item} className="space-y-card-gap">
-              <Card className="bg-muted/30 border-none shadow-none">
+            <motion.div variants={item} className="space-y-4">
+              <Card className={interactiveCardClass}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{t('dashboard.stats.totalIncome')}</CardTitle>
-                  <DollarSign className="h-4 w-4 text-blue-500" />
+                  <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.totalIncome')}</CardTitle>
+                  <div className="p-2 rounded-full bg-blue-50 dark:bg-blue-900/20">
+                    <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold tabular-nums text-blue-600">
+                  <div className="text-2xl font-bold tabular-nums text-foreground">
                     {statsLoading ? '...' : statistics ? formatCurrency(statistics.total_income) : '$0.00'}
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-muted/30 border-none shadow-none">
+              <Card className={interactiveCardClass}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{t('dashboard.stats.historicalConsumption')}</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-orange-500" />
+                  <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.historicalConsumption')}</CardTitle>
+                  <div className="p-2 rounded-full bg-orange-50 dark:bg-orange-900/20">
+                    <TrendingUp className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold tabular-nums text-orange-600">
+                  <div className="text-2xl font-bold tabular-nums text-foreground">
                     {statsLoading ? '...' : statistics ? formatCurrency(statistics.total_consumed) : '$0.00'}
                   </div>
                 </CardContent>
@@ -102,21 +129,19 @@ export function HomePage() {
 
             {/* Accounts Status */}
             <motion.div variants={item}>
-              <Card className="h-full flex flex-col justify-center bg-muted/30 border-none shadow-none">
+              <Card className={cn(interactiveCardClass, "h-full flex flex-col justify-center")}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{t('dashboard.stats.totalAccounts')}</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.totalAccounts')}</CardTitle>
+                  <div className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-900/20">
+                    <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold tabular-nums">{isLoading ? '...' : totalAccounts}</div>
+                  <div className="text-3xl font-bold tabular-nums text-foreground">{isLoading ? '...' : totalAccounts}</div>
                   <div className="flex items-center gap-2 mt-2">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </span>
-                    <p className="text-xs text-muted-foreground">
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0">
                       {enabledAccounts} {t('dashboard.stats.enabled')}
-                    </p>
+                    </Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -127,9 +152,10 @@ export function HomePage() {
         {/* Provider Breakdown Section */}
         {statistics && statistics.providers.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="mt-8"
           >
             <Section
               title={
@@ -139,44 +165,53 @@ export function HomePage() {
                 </div>
               }
             >
-              <div className="grid gap-section-gap-sm">
+              {/* Grid layout for scalability */}
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {statistics.providers.map((provider) => {
                   const providerAccount = accounts?.find(
                     (acc) => acc.provider_id === provider.provider_id && acc.enabled
                   );
 
                   return (
-                    <Card key={provider.provider_id} className="overflow-hidden border-none shadow-sm bg-card/50">
-                      <CardContent className="p-0">
+                    <motion.div key={provider.provider_id} variants={item} className="h-full">
+                      <Card className={cn(interactiveCardClass, "h-full flex flex-col overflow-hidden")}>
                         {/* Provider Header */}
-                        <div className="p-card bg-muted/20 flex items-center justify-between">
-                          <div>
-                            <h3 className="text-lg font-semibold">{provider.provider_name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {provider.account_count} {provider.account_count === 1 ? t('dashboard.account') : t('dashboard.accounts_plural')}
-                            </p>
-                          </div>
-                          <div className="flex gap-8 text-sm">
-                            <div className="text-right">
-                              <p className="text-xs text-muted-foreground mb-1">{t('dashboard.stats.currentBalance')}</p>
-                              <p className="font-bold text-lg tabular-nums text-green-600">{formatCurrency(provider.current_balance)}</p>
+                        <div className="p-4 bg-muted/30 border-b flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-background rounded-full border shadow-sm">
+                              <Zap className="h-4 w-4 text-yellow-500" />
                             </div>
+                            <div>
+                              <h3 className="font-semibold text-foreground">{provider.provider_name}</h3>
+                              <p className="text-xs text-muted-foreground">
+                                {provider.account_count} {provider.account_count === 1 ? t('dashboard.account') : t('dashboard.accounts_plural')}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                             <div className="font-mono font-bold text-green-600 dark:text-green-400">
+                               {formatCurrency(provider.current_balance)}
+                             </div>
                           </div>
                         </div>
 
-                        {/* Models List */}
-                        {providerAccount && (
-                          <div className="p-card">
+                        {/* Models List - Flex grow to push content */}
+                        <CardContent className="p-4 flex-grow">
+                          {providerAccount ? (
                             <ProviderModelsSection
                               providerId={provider.provider_id}
                               providerName={provider.provider_name}
                               accountId={providerAccount.id}
-                              compact={false}
+                              compact={true} // Use compact mode for grid layout
                             />
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                          ) : (
+                            <div className="h-full flex items-center justify-center text-sm text-muted-foreground italic min-h-[60px]">
+                              {t('dashboard.noActiveAccounts')}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   );
                 })}
               </div>
