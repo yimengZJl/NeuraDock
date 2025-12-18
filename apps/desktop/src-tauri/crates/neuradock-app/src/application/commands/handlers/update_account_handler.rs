@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chrono::Utc;
+use chrono::{Duration, Utc};
 use log::info;
 use std::sync::Arc;
 
@@ -8,6 +8,7 @@ use crate::application::commands::command_handler::CommandHandler;
 use neuradock_domain::account::{Account, AccountRepository, Credentials};
 use neuradock_domain::events::account_events::AccountUpdated;
 use neuradock_domain::events::EventBus;
+use neuradock_domain::session::SessionTokenExtractor;
 use neuradock_domain::shared::{AccountId, DomainError};
 
 /// Update account command handler
@@ -65,7 +66,9 @@ impl CommandHandler<UpdateAccountCommand> for UpdateAccountCommandHandler {
 
             // When cookies are updated, set session expiration to 30 days from now
             // This allows frontend to track when the session will expire
-            account.refresh_session_with_default_expiration(&cookies);
+            let token = SessionTokenExtractor::extract(&cookies);
+            let expires_at = Utc::now() + Duration::days(Account::DEFAULT_SESSION_EXPIRATION_DAYS);
+            account.update_session(token, expires_at);
 
             info!(
                 "Session expiration set to {} days from now for account: {}",

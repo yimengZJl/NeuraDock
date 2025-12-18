@@ -1,4 +1,5 @@
 mod repository;
+mod token_extractor;
 
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
@@ -6,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::shared::{AccountId, DomainError};
 
 pub use repository::SessionRepository;
+pub use token_extractor::SessionTokenExtractor;
 
 /// Session value object
 /// Represents user authentication session for an account

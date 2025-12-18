@@ -302,7 +302,8 @@ pub async fn export_accounts_to_json(
             });
 
             if input.include_credentials {
-                data["cookies"] = serde_json::to_value(acc.credentials().cookies()).unwrap();
+                data["cookies"] = serde_json::to_value(acc.credentials().cookies())
+                    .expect("Failed to serialize cookies");
                 data["api_user"] =
                     serde_json::Value::String(acc.credentials().api_user().to_string());
             }
@@ -919,7 +920,10 @@ async fn save_balance_history(
     let now = chrono::Utc::now();
 
     // Check if we already have a record today
-    let today_start = now.date_naive().and_hms_opt(0, 0, 0).unwrap();
+    let today_start = now
+        .date_naive()
+        .and_hms_opt(0, 0, 0)
+        .expect("00:00:00 is always a valid time");
     let today_start_str =
         chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(today_start, chrono::Utc)
             .to_rfc3339();

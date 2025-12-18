@@ -133,7 +133,7 @@ fn get_file_filter() -> EnvFilter {
 
     EnvFilter::try_from_default_env()
         .or_else(|_| EnvFilter::try_new(default_level))
-        .unwrap()
+        .unwrap_or_else(|_| EnvFilter::new("info"))
 }
 
 /// 获取 stdout 日志的过滤器
@@ -142,7 +142,7 @@ fn get_stdout_filter() -> EnvFilter {
     // 默认 DEBUG 级别
     EnvFilter::try_from_default_env()
         .or_else(|_| EnvFilter::try_new("debug,neuradock=trace"))
-        .unwrap()
+        .unwrap_or_else(|_| EnvFilter::new("debug"))
 }
 
 /// 获取日志目录路径

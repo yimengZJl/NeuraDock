@@ -4,11 +4,12 @@ import type { CreateAccountInput, UpdateAccountInput } from '@/lib/tauri-command
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { cacheInvalidators } from '@/lib/cacheInvalidators';
+import { accountKeys } from '@/lib/query-keys';
 
 // Query: Get all accounts
 export function useAccounts(enabledOnly: boolean = false) {
   return useQuery({
-    queryKey: ['accounts', enabledOnly],
+    queryKey: accountKeys.list(enabledOnly),
     queryFn: () => accountCommands.getAll(enabledOnly),
   });
 }
@@ -16,7 +17,7 @@ export function useAccounts(enabledOnly: boolean = false) {
 // Query: Get account detail
 export function useAccountDetail(accountId: string) {
   return useQuery({
-    queryKey: ['account', accountId],
+    queryKey: accountKeys.detail(accountId),
     queryFn: () => accountCommands.getDetail(accountId),
     enabled: !!accountId,
   });
@@ -101,22 +102,59 @@ export function useToggleAccount() {
   return useMutation({
     mutationFn: ({ accountId, enabled }: { accountId: string; enabled: boolean }) =>
       accountCommands.toggle(accountId, enabled),
-    onSuccess: (_, variables) => {
-      cacheInvalidators.invalidateAccount(queryClient, variables.accountId);
-      cacheInvalidators.invalidateAllAccounts(queryClient);
-      toast.success(
-        variables.enabled
-          ? t('accountCard.enabled', '账号已启用')
-          : t('accountCard.disabled', '账号已停用')
-      );
+    onMutate: async ({ accountId, enabled }) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: accountKeys.all });
+
+      // Snapshot the previous value
+      const previousAccounts = queryClient.getQueriesData({ queryKey: accountKeys.lists() });
+      const previousDetail = queryClient.getQueryData(accountKeys.detail(accountId));
+
+      // Optimistically update to the new value
+      queryClient.setQueriesData({ queryKey: accountKeys.lists() }, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((acc: any) =>
+          acc.id === accountId ? { ...acc, enabled } : acc
+        );
+      });
+
+      if (previousDetail) {
+        queryClient.setQueryData(accountKeys.detail(accountId), (old: any) => ({
+          ...old,
+          enabled,
+        }));
+      }
+
+      return { previousAccounts, previousDetail };
     },
-    onError: (error: any) => {
+    onError: (error: any, { accountId }, context) => {
+      // Rollback
+      if (context?.previousAccounts) {
+        context.previousAccounts.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      if (context?.previousDetail) {
+        queryClient.setQueryData(accountKeys.detail(accountId), context.previousDetail);
+      }
+
       const message = error?.message || String(error);
       toast.error(
         t('accountCard.toggleFailed', {
           defaultValue: '切换账号状态失败: {{message}}',
           message,
         })
+      );
+    },
+    onSuccess: (_, { enabled, accountId }) => {
+      // Even with optimistic updates, we should invalidate to ensure eventual consistency
+      cacheInvalidators.invalidateAccount(queryClient, accountId);
+      cacheInvalidators.invalidateAllAccounts(queryClient);
+
+      toast.success(
+        enabled
+          ? t('accountCard.enabled', '账号已启用')
+          : t('accountCard.disabled', '账号已停用')
       );
     },
   });

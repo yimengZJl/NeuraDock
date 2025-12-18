@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chrono::Utc;
+use chrono::{Duration, Utc};
 use log::info;
 use std::sync::Arc;
 
@@ -8,6 +8,7 @@ use crate::application::commands::command_handler::CommandHandler;
 use neuradock_domain::account::{Account, AccountRepository, Credentials};
 use neuradock_domain::events::account_events::AccountCreated;
 use neuradock_domain::events::EventBus;
+use neuradock_domain::session::SessionTokenExtractor;
 use neuradock_domain::shared::{DomainError, ProviderId};
 
 /// Create account command handler
@@ -42,8 +43,10 @@ impl CommandHandler<CreateAccountCommand> for CreateAccountCommandHandler {
             credentials,
         )?;
 
-        // 3. Set session expiration using default domain logic
-        account.refresh_session_with_default_expiration(&cmd.cookies);
+        // 3. Set session expiration using token extractor
+        let token = SessionTokenExtractor::extract(&cmd.cookies);
+        let expires_at = Utc::now() + Duration::days(Account::DEFAULT_SESSION_EXPIRATION_DAYS);
+        account.update_session(token, expires_at);
 
         // 4. Set auto check-in configuration if provided
         if let Some(enabled) = cmd.auto_checkin_enabled {

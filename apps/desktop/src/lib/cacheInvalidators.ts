@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
+import { accountKeys, providerKeys, checkInKeys, notificationKeys } from './query-keys';
 
 /**
  * Centralized cache invalidation utilities to ensure consistent
@@ -9,19 +10,20 @@ export const cacheInvalidators = {
    * Invalidate caches for a specific account
    */
   invalidateAccount: (queryClient: QueryClient, accountId: string) => {
-    queryClient.invalidateQueries({ queryKey: ['account', accountId] });
-    queryClient.invalidateQueries({ queryKey: ['balance', accountId] });
-    queryClient.invalidateQueries({ queryKey: ['tokens', accountId] });
+    // This will also invalidate sub-keys like balance and tokens
+    queryClient.invalidateQueries({ queryKey: accountKeys.detail(accountId) });
   },
 
   /**
    * Invalidate all accounts list and related aggregate data
    */
   invalidateAllAccounts: (queryClient: QueryClient) => {
-    queryClient.invalidateQueries({ queryKey: ['accounts'], exact: false });
-    queryClient.refetchQueries({ queryKey: ['accounts'], type: 'active' });
-    queryClient.invalidateQueries({ queryKey: ['balance-statistics'], exact: false });
-    queryClient.refetchQueries({ queryKey: ['balance-statistics'], type: 'active' });
+    queryClient.invalidateQueries({ queryKey: accountKeys.all });
+    // We might want to refetch the list immediately
+    queryClient.refetchQueries({ queryKey: accountKeys.lists(), type: 'active' });
+    
+    queryClient.invalidateQueries({ queryKey: accountKeys.balanceStatistics() });
+    queryClient.refetchQueries({ queryKey: accountKeys.balanceStatistics(), type: 'active' });
   },
 
   /**
@@ -30,16 +32,16 @@ export const cacheInvalidators = {
   invalidateAfterCheckIn: (queryClient: QueryClient, accountId: string) => {
     cacheInvalidators.invalidateAccount(queryClient, accountId);
     cacheInvalidators.invalidateAllAccounts(queryClient);
-    queryClient.invalidateQueries({ queryKey: ['check-in-streak'] });
+    queryClient.invalidateQueries({ queryKey: checkInKeys.all });
   },
 
   /**
    * Invalidate provider-related caches
    */
   invalidateProvider: (queryClient: QueryClient, providerId?: string) => {
-    queryClient.invalidateQueries({ queryKey: ['providers'] });
+    queryClient.invalidateQueries({ queryKey: providerKeys.all });
     if (providerId) {
-      queryClient.invalidateQueries({ queryKey: ['provider', providerId] });
+      queryClient.invalidateQueries({ queryKey: providerKeys.detail(providerId) });
     }
   },
 
@@ -47,6 +49,6 @@ export const cacheInvalidators = {
    * Invalidate notification channels
    */
   invalidateNotificationChannels: (queryClient: QueryClient) => {
-    queryClient.invalidateQueries({ queryKey: ['notification-channels'] });
+    queryClient.invalidateQueries({ queryKey: notificationKeys.channels() });
   },
 };
