@@ -115,6 +115,14 @@
     "validateFirst": "Please validate the JSON first",
     "cannotFormat": "Cannot format invalid JSON"
   },
+  "accountOverview": {
+    "apiKeyConfig": "API Key Configuration",
+    "tokenHint": "Tokens will be fetched automatically after balance refresh",
+    "accountStatistics": "Account Statistics",
+    "checkInStatistics": "Check-in Statistics",
+    "checkInTrends": "Check-in Trends",
+    "auto": "Auto"
+  },
   "accountCard": {
     "active": "Online",
     "disabled": "Disabled",

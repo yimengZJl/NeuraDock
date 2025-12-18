@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 import {
   ArrowLeft,
   RefreshCw,
@@ -19,6 +20,7 @@ import {
   Award,
   Flame,
   CalendarCheck,
+  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -172,6 +174,9 @@ export function AccountOverviewPage() {
     return `$${dollars.toFixed(2)}`;
   };
 
+  // Shared card classes
+  const cardClass = "border-border/50 shadow-sm bg-card transition-all duration-200 hover:shadow-md hover:-translate-y-[2px] active:scale-[0.99]";
+
   return (
     <PageContainer
       className="h-full flex flex-col overflow-hidden"
@@ -181,17 +186,20 @@ export function AccountOverviewPage() {
             variant="ghost"
             size="icon"
             onClick={() => navigate('/accounts')}
-            className="shrink-0 h-9 w-9"
+            className="shrink-0 h-9 w-9 rounded-full hover:bg-muted"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-3">
             <span className="text-xl font-bold tracking-tight">{account.name}</span>
-            <Badge variant="outline">{account.provider_name}</Badge>
+            <Badge variant="outline" className="text-muted-foreground">{account.provider_name}</Badge>
             {account.auto_checkin_enabled && (
-              <Badge variant="secondary" className="gap-1 text-xs">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                自动 {String(account.auto_checkin_hour).padStart(2, '0')}:
+              <Badge variant="secondary" className="gap-1.5 text-xs bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400 border-0">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                </span>
+                {t('accountOverview.auto', 'Auto')} {String(account.auto_checkin_hour).padStart(2, '0')}:
                 {String(account.auto_checkin_minute).padStart(2, '0')}
               </Badge>
             )}
@@ -205,18 +213,16 @@ export function AccountOverviewPage() {
             size="sm"
             onClick={() => refreshBalanceMutation.mutate()}
             disabled={refreshBalanceMutation.isPending}
+            className="shadow-sm"
           >
-            {refreshBalanceMutation.isPending ? (
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
+            <RefreshCw className={cn("mr-2 h-4 w-4", refreshBalanceMutation.isPending && "animate-spin")} />
             {t('accountCard.refreshBalance')}
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => handleEdit(account)}
+            className="shadow-sm"
           >
             <Edit className="mr-2 h-4 w-4" />
             {t('accountCard.edit')}
@@ -230,6 +236,7 @@ export function AccountOverviewPage() {
               }
             }}
             disabled={deleteMutation.isPending}
+            className="shadow-sm"
           >
             <Trash2 className="mr-2 h-4 w-4" />
             {t('accountCard.delete')}
@@ -237,13 +244,20 @@ export function AccountOverviewPage() {
         </div>
       }
     >
-      <div className="flex-1 overflow-auto space-y-6 pb-6">
+      <motion.div 
+        className="flex-1 overflow-auto space-y-6 pb-6 p-1 auto-hide-scrollbar"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      >
         {/* API Key Configuration */}
-        <Card className="p-6 border-border/50">
+        <Card className={cn("p-6", cardClass)}>
           <div className="mb-6">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <KeyRound className="h-5 w-5" />
-              API Key 配置
+            <h2 className="text-xl font-bold flex items-center gap-2 tracking-tight">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <KeyRound className="h-5 w-5" />
+              </div>
+              {t('accountOverview.apiKeyConfig', 'API Key Configuration')}
             </h2>
           </div>
 
@@ -252,10 +266,10 @@ export function AccountOverviewPage() {
               <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : tokens.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+            <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-xl bg-muted/20">
               <KeyRound className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-semibold mb-2">{t('token.noTokens')}</p>
-              <p className="text-sm">点击刷新余额后将自动获取 Token</p>
+              <p className="text-sm">{t('accountOverview.tokenHint', 'Tokens will be fetched automatically after balance refresh')}</p>
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -263,7 +277,7 @@ export function AccountOverviewPage() {
                 <Card
                   key={token.id}
                   className={cn(
-                    "flex flex-col border-none shadow-sm bg-background/60 backdrop-blur-xl ring-1 ring-border/50 transition-all hover:shadow-md hover:scale-[1.01]",
+                    "flex flex-col border-none shadow-sm bg-muted/30 dark:bg-muted/10 ring-1 ring-border/50 transition-all hover:shadow-md hover:scale-[1.01] hover:bg-card active:scale-[0.99]",
                     !token.is_active && "opacity-60 grayscale"
                   )}
                 >
@@ -282,7 +296,7 @@ export function AccountOverviewPage() {
                         {token.status_text}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground bg-muted/50 w-fit px-2 py-1 rounded-md">
+                    <div className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground bg-background w-fit px-2 py-1 rounded-md border border-border/50">
                       <Key className="h-3 w-3" />
                       {token.masked_key}
                     </div>
@@ -292,7 +306,7 @@ export function AccountOverviewPage() {
                     {/* Quota Usage Section */}
                     <div className="flex-1 space-y-3">
                       {token.unlimited_quota ? (
-                        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/30">
+                        <div className="p-3 rounded-lg bg-green-50/50 dark:bg-green-950/20 border border-green-100/50 dark:border-green-900/30">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs font-medium text-green-700 dark:text-green-300">{t('token.quotaUnlimited', 'Unlimited')}</span>
                             <Badge variant="outline" className="text-[10px] h-4 px-1 text-green-600 border-green-600 bg-transparent">
@@ -337,7 +351,7 @@ export function AccountOverviewPage() {
                       <div className="grid grid-cols-2 gap-2 pt-1">
                         {/* Expiration */}
                         {token.expired_at && (
-                          <div className="flex flex-col gap-1 p-2 rounded-lg bg-muted/30">
+                          <div className="flex flex-col gap-1 p-2 rounded-lg bg-background border border-border/50">
                             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('token.expiresAt', 'Expires')}</span>
                             <div className="flex items-center gap-1 text-xs font-medium">
                               <Clock className="h-3 w-3 text-muted-foreground" />
@@ -347,7 +361,7 @@ export function AccountOverviewPage() {
                         )}
 
                         {/* Model Limits */}
-                        <div className={cn("flex flex-col gap-1 p-2 rounded-lg bg-muted/30", !token.expired_at && "col-span-2")}>
+                        <div className={cn("flex flex-col gap-1 p-2 rounded-lg bg-background border border-border/50", !token.expired_at && "col-span-2")}>
                           <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('token.supportedModels', 'Models')}</span>
                           <div className="text-xs font-medium truncate">
                             {!token.model_limits_enabled ? (
@@ -371,7 +385,7 @@ export function AccountOverviewPage() {
 
                     {/* Configure Button */}
                     <Button
-                      className="w-full mt-auto rounded-lg"
+                      className="w-full mt-auto rounded-lg shadow-sm"
                       size="sm"
                       variant="outline"
                       onClick={() => handleConfigureToken(token)}
@@ -391,8 +405,13 @@ export function AccountOverviewPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
             {/* Account Statistics Card */}
-            <Card className="lg:col-span-1 p-6 border-border/50 h-full flex flex-col">
-              <h3 className="text-lg font-bold mb-4">账号统计</h3>
+            <Card className={cn("lg:col-span-1 p-6 h-full flex flex-col", cardClass)}>
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-blue-500/10 text-blue-500">
+                  <Activity className="h-4 w-4" />
+                </div>
+                {t('accountOverview.accountStatistics', 'Account Statistics')}
+              </h3>
               <div className="space-y-4">
                 {/* Current Balance */}
                 <div className="space-y-2">
@@ -440,8 +459,13 @@ export function AccountOverviewPage() {
             </Card>
 
             {/* Check-in Statistics Card */}
-            <Card className="lg:col-span-1 p-6 border-border/50 h-full flex flex-col">
-              <h3 className="text-lg font-bold mb-4">签到统计</h3>
+            <Card className={cn("lg:col-span-1 p-6 h-full flex flex-col", cardClass)}>
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-orange-500/10 text-orange-500">
+                  <Flame className="h-4 w-4" />
+                </div>
+                {t('accountOverview.checkInStatistics', 'Check-in Statistics')}
+              </h3>
               <div className="space-y-4">
                 {/* Current Streak */}
                 <div className="space-y-2">
@@ -512,7 +536,7 @@ export function AccountOverviewPage() {
             {/* Calendar */}
             <div className="lg:col-span-2">
               {calendar && (
-                <Card className="p-6 border-border/50 h-full">
+                <Card className={cn("p-6 h-full", cardClass)}>
                   <CheckInCalendar
                     year={calendar.year}
                     month={calendar.month}
@@ -529,14 +553,17 @@ export function AccountOverviewPage() {
           {/* Check-in Trends */}
           {trend && (
             <div>
-              <h2 className="text-xl font-bold mb-4">签到走势</h2>
-              <Card className="p-6 border-border/50">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-blue-500" />
+                {t('accountOverview.checkInTrends', 'Check-in Trends')}
+              </h2>
+              <Card className={cn("p-6", cardClass)}>
                 <CheckInTrendChart data={trend.data_points} />
               </Card>
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Edit Dialog */}
       <AccountDialog

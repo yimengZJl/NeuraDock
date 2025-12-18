@@ -115,6 +115,14 @@
     "validateFirst": "请先验证 JSON",
     "cannotFormat": "无法格式化无效的 JSON"
   },
+  "accountOverview": {
+    "apiKeyConfig": "API Key 配置",
+    "tokenHint": "点击刷新余额后将自动获取 Token",
+    "accountStatistics": "账号统计",
+    "checkInStatistics": "签到统计",
+    "checkInTrends": "签到走势",
+    "auto": "自动"
+  },
   "accountCard": {
     "active": "在线",
     "disabled": "已禁用",
