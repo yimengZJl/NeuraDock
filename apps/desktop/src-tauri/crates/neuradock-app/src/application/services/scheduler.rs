@@ -19,6 +19,17 @@ struct TaskMetadata {
     last_execution: Option<chrono::DateTime<chrono::Utc>>,
 }
 
+/// Configuration for spawning a check-in task
+struct CheckInTaskConfig {
+    account_id: AccountId,
+    account_name: String,
+    hour: u8,
+    minute: u8,
+    provider: Provider,
+    account_repo: Arc<dyn AccountRepository>,
+    app_handle: tauri::AppHandle,
+}
+
 pub struct AutoCheckInScheduler {
     account_repo: Arc<dyn AccountRepository>,
     /// Active tasks mapped by account ID
@@ -180,15 +191,15 @@ impl AutoCheckInScheduler {
             if account.auto_checkin_enabled() && account.is_enabled() {
                 let provider_id = account.provider_id().as_str();
                 if let Some(provider) = providers.get(provider_id) {
-                    self.spawn_check_in_task(
-                        account.id().clone(),
-                        account.name().to_string(),
-                        account.auto_checkin_hour(),
-                        account.auto_checkin_minute(),
-                        provider.clone(),
-                        account_repo.clone(),
-                        app_handle.clone(),
-                    )
+                    self.spawn_check_in_task(CheckInTaskConfig {
+                        account_id: account.id().clone(),
+                        account_name: account.name().to_string(),
+                        hour: account.auto_checkin_hour(),
+                        minute: account.auto_checkin_minute(),
+                        provider: provider.clone(),
+                        account_repo: account_repo.clone(),
+                        app_handle: app_handle.clone(),
+                    })
                     .await;
                     scheduled_count += 1;
                 } else {
@@ -206,16 +217,18 @@ impl AutoCheckInScheduler {
         Ok(())
     }
 
-    async fn spawn_check_in_task(
-        &self,
-        account_id: AccountId,
-        account_name: String,
-        hour: u8,
-        minute: u8,
-        provider: Provider,
-        account_repo: Arc<dyn AccountRepository>,
-        app_handle: tauri::AppHandle,
-    ) {
+    async fn spawn_check_in_task(&self, config: CheckInTaskConfig) {
+        // Destructure config for easier use
+        let CheckInTaskConfig {
+            account_id,
+            account_name,
+            hour,
+            minute,
+            provider,
+            account_repo,
+            app_handle,
+        } = config;
+
         info!(
             "➕ Spawning task for '{}' at {}:{:02}",
             account_name, hour, minute
