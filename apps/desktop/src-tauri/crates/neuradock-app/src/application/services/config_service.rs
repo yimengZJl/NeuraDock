@@ -9,9 +9,11 @@ use tracing::info;
 /// Log level configuration
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum LogLevel {
     Error = 1,
     Warn = 2,
+    #[default]
     Info = 3,
     Debug = 4,
     Trace = 5,
@@ -50,11 +52,6 @@ impl LogLevel {
     }
 }
 
-impl Default for LogLevel {
-    fn default() -> Self {
-        LogLevel::Info
-    }
-}
 
 /// Persistent configuration structure
 #[derive(Debug, Clone, Serialize, Deserialize)]

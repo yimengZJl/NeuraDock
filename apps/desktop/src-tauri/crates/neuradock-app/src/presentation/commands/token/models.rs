@@ -153,9 +153,7 @@ pub async fn fetch_provider_models(
                 }
 
                 // Return helpful error message
-                return Err(format!(
-                    "WAF challenge detected. Please use 'Refresh with WAF' button in account management to refresh cookies."
-                ));
+                return Err("WAF challenge detected. Please use 'Refresh with WAF' button in account management to refresh cookies.".to_string());
             }
 
             // Other error, just propagate

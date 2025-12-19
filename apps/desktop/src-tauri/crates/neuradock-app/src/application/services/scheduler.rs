@@ -266,7 +266,7 @@ impl AutoCheckInScheduler {
                     Some(mut next) => {
                         // If the target time has already passed today, schedule for tomorrow
                         if next <= now {
-                            next = next + chrono::Duration::days(1);
+                            next += chrono::Duration::days(1);
                         }
                         next
                     }

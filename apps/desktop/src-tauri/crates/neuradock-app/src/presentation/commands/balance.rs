@@ -190,7 +190,7 @@ pub async fn get_balance_statistics(
     }
 
     Ok(BalanceStatisticsDto {
-        providers: provider_stats.into_iter().map(|(_, v)| v).collect(),
+        providers: provider_stats.into_values().collect(),
         total_current_balance,
         total_consumed,
         total_income,

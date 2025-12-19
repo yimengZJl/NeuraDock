@@ -118,7 +118,7 @@ impl CheckInStreakQueries {
         month: u32,
     ) -> Result<CheckInCalendarDto, DomainError> {
         // Validate inputs
-        if month < 1 || month > 12 {
+        if !(1..=12).contains(&month) {
             return Err(DomainError::Validation("Invalid month".to_string()));
         }
 
@@ -204,15 +204,14 @@ impl CheckInStreakQueries {
 
             if let Some(row) = daily_map.get(&date_str) {
                 let income_increment = prev_income
-                    .map(|prev| {
+                    .and_then(|prev| {
                         let diff = row.daily_total_income - prev;
                         if diff > 0.0 {
                             Some(diff)
                         } else {
                             None
                         }
-                    })
-                    .flatten();
+                    });
 
                 let is_checked_in = income_increment.is_some() || prev_income.is_none();
 
@@ -429,15 +428,14 @@ impl CheckInStreakQueries {
                 .to_repo_err()?;
 
             let income_increment = prev_income
-                .map(|prev| {
+                .and_then(|prev| {
                     let diff = row.daily_total_income - prev;
                     if diff > 0.0 {
                         Some(diff)
                     } else {
                         None
                     }
-                })
-                .flatten();
+                });
 
             let is_checked_in = income_increment.is_some() || prev_income.is_none();
 
@@ -574,7 +572,7 @@ impl CheckInStreakQueries {
                 }
             };
 
-            let is_checked_in = prev_income.map_or(true, |prev| row.daily_total_income > prev);
+            let is_checked_in = prev_income.is_none_or(|prev| row.daily_total_income > prev);
 
             if is_checked_in {
                 current_streak = match last_check_in_date {

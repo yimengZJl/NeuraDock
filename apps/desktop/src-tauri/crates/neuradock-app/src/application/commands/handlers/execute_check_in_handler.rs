@@ -416,22 +416,20 @@ impl CommandHandler<BatchExecuteCheckInCommand> for BatchExecuteCheckInCommandHa
                                     account_id
                                 );
                             }
+                        } else if let Err(e) = notification_service
+                            .send_check_in_failure(
+                                &result.account_name,
+                                provider_name,
+                                &result.message,
+                            )
+                            .await
+                        {
+                            error!("Failed to send check-in failure notification: {}", e);
                         } else {
-                            if let Err(e) = notification_service
-                                .send_check_in_failure(
-                                    &result.account_name,
-                                    provider_name,
-                                    &result.message,
-                                )
-                                .await
-                            {
-                                error!("Failed to send check-in failure notification: {}", e);
-                            } else {
-                                info!(
-                                    "Check-in failure notification sent for account {}",
-                                    account_id
-                                );
-                            }
+                            info!(
+                                "Check-in failure notification sent for account {}",
+                                account_id
+                            );
                         }
                     } else {
                         info!(

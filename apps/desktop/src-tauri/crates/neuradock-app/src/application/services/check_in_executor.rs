@@ -63,7 +63,7 @@ impl CheckInExecutor {
     }
 
     /// Create UserInfoService from current executor state
-    fn create_user_info_service(&self) -> UserInfoService {
+    fn create_user_info_service(&self) -> UserInfoService<'_> {
         UserInfoService::new(&self.http_client, &self.waf_manager)
     }
 

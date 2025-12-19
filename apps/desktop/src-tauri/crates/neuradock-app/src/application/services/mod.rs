@@ -17,5 +17,3 @@ pub use notification_service::NotificationService;
 pub use provider_models_service::ProviderModelsService;
 pub use scheduler::AutoCheckInScheduler;
 pub use token::{ClaudeConfigService, CodexConfigService, TokenService};
-pub use user_info_service::UserInfoService;
-pub use waf_cookie_manager::WafCookieManager;

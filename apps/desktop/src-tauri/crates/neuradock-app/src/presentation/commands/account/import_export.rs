@@ -173,8 +173,8 @@ pub async fn import_accounts_batch(
 
     Ok(BatchImportResult {
         total: results.len() as i32,
-        succeeded: succeeded as i32,
-        failed: failed as i32,
+        succeeded,
+        failed,
         results,
     })
 }
@@ -344,9 +344,9 @@ pub async fn update_accounts_batch(
 
     Ok(BatchUpdateResult {
         total: results.len() as i32,
-        updated: updated as i32,
-        created: created as i32,
-        failed: failed as i32,
+        updated,
+        created,
+        failed,
         results,
     })
 }

@@ -7,6 +7,4 @@ pub mod queries;
 pub mod services;
 pub mod utils;
 
-pub use config::TimeoutConfig;
-pub use dtos::*;
 pub use utils::ResultExt;
