@@ -170,25 +170,15 @@ mod tests {
 
         // Create account with recent check-in (2 hours ago)
         let last_check_in = Utc::now() - Duration::hours(2);
-        let account = Account::restore(
+        let account = Account::builder(
             AccountId::new(),
             "Test Account".to_string(),
             ProviderId::new(),
             Credentials::new(cookies, "test@user".to_string()),
-            true,
-            Some(last_check_in),
-            Utc::now() - Duration::days(1),
-            false,
-            9,
-            0,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        );
+        )
+        .last_check_in(Some(last_check_in))
+        .created_at(Utc::now() - Duration::days(1))
+        .build();
 
         let result = CheckInDomainService::can_check_in(&account);
         assert!(result.is_err());
@@ -213,25 +203,15 @@ mod tests {
 
         // Create account with old check-in (24 hours ago - allowed)
         let last_check_in = Utc::now() - Duration::hours(24);
-        let account = Account::restore(
+        let account = Account::builder(
             AccountId::new(),
             "Test Account".to_string(),
             ProviderId::new(),
             Credentials::new(cookies, "test@user".to_string()),
-            true,
-            Some(last_check_in),
-            Utc::now() - Duration::days(1),
-            false,
-            9,
-            0,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        );
+        )
+        .last_check_in(Some(last_check_in))
+        .created_at(Utc::now() - Duration::days(1))
+        .build();
 
         let result = CheckInDomainService::can_check_in(&account);
         assert!(result.is_ok());

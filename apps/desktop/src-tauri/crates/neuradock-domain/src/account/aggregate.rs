@@ -67,43 +67,31 @@ impl Account {
         })
     }
 
-    pub fn restore(
+    /// Create a builder for restoring an Account from persistence
+    pub fn builder(
         id: AccountId,
         name: String,
         provider_id: ProviderId,
         credentials: Credentials,
-        enabled: bool,
-        last_check_in: Option<DateTime<Utc>>,
-        created_at: DateTime<Utc>,
-        auto_checkin_enabled: bool,
-        auto_checkin_hour: u8,
-        auto_checkin_minute: u8,
-        last_login_at: Option<DateTime<Utc>>,
-        session_token: Option<String>,
-        session_expires_at: Option<DateTime<Utc>>,
-        last_balance_check_at: Option<DateTime<Utc>>,
-        current_balance: Option<f64>,
-        total_consumed: Option<f64>,
-        total_income: Option<f64>,
-    ) -> Self {
-        Self {
+    ) -> AccountBuilder {
+        AccountBuilder {
             id,
             name,
             provider_id,
             credentials,
-            enabled,
-            last_check_in,
-            created_at,
-            auto_checkin_enabled,
-            auto_checkin_hour,
-            auto_checkin_minute,
-            last_login_at,
-            session_token,
-            session_expires_at,
-            last_balance_check_at,
-            current_balance,
-            total_consumed,
-            total_income,
+            enabled: true,
+            last_check_in: None,
+            created_at: Utc::now(),
+            auto_checkin_enabled: false,
+            auto_checkin_hour: 9,
+            auto_checkin_minute: 0,
+            last_login_at: None,
+            session_token: None,
+            session_expires_at: None,
+            last_balance_check_at: None,
+            current_balance: None,
+            total_consumed: None,
+            total_income: None,
         }
     }
 
@@ -257,6 +245,116 @@ impl Account {
                 age.num_hours() > max_age_hours
             }
             None => true,
+        }
+    }
+}
+
+/// Builder for restoring Account aggregates from persistence
+pub struct AccountBuilder {
+    id: AccountId,
+    name: String,
+    provider_id: ProviderId,
+    credentials: Credentials,
+    enabled: bool,
+    last_check_in: Option<DateTime<Utc>>,
+    created_at: DateTime<Utc>,
+    auto_checkin_enabled: bool,
+    auto_checkin_hour: u8,
+    auto_checkin_minute: u8,
+    last_login_at: Option<DateTime<Utc>>,
+    session_token: Option<String>,
+    session_expires_at: Option<DateTime<Utc>>,
+    last_balance_check_at: Option<DateTime<Utc>>,
+    current_balance: Option<f64>,
+    total_consumed: Option<f64>,
+    total_income: Option<f64>,
+}
+
+impl AccountBuilder {
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
+
+    pub fn last_check_in(mut self, last_check_in: Option<DateTime<Utc>>) -> Self {
+        self.last_check_in = last_check_in;
+        self
+    }
+
+    pub fn created_at(mut self, created_at: DateTime<Utc>) -> Self {
+        self.created_at = created_at;
+        self
+    }
+
+    pub fn auto_checkin_enabled(mut self, enabled: bool) -> Self {
+        self.auto_checkin_enabled = enabled;
+        self
+    }
+
+    pub fn auto_checkin_hour(mut self, hour: u8) -> Self {
+        self.auto_checkin_hour = hour;
+        self
+    }
+
+    pub fn auto_checkin_minute(mut self, minute: u8) -> Self {
+        self.auto_checkin_minute = minute;
+        self
+    }
+
+    pub fn last_login_at(mut self, last_login_at: Option<DateTime<Utc>>) -> Self {
+        self.last_login_at = last_login_at;
+        self
+    }
+
+    pub fn session_token(mut self, token: Option<String>) -> Self {
+        self.session_token = token;
+        self
+    }
+
+    pub fn session_expires_at(mut self, expires_at: Option<DateTime<Utc>>) -> Self {
+        self.session_expires_at = expires_at;
+        self
+    }
+
+    pub fn last_balance_check_at(mut self, last_check: Option<DateTime<Utc>>) -> Self {
+        self.last_balance_check_at = last_check;
+        self
+    }
+
+    pub fn current_balance(mut self, balance: Option<f64>) -> Self {
+        self.current_balance = balance;
+        self
+    }
+
+    pub fn total_consumed(mut self, consumed: Option<f64>) -> Self {
+        self.total_consumed = consumed;
+        self
+    }
+
+    pub fn total_income(mut self, income: Option<f64>) -> Self {
+        self.total_income = income;
+        self
+    }
+
+    pub fn build(self) -> Account {
+        Account {
+            id: self.id,
+            name: self.name,
+            provider_id: self.provider_id,
+            credentials: self.credentials,
+            enabled: self.enabled,
+            last_check_in: self.last_check_in,
+            created_at: self.created_at,
+            auto_checkin_enabled: self.auto_checkin_enabled,
+            auto_checkin_hour: self.auto_checkin_hour,
+            auto_checkin_minute: self.auto_checkin_minute,
+            last_login_at: self.last_login_at,
+            session_token: self.session_token,
+            session_expires_at: self.session_expires_at,
+            last_balance_check_at: self.last_balance_check_at,
+            current_balance: self.current_balance,
+            total_consumed: self.total_consumed,
+            total_income: self.total_income,
         }
     }
 }

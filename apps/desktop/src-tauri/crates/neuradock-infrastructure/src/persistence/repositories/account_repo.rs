@@ -60,25 +60,26 @@ impl AccountRow {
 
         let credentials = Credentials::new(cookies, api_user);
 
-        Ok(Account::restore(
+        Ok(Account::builder(
             AccountId::from_string(&self.id),
             self.name,
             ProviderId::from_string(&self.provider_id),
             credentials,
-            self.enabled,
-            self.last_check_in,
-            self.created_at,
-            self.auto_checkin_enabled,
-            self.auto_checkin_hour as u8,
-            self.auto_checkin_minute as u8,
-            self.last_login_at,
-            self.session_token,
-            self.session_expires_at,
-            self.last_balance_check_at,
-            self.current_balance,
-            self.total_consumed,
-            self.total_income,
-        ))
+        )
+        .enabled(self.enabled)
+        .last_check_in(self.last_check_in)
+        .created_at(self.created_at)
+        .auto_checkin_enabled(self.auto_checkin_enabled)
+        .auto_checkin_hour(self.auto_checkin_hour as u8)
+        .auto_checkin_minute(self.auto_checkin_minute as u8)
+        .last_login_at(self.last_login_at)
+        .session_token(self.session_token)
+        .session_expires_at(self.session_expires_at)
+        .last_balance_check_at(self.last_balance_check_at)
+        .current_balance(self.current_balance)
+        .total_consumed(self.total_consumed)
+        .total_income(self.total_income)
+        .build())
     }
 }
 
