@@ -2,6 +2,7 @@ use crate::application::commands::account_commands::*;
 use crate::application::commands::command_handler::CommandHandler;
 use crate::application::dtos::CreateAccountInput;
 use crate::application::dtos::UpdateAccountInput;
+use crate::application::ResultExt;
 use crate::presentation::state::AppState;
 use tauri::State;
 
@@ -27,7 +28,7 @@ pub async fn create_account(
         .create_account
         .handle(command)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     // Scheduler will be reloaded automatically via AccountCreated event
     // handled by SchedulerReloadEventHandler
@@ -57,7 +58,7 @@ pub async fn update_account(
         .update_account
         .handle(command)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     // Scheduler will be reloaded automatically via AccountUpdated event
     // handled by SchedulerReloadEventHandler
@@ -79,7 +80,7 @@ pub async fn delete_account(
         .delete_account
         .handle(command)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     // Scheduler will be reloaded automatically via AccountDeleted event
     // handled by SchedulerReloadEventHandler
@@ -105,7 +106,7 @@ pub async fn toggle_account(
         .toggle_account
         .handle(command)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     // Scheduler will be reloaded automatically via AccountToggled event
     // handled by SchedulerReloadEventHandler

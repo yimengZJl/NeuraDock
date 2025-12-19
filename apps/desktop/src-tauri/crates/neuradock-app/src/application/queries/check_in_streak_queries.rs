@@ -8,6 +8,7 @@ use crate::application::dtos::{
     CheckInCalendarDto, CheckInDayDto, CheckInStreakDto, CheckInTrendDto, MonthStatsDto,
     TrendDataPoint,
 };
+use crate::application::ResultExt;
 use neuradock_domain::shared::DomainError;
 
 #[derive(FromRow)]
@@ -166,7 +167,7 @@ impl CheckInStreakQueries {
             .bind(last_day.format("%Y-%m-%d").to_string())
             .fetch_all(&*self.db)
             .await
-            .map_err(|e| DomainError::Repository(e.to_string()))?;
+            .to_repo_err()?;
 
         if rows.is_empty() {
             warn!(
@@ -323,7 +324,7 @@ impl CheckInStreakQueries {
             .bind(end_date.format("%Y-%m-%d").to_string())
             .fetch_all(&*self.db)
             .await
-            .map_err(|e| DomainError::Repository(e.to_string()))?;
+            .to_repo_err()?;
 
         info!(
             "[streak] trend query account_id={} range={}~{} rows={}",
@@ -409,7 +410,7 @@ impl CheckInStreakQueries {
             .bind(date)
             .fetch_optional(&*self.db)
             .await
-            .map_err(|e| DomainError::Repository(e.to_string()))?;
+            .to_repo_err()?;
 
         if let Some(row) = row {
             // Get previous day's income to calculate increment
@@ -425,7 +426,7 @@ impl CheckInStreakQueries {
                 .bind(prev_date.format("%Y-%m-%d").to_string())
                 .fetch_optional(&*self.db)
                 .await
-                .map_err(|e| DomainError::Repository(e.to_string()))?;
+                .to_repo_err()?;
 
             let income_increment = prev_income
                 .map(|prev| {
@@ -471,7 +472,7 @@ impl CheckInStreakQueries {
         let account_ids: Vec<String> = sqlx::query_scalar(accounts_query)
             .fetch_all(&*self.db)
             .await
-            .map_err(|e| DomainError::Repository(e.to_string()))?;
+            .to_repo_err()?;
 
         info!(
             "[streak] recalc_all_streaks requested accounts={} (derived on demand)",
@@ -497,7 +498,7 @@ impl CheckInStreakQueries {
             .bind(account_id)
             .fetch_optional(&*self.db)
             .await
-            .map_err(|e| DomainError::Repository(e.to_string()))?;
+            .to_repo_err()?;
 
         row.ok_or_else(|| DomainError::AccountNotFound(account_id.to_string()))
     }
@@ -517,7 +518,7 @@ impl CheckInStreakQueries {
         sqlx::query_as(query)
             .fetch_all(&*self.db)
             .await
-            .map_err(|e| DomainError::Repository(e.to_string()))
+            .to_repo_err()
     }
 
     async fn fetch_all_daily_summaries(
@@ -540,7 +541,7 @@ impl CheckInStreakQueries {
             .bind(account_id)
             .fetch_all(&*self.db)
             .await
-            .map_err(|e| DomainError::Repository(e.to_string()))
+            .to_repo_err()
     }
 
     fn calculate_streak_stats(

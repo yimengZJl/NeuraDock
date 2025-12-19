@@ -1,4 +1,6 @@
 use crate::application::dtos;
+use crate::application::ResultExt;
+
 use crate::presentation::state::AppState;
 use neuradock_domain::shared::AccountId;
 use tauri::State;
@@ -10,13 +12,13 @@ pub async fn get_all_accounts(
     enabled_only: bool,
     state: State<'_, AppState>,
 ) -> Result<Vec<dtos::AccountDto>, String> {
-    let providers = state.provider_map().await.map_err(|e| e.to_string())?;
+    let providers = state.provider_map().await.to_string_err()?;
 
     state
         .account_queries
         .get_all_accounts(enabled_only, &providers)
         .await
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }
 
 /// Get account detail by ID
@@ -31,12 +33,12 @@ pub async fn get_account_detail(
         .account_repo
         .find_by_id(&id)
         .await
-        .map_err(|e| e.to_string())?
+        .to_string_err()?
         .ok_or("Account not found")?;
 
     use crate::application::dtos::AccountDetailDtoMapper;
 
-    let providers = state.provider_map().await.map_err(|e| e.to_string())?;
+    let providers = state.provider_map().await.to_string_err()?;
     let provider_name = providers
         .get(account.provider_id().as_str())
         .map(|p| p.name().to_string())

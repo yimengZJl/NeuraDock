@@ -1,4 +1,6 @@
 use tauri::State;
+use crate::application::ResultExt;
+
 
 use crate::application::dtos::ProviderNodeDto;
 use crate::presentation::state::AppState;
@@ -14,7 +16,7 @@ pub async fn get_provider_nodes(
         .provider_repo
         .find_by_id(&provider_id_obj)
         .await
-        .map_err(|e| e.to_string())?
+        .to_string_err()?
         .ok_or_else(|| format!("Provider {} not found", provider_id))?;
 
     let mut nodes = vec![ProviderNodeDto {
@@ -28,7 +30,7 @@ pub async fn get_provider_nodes(
         .custom_node_repo
         .find_by_provider(&provider_id_obj)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     for custom_node in custom_nodes {
         nodes.push(ProviderNodeDto {
@@ -60,7 +62,7 @@ pub async fn add_custom_node(
         .custom_node_repo
         .create(&node)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     Ok(format!("Custom node '{}' added successfully", name))
 }
@@ -77,7 +79,7 @@ pub async fn delete_custom_node(
         .custom_node_repo
         .delete(&id)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     Ok("Custom node deleted successfully".to_string())
 }

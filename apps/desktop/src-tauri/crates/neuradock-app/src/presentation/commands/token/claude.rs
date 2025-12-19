@@ -1,4 +1,6 @@
 use tauri::State;
+use crate::application::ResultExt;
+
 
 use crate::presentation::state::AppState;
 use neuradock_domain::shared::AccountId;
@@ -20,7 +22,7 @@ pub async fn configure_claude_global(
         .token_service
         .get_cached_tokens(&account_id)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     let token = tokens
         .iter()
@@ -31,7 +33,7 @@ pub async fn configure_claude_global(
     let result = state
         .claude_config_service
         .configure_global(token, &base_url, model.as_deref())
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     Ok(result)
 }
@@ -53,7 +55,7 @@ pub async fn generate_claude_temp_commands(
         .token_service
         .get_cached_tokens(&account_id)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     let token = tokens
         .iter()
@@ -64,7 +66,7 @@ pub async fn generate_claude_temp_commands(
     let commands = state
         .claude_config_service
         .generate_temp_commands(token, &base_url, model.as_deref())
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     Ok(commands)
 }
@@ -75,7 +77,7 @@ pub async fn clear_claude_global(state: State<'_, AppState>) -> Result<String, S
     state
         .claude_config_service
         .clear_global()
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }
 
 /// Check if models are compatible with Claude Code

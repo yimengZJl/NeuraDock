@@ -1,4 +1,6 @@
 use tauri::State;
+use crate::application::ResultExt;
+
 
 use crate::presentation::state::AppState;
 use neuradock_domain::shared::AccountId;
@@ -30,14 +32,14 @@ pub async fn fetch_provider_models(
             .provider_models_repo
             .is_stale(&provider_id, 24)
             .await
-            .map_err(|e| e.to_string())?;
+            .to_string_err()?;
 
         if !is_stale {
             if let Some(cached) = state
                 .provider_models_repo
                 .find_by_provider(&provider_id)
                 .await
-                .map_err(|e| e.to_string())?
+                .to_string_err()?
             {
                 log::info!(
                     "Returning {} cached models for provider {}",
@@ -55,7 +57,7 @@ pub async fn fetch_provider_models(
         .account_repo
         .find_by_id(&account_id_obj)
         .await
-        .map_err(|e| e.to_string())?
+        .to_string_err()?
         .ok_or_else(|| "Account not found".to_string())?;
 
     // Get provider configuration
@@ -64,7 +66,7 @@ pub async fn fetch_provider_models(
         .provider_repo
         .find_by_id(&provider_id_obj)
         .await
-        .map_err(|e| e.to_string())?
+        .to_string_err()?
         .ok_or_else(|| format!("Provider {} not found", provider_id))?;
 
     // Check if provider supports models API
@@ -113,7 +115,7 @@ pub async fn fetch_provider_models(
     }
 
     // Create token client and fetch models
-    let client = TokenClient::new().map_err(|e| e.to_string())?;
+    let client = TokenClient::new().to_string_err()?;
 
     // Build cookie string from merged cookies
     let cookie_string: String = cookies
@@ -166,7 +168,7 @@ pub async fn fetch_provider_models(
         .provider_models_repo
         .save(&provider_id, &models)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     log::info!(
         "Fetched and cached {} models for provider {}",
@@ -204,7 +206,7 @@ pub async fn refresh_provider_models_with_waf(
         .account_repo
         .find_by_id(&account_id_obj)
         .await
-        .map_err(|e| e.to_string())?
+        .to_string_err()?
         .ok_or_else(|| "Account not found".to_string())?;
 
     // Get provider configuration
@@ -213,7 +215,7 @@ pub async fn refresh_provider_models_with_waf(
         .provider_repo
         .find_by_id(&provider_id_obj)
         .await
-        .map_err(|e| e.to_string())?
+        .to_string_err()?
         .ok_or_else(|| format!("Provider {} not found", provider_id))?;
 
     // Check if provider supports models API
@@ -324,7 +326,7 @@ pub async fn refresh_provider_models_with_waf(
     let api_user = account.credentials().api_user();
 
     // Fetch models - with retry on WAF challenge
-    let client = TokenClient::new().map_err(|e| e.to_string())?;
+    let client = TokenClient::new().to_string_err()?;
     let models_result = client
         .fetch_provider_models(
             &base_url,
@@ -407,7 +409,7 @@ pub async fn refresh_provider_models_with_waf(
         .provider_models_repo
         .save(&provider_id, &models)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     log::info!(
         "Refreshed and saved {} models for provider {}",

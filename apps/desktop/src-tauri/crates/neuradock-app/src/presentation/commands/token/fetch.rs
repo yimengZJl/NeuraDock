@@ -1,4 +1,6 @@
 use tauri::State;
+use crate::application::ResultExt;
+
 
 use crate::application::dtos::TokenDto;
 use crate::presentation::state::AppState;
@@ -35,7 +37,7 @@ pub async fn fetch_account_tokens(
         .account_repo
         .find_by_id(&account_id)
         .await
-        .map_err(|e| e.to_string())?
+        .to_string_err()?
         .ok_or_else(|| "Account not found".to_string())?;
 
     // Get provider info
@@ -44,7 +46,7 @@ pub async fn fetch_account_tokens(
         .provider_repo
         .find_by_id(account.provider_id())
         .await
-        .map_err(|e| e.to_string())?
+        .to_string_err()?
         .ok_or_else(|| format!("Provider {} not found", provider_id))?;
 
     // Convert to DTOs

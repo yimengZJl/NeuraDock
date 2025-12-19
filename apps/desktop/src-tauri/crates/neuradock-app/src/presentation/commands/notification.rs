@@ -1,4 +1,6 @@
 use crate::application::commands::command_handler::CommandHandler;
+use crate::application::ResultExt;
+
 use crate::application::commands::notification_commands::*;
 use crate::application::dtos::{
     CreateNotificationChannelInput, NotificationChannelDto, UpdateNotificationChannelInput,
@@ -20,7 +22,7 @@ pub async fn create_notification_channel(
         .create_notification_channel
         .handle(command)
         .await
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }
 
 /// Update a notification channel
@@ -37,7 +39,7 @@ pub async fn update_notification_channel(
         .update_notification_channel
         .handle(command)
         .await
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }
 
 /// Delete a notification channel
@@ -54,7 +56,7 @@ pub async fn delete_notification_channel(
         .delete_notification_channel
         .handle(command)
         .await
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }
 
 /// Get all notification channels
@@ -67,7 +69,7 @@ pub async fn get_all_notification_channels(
         .notification_channel_repo
         .find_all()
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     let dtos = channels
         .iter()
@@ -97,5 +99,5 @@ pub async fn test_notification_channel(
         .test_notification_channel
         .handle(command)
         .await
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }

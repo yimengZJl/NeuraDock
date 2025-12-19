@@ -8,6 +8,7 @@ use crate::application::dtos::BalanceDto;
 use crate::application::services::{
     BalanceHistoryService, CheckInExecutor, NotificationService, ProviderModelsService,
 };
+use crate::application::ResultExt;
 use neuradock_domain::account::AccountRepository;
 use neuradock_domain::check_in::ProviderRepository;
 use neuradock_domain::shared::{AccountId, DomainError};
@@ -83,14 +84,14 @@ impl CommandHandler<ExecuteCheckInCommand> for ExecuteCheckInCommandHandler {
 
         // Create executor
         let executor = CheckInExecutor::new(self.account_repo.clone(), self.headless_browser)
-            .map_err(|e| DomainError::Infrastructure(e.to_string()))?
+            .to_infra_err()?
             .with_waf_cookies_repo(self.waf_cookies_repo.clone());
 
         // Execute check-in
         let result = executor
             .execute_check_in(&cmd.account_id, &provider)
             .await
-            .map_err(|e| DomainError::Infrastructure(e.to_string()))?;
+            .to_infra_err()?;
 
         info!(
             "Check-in completed for account {}: success={}",
@@ -260,7 +261,7 @@ impl CommandHandler<BatchExecuteCheckInCommand> for BatchExecuteCheckInCommandHa
         let mut results = Vec::new();
 
         let executor = CheckInExecutor::new(self.account_repo.clone(), self.headless_browser)
-            .map_err(|e| DomainError::Infrastructure(e.to_string()))?
+            .to_infra_err()?
             .with_waf_cookies_repo(self.waf_cookies_repo.clone());
 
         for account_id in cmd.account_ids {

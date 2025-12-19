@@ -1,4 +1,6 @@
 use crate::application::commands::command_handler::CommandHandler;
+use crate::application::ResultExt;
+
 use crate::application::commands::provider_commands::*;
 use crate::application::dtos::{AddProviderInput, BrowserInfoDto, ProviderDto};
 use crate::presentation::state::AppState;
@@ -63,7 +65,7 @@ pub async fn get_all_providers(state: State<'_, AppState>) -> Result<Vec<Provide
         .account_repo
         .find_all()
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     let dtos: Vec<ProviderDto> = all_providers
         .iter()
@@ -133,7 +135,7 @@ pub async fn create_provider(
         .create_provider
         .handle(input)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     Ok(result.provider_id)
 }
@@ -150,7 +152,7 @@ pub async fn update_provider(
         .update_provider
         .handle(input)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     Ok(true)
 }
@@ -167,7 +169,7 @@ pub async fn delete_provider(
         .delete_provider
         .handle(input)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     Ok(true)
 }

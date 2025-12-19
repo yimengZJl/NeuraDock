@@ -1,4 +1,6 @@
 use neuradock_infrastructure::logging::{log_from_frontend as log_fe, FrontendLog};
+use crate::application::ResultExt;
+
 use tauri::Manager;
 use tauri_plugin_opener::OpenerExt;
 
@@ -46,11 +48,11 @@ pub async fn open_log_dir(app: tauri::AppHandle) -> Result<String, String> {
         .ok_or_else(|| "Failed to get log directory".to_string())?;
 
     // Ensure directory exists
-    std::fs::create_dir_all(&log_dir).map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&log_dir).to_string_err()?;
 
     app.opener()
         .reveal_item_in_dir(&log_dir)
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     Ok(log_dir.display().to_string())
 }

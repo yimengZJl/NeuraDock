@@ -1,4 +1,6 @@
 use crate::application::dtos::{BalanceDto, BalanceStatisticsDto, ProviderBalanceDto};
+use crate::application::ResultExt;
+
 use crate::application::services::CheckInExecutor;
 use crate::presentation::state::AppState;
 use neuradock_domain::shared::AccountId;
@@ -25,7 +27,7 @@ pub async fn fetch_account_balance(
         .account_repo
         .find_by_id(&acc_id)
         .await
-        .map_err(|e| e.to_string())?
+        .to_string_err()?
         .ok_or("Account not found")?;
 
     // Check if we have valid cached balance (unless force_refresh is true)
@@ -50,18 +52,18 @@ pub async fn fetch_account_balance(
         .provider_repo
         .find_by_id(account.provider_id())
         .await
-        .map_err(|e| e.to_string())?
+        .to_string_err()?
         .ok_or(format!("Provider {} not found", provider_id))?;
 
     // Create executor
     let executor =
-        CheckInExecutor::new(state.account_repo.clone(), true).map_err(|e| e.to_string())?;
+        CheckInExecutor::new(state.account_repo.clone(), true).to_string_err()?;
 
     // Fetch balance only (without triggering check-in)
     let user_info = executor
         .fetch_balance_only(&account_id, &provider)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     // Note: API returns quota (current balance) and used_quota (total consumed)
     let current_balance = user_info.quota;
@@ -82,7 +84,7 @@ pub async fn fetch_account_balance(
         .account_repo
         .save(&account)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     // Store balance history (only if significantly changed or first time)
     save_balance_history(&account_id, &balance_dto, &state).await?;
@@ -127,8 +129,8 @@ pub async fn get_balance_statistics(
         .account_repo
         .find_enabled()
         .await
-        .map_err(|e| e.to_string())?;
-    let providers = state.provider_map().await.map_err(|e| e.to_string())?;
+        .to_string_err()?;
+    let providers = state.provider_map().await.to_string_err()?;
 
     let mut provider_stats: HashMap<String, ProviderBalanceDto> = HashMap::new();
     let mut total_current_balance = 0.0;
@@ -153,7 +155,7 @@ pub async fn get_balance_statistics(
                 .bind(account_id)
                 .fetch_optional(pool)
                 .await
-                .map_err(|e| e.to_string())?
+                .to_string_err()?
             }
         };
 
@@ -221,7 +223,7 @@ async fn save_balance_history(
     .bind(&today_start_str)
     .fetch_optional(pool)
     .await
-    .map_err(|e| e.to_string())?;
+    .to_string_err()?;
 
     match existing {
         Some((existing_id,)) => {
@@ -238,7 +240,7 @@ async fn save_balance_history(
             .bind(&existing_id)
             .execute(pool)
             .await
-            .map_err(|e| e.to_string())?;
+            .to_string_err()?;
         }
         None => {
             // No record exists for today - insert new one
@@ -254,7 +256,7 @@ async fn save_balance_history(
             .bind(now.to_rfc3339())
             .execute(pool)
             .await
-            .map_err(|e| e.to_string())?;
+            .to_string_err()?;
         }
     }
 

@@ -2,6 +2,7 @@ use crate::application::dtos::{
     BatchImportResult, BatchUpdateResult, ExportAccountsInput, ImportAccountInput,
     ImportItemResult, UpdateItemResult,
 };
+use crate::application::ResultExt;
 use crate::presentation::state::AppState;
 use chrono::{Duration, Utc};
 use neuradock_domain::account::{Account, Credentials};
@@ -29,9 +30,9 @@ async fn create_and_save_default_session(
         .unwrap_or_else(|| "session".to_string());
 
     let expires_at = Utc::now() + Duration::days(DEFAULT_SESSION_EXPIRATION_DAYS);
-    let session = Session::new(account_id, session_token, expires_at).map_err(|e| e.to_string())?;
+    let session = Session::new(account_id, session_token, expires_at).to_string_err()?;
 
-    session_repo.save(&session).await.map_err(|e| e.to_string())?;
+    session_repo.save(&session).await.to_string_err()?;
     Ok(())
 }
 
@@ -96,7 +97,7 @@ pub async fn import_account_from_json(
         ProviderId::from_string(&input.provider),
         credentials,
     )
-    .map_err(|e| e.to_string())?;
+    .to_string_err()?;
 
     let account_id = account.id().clone();
 
@@ -104,7 +105,7 @@ pub async fn import_account_from_json(
         .account_repo
         .save(&account)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     create_and_save_default_session(account_id.clone(), &cookies, &state.session_repo).await?;
 
@@ -190,7 +191,7 @@ pub async fn export_accounts_to_json(
             .account_repo
             .find_all()
             .await
-            .map_err(|e| e.to_string())?
+            .to_string_err()?
     } else {
         let mut result = Vec::new();
         for id_str in input.account_ids {
@@ -199,7 +200,7 @@ pub async fn export_accounts_to_json(
                 .account_repo
                 .find_by_id(&id)
                 .await
-                .map_err(|e| e.to_string())?
+                .to_string_err()?
             {
                 result.push(account);
             }
@@ -226,7 +227,7 @@ pub async fn export_accounts_to_json(
         })
         .collect();
 
-    serde_json::to_string_pretty(&export_data).map_err(|e| e.to_string())
+    serde_json::to_string_pretty(&export_data).to_string_err()
 }
 
 /// Batch update accounts - match by name+provider, update cookies and api_user
@@ -246,7 +247,7 @@ pub async fn update_accounts_batch(
         .account_repo
         .find_all()
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     let mut results = Vec::new();
     let mut updated = 0;

@@ -1,4 +1,6 @@
 use tauri::State;
+use crate::application::ResultExt;
+
 
 use crate::presentation::state::AppState;
 use neuradock_domain::shared::{AccountId, ProviderId};
@@ -21,7 +23,7 @@ pub async fn configure_codex_global(
         .token_service
         .get_cached_tokens(&account_id)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     let token = tokens
         .iter()
@@ -33,7 +35,7 @@ pub async fn configure_codex_global(
         .provider_repo
         .find_by_id(&provider_id_obj)
         .await
-        .map_err(|e| e.to_string())?
+        .to_string_err()?
         .ok_or_else(|| format!("Provider {} not found", provider_id))?;
 
     // Configure to Codex
@@ -46,7 +48,7 @@ pub async fn configure_codex_global(
             &base_url,
             model.as_deref(),
         )
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     Ok(result)
 }
@@ -69,7 +71,7 @@ pub async fn generate_codex_temp_commands(
         .token_service
         .get_cached_tokens(&account_id)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     let token = tokens
         .iter()
@@ -81,7 +83,7 @@ pub async fn generate_codex_temp_commands(
         .provider_repo
         .find_by_id(&provider_id_obj)
         .await
-        .map_err(|e| e.to_string())?
+        .to_string_err()?
         .ok_or_else(|| format!("Provider {} not found", provider_id))?;
 
     // Generate temp commands
@@ -94,7 +96,7 @@ pub async fn generate_codex_temp_commands(
             &base_url,
             model.as_deref(),
         )
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     Ok(commands)
 }
@@ -105,5 +107,5 @@ pub async fn clear_codex_global(state: State<'_, AppState>) -> Result<String, St
     state
         .codex_config_service
         .clear_global()
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }

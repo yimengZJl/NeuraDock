@@ -1,4 +1,6 @@
 use crate::application::commands::check_in_commands::*;
+use crate::application::ResultExt;
+
 use crate::application::commands::command_handler::CommandHandler;
 use crate::application::dtos::{
     self, BatchCheckInResult, CheckInHistoryDto, CheckInStatsDto, ExecuteCheckInResult,
@@ -28,7 +30,7 @@ pub async fn execute_check_in(
         .execute_check_in
         .handle(command)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     Ok(ExecuteCheckInResult {
         job_id: account_id,
@@ -56,7 +58,7 @@ pub async fn execute_batch_check_in(
         .batch_execute_check_in
         .handle(command)
         .await
-        .map_err(|e| e.to_string())?;
+        .to_string_err()?;
 
     // Convert results to DTOs
     let results_dto: Vec<ExecuteCheckInResult> = result
@@ -126,7 +128,7 @@ pub async fn get_check_in_streak(
         .streak_queries
         .get_streak_stats(&account_id)
         .await
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }
 
 /// Get check-in streak statistics for all accounts
@@ -139,7 +141,7 @@ pub async fn get_all_check_in_streaks(
         .streak_queries
         .get_all_streaks()
         .await
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }
 
 /// Get check-in calendar for a specific month
@@ -155,7 +157,7 @@ pub async fn get_check_in_calendar(
         .streak_queries
         .get_calendar(&account_id, year, month)
         .await
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }
 
 /// Get check-in trend over a period of days
@@ -170,7 +172,7 @@ pub async fn get_check_in_trend(
         .streak_queries
         .get_trend(&account_id, days)
         .await
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }
 
 /// Get detailed check-in information for a specific day
@@ -185,7 +187,7 @@ pub async fn get_check_in_day_detail(
         .streak_queries
         .get_day_detail(&account_id, &date)
         .await
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }
 
 /// Recalculate check-in streaks for all accounts
@@ -196,5 +198,5 @@ pub async fn recalculate_check_in_streaks(state: State<'_, AppState>) -> Result<
         .streak_queries
         .recalculate_all_streaks()
         .await
-        .map_err(|e| e.to_string())
+        .to_string_err()
 }
