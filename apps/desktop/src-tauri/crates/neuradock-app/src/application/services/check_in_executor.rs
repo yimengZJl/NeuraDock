@@ -88,180 +88,27 @@ impl CheckInExecutor {
             .prepare_cookies_and_fetch_user_info(&account, provider, &account_name)
             .await?;
 
-        let api_user = account.credentials().api_user();
+        // 4. Execute check-in request
+        let check_in_result = self
+            .perform_check_in_request(
+                &account,
+                provider,
+                &account_name,
+                &mut cookies,
+            )
+            .await;
 
-        // 4. Execute check-in if provider requires it
-        let check_in_result = if let Some(sign_in_url) = provider.sign_in_url() {
-            info!(
-                "[{}] Executing check-in request to: {}",
-                account_name, sign_in_url
-            );
-
-            // Check if the sign_in_url is a page (like /console/token) or an API endpoint
-            // Page URLs typically don't contain /api/
-            let is_page_visit = !sign_in_url.contains("/api/");
-
-            if is_page_visit {
-                // Visit the page (HTML response expected)
-                info!("[{}] Visiting check-in page: {}", account_name, sign_in_url);
-                match self
-                    .http_client
-                    .visit_login_page(&sign_in_url, &cookies)
-                    .await
-                {
-                    Ok(_) => {
-                        info!("[{}] Check-in page visited successfully!", account_name);
-                        CheckInResult {
-                            success: true,
-                            message: "Check-in page visited successfully".to_string(),
-                        }
-                    }
-                    Err(e) => {
-                        error!("[{}] Failed to visit check-in page: {}", account_name, e);
-                        CheckInResult {
-                            success: false,
-                            message: format!("Failed to visit page: {}", e),
-                        }
-                    }
-                }
-            } else {
-                // Call API endpoint (JSON response expected)
-                let check_in_call = self
-                    .http_client
-                    .execute_check_in(&sign_in_url, &cookies, provider.api_user_key(), api_user)
-                    .await;
-
-                match check_in_call {
-                    Ok(result) => {
-                        if result.success {
-                            info!("[{}] Check-in successful!", account_name);
-                        } else {
-                            warn!("[{}] Check-in failed: {}", account_name, result.message);
-                        }
-                        result
-                    }
-                    Err(e) if self.waf_manager.is_waf_challenge_error(&e) => {
-                        warn!("[{}] WAF challenge detected during check-in, refreshing cookies and retrying...", account_name);
-
-                        // Refresh WAF cookies and retry
-                        match self.waf_manager
-                            .refresh_waf_cookies(
-                                &account_name,
-                                provider,
-                                account.credentials().cookies(),
-                            )
-                            .await
-                        {
-                            Ok(fresh_cookies) => {
-                                // Update main cookies variable for subsequent operations
-                                cookies = fresh_cookies;
-
-                                // Retry check-in with fresh cookies
-                                match self
-                                    .http_client
-                                    .execute_check_in(
-                                        &sign_in_url,
-                                        &cookies,
-                                        provider.api_user_key(),
-                                        api_user,
-                                    )
-                                    .await
-                                {
-                                    Ok(result) => {
-                                        info!(
-                                            "[{}] Check-in retry successful after WAF refresh!",
-                                            account_name
-                                        );
-                                        result
-                                    }
-                                    Err(retry_err) => {
-                                        error!(
-                                            "[{}] Check-in retry failed: {}",
-                                            account_name, retry_err
-                                        );
-                                        CheckInResult {
-                                            success: false,
-                                            message: format!(
-                                                "Check-in failed after WAF retry: {}",
-                                                retry_err
-                                            ),
-                                        }
-                                    }
-                                }
-                            }
-                            Err(refresh_err) => {
-                                error!(
-                                    "[{}] Failed to refresh WAF cookies: {}",
-                                    account_name, refresh_err
-                                );
-                                CheckInResult {
-                                    success: false,
-                                    message: format!("WAF refresh failed: {}", refresh_err),
-                                }
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        error!("[{}] Check-in request error: {}", account_name, e);
-                        CheckInResult {
-                            success: false,
-                            message: format!("Request failed: {}", e),
-                        }
-                    }
-                }
-            }
-        } else {
-            info!(
-                "[{}] Provider {} does not require an explicit check-in request, skipping API call",
-                account_name,
-                provider.name()
-            );
-            CheckInResult {
-                success: true,
-                message: "Provider does not require explicit check-in".to_string(),
-            }
-        };
-
-        // Fetch balance after check-in to get updated value
-        // For successful check-ins, always fetch updated balance
-        let final_user_info = if check_in_result.success {
-            info!(
-                "[{}] Fetching updated balance after check-in...",
-                account_name
-            );
-
-            // Wait for server to process check-in
-            tokio::time::sleep(self.timeout_config.check_in_processing).await;
-
-            match self
-                .http_client
-                .get_user_info(
-                    &provider.user_info_url(),
-                    &cookies,
-                    provider.api_user_key(),
-                    api_user,
-                )
-                .await
-            {
-                Ok(updated_info) => {
-                    info!(
-                        "[{}] Updated balance: ${:.2}, Used: ${:.2}",
-                        account_name, updated_info.quota, updated_info.used_quota
-                    );
-                    Some(updated_info)
-                }
-                Err(e) => {
-                    warn!(
-                        "[{}] Failed to get updated balance: {}, using pre-check-in balance",
-                        account_name, e
-                    );
-                    user_info
-                }
-            }
-        } else {
-            // Check-in failed, use initial balance if available
-            user_info
-        };
+        // 5. Fetch updated balance after successful check-in
+        let final_user_info = self
+            .fetch_updated_balance_after_check_in(
+                &account,
+                provider,
+                &account_name,
+                &cookies,
+                &check_in_result,
+                user_info,
+            )
+            .await;
 
         Ok(AccountCheckInResult {
             account_id: account_id.to_string(),
@@ -454,6 +301,233 @@ impl CheckInExecutor {
         Ok((cookies, user_info))
     }
 
+    /// Perform check-in request (page visit or API call) with WAF retry logic
+    async fn perform_check_in_request(
+        &self,
+        account: &Account,
+        provider: &Provider,
+        account_name: &str,
+        cookies: &mut HashMap<String, String>,
+    ) -> CheckInResult {
+        let api_user = account.credentials().api_user();
+
+        // Check if provider requires explicit check-in
+        let Some(sign_in_url) = provider.sign_in_url() else {
+            info!(
+                "[{}] Provider {} does not require an explicit check-in request, skipping API call",
+                account_name,
+                provider.name()
+            );
+            return CheckInResult {
+                success: true,
+                message: "Provider does not require explicit check-in".to_string(),
+            };
+        };
+
+        info!(
+            "[{}] Executing check-in request to: {}",
+            account_name, sign_in_url
+        );
+
+        // Determine if this is a page visit or API call
+        // Page URLs typically don't contain /api/
+        let is_page_visit = !sign_in_url.contains("/api/");
+
+        if is_page_visit {
+            self.execute_page_visit_check_in(account_name, &sign_in_url, cookies)
+                .await
+        } else {
+            self.execute_api_check_in(
+                account,
+                provider,
+                account_name,
+                &sign_in_url,
+                cookies,
+                api_user,
+            )
+            .await
+        }
+    }
+
+    /// Execute check-in via page visit
+    async fn execute_page_visit_check_in(
+        &self,
+        account_name: &str,
+        sign_in_url: &str,
+        cookies: &HashMap<String, String>,
+    ) -> CheckInResult {
+        info!("[{}] Visiting check-in page: {}", account_name, sign_in_url);
+
+        match self
+            .http_client
+            .visit_login_page(sign_in_url, cookies)
+            .await
+        {
+            Ok(_) => {
+                info!("[{}] Check-in page visited successfully!", account_name);
+                CheckInResult {
+                    success: true,
+                    message: "Check-in page visited successfully".to_string(),
+                }
+            }
+            Err(e) => {
+                error!("[{}] Failed to visit check-in page: {}", account_name, e);
+                create_error_result(&format!("Failed to visit page: {}", e))
+            }
+        }
+    }
+
+    /// Execute check-in via API call with WAF retry logic
+    async fn execute_api_check_in(
+        &self,
+        account: &Account,
+        provider: &Provider,
+        account_name: &str,
+        sign_in_url: &str,
+        cookies: &mut HashMap<String, String>,
+        api_user: &str,
+    ) -> CheckInResult {
+        let check_in_call = self
+            .http_client
+            .execute_check_in(sign_in_url, cookies, provider.api_user_key(), api_user)
+            .await;
+
+        match check_in_call {
+            Ok(result) => {
+                if result.success {
+                    info!("[{}] Check-in successful!", account_name);
+                } else {
+                    warn!("[{}] Check-in failed: {}", account_name, result.message);
+                }
+                result
+            }
+            Err(e) if self.waf_manager.is_waf_challenge_error(&e) => {
+                self.retry_check_in_after_waf_refresh(
+                    account,
+                    provider,
+                    account_name,
+                    sign_in_url,
+                    cookies,
+                    api_user,
+                )
+                .await
+            }
+            Err(e) => {
+                error!("[{}] Check-in request error: {}", account_name, e);
+                create_error_result(&format!("Request failed: {}", e))
+            }
+        }
+    }
+
+    /// Retry check-in after refreshing WAF cookies
+    async fn retry_check_in_after_waf_refresh(
+        &self,
+        account: &Account,
+        provider: &Provider,
+        account_name: &str,
+        sign_in_url: &str,
+        cookies: &mut HashMap<String, String>,
+        api_user: &str,
+    ) -> CheckInResult {
+        warn!(
+            "[{}] WAF challenge detected during check-in, refreshing cookies and retrying...",
+            account_name
+        );
+
+        // Refresh WAF cookies
+        let fresh_cookies = match self
+            .waf_manager
+            .refresh_waf_cookies(account_name, provider, account.credentials().cookies())
+            .await
+        {
+            Ok(fresh) => fresh,
+            Err(refresh_err) => {
+                error!(
+                    "[{}] Failed to refresh WAF cookies: {}",
+                    account_name, refresh_err
+                );
+                return create_error_result(&format!("WAF refresh failed: {}", refresh_err));
+            }
+        };
+
+        // Update cookies for subsequent operations
+        *cookies = fresh_cookies;
+
+        // Retry check-in with fresh cookies
+        match self
+            .http_client
+            .execute_check_in(sign_in_url, cookies, provider.api_user_key(), api_user)
+            .await
+        {
+            Ok(result) => {
+                info!(
+                    "[{}] Check-in retry successful after WAF refresh!",
+                    account_name
+                );
+                result
+            }
+            Err(retry_err) => {
+                error!(
+                    "[{}] Check-in retry failed: {}",
+                    account_name, retry_err
+                );
+                create_error_result(&format!("Check-in failed after WAF retry: {}", retry_err))
+            }
+        }
+    }
+
+    /// Fetch updated balance after successful check-in
+    async fn fetch_updated_balance_after_check_in(
+        &self,
+        account: &Account,
+        provider: &Provider,
+        account_name: &str,
+        cookies: &HashMap<String, String>,
+        check_in_result: &CheckInResult,
+        initial_user_info: Option<UserInfo>,
+    ) -> Option<UserInfo> {
+        // Only fetch updated balance if check-in was successful
+        if !check_in_result.success {
+            return initial_user_info;
+        }
+
+        info!(
+            "[{}] Fetching updated balance after check-in...",
+            account_name
+        );
+
+        // Wait for server to process check-in
+        tokio::time::sleep(self.timeout_config.check_in_processing).await;
+
+        let api_user = account.credentials().api_user();
+
+        match self
+            .http_client
+            .get_user_info(
+                &provider.user_info_url(),
+                cookies,
+                provider.api_user_key(),
+                api_user,
+            )
+            .await
+        {
+            Ok(updated_info) => {
+                info!(
+                    "[{}] Updated balance: ${:.2}, Used: ${:.2}",
+                    account_name, updated_info.quota, updated_info.used_quota
+                );
+                Some(updated_info)
+            }
+            Err(e) => {
+                warn!(
+                    "[{}] Failed to get updated balance: {}, using pre-check-in balance",
+                    account_name, e
+                );
+                initial_user_info
+            }
+        }
+    }
+
     /// Execute batch check-in for multiple accounts
     #[instrument(skip(self, providers), fields(batch_size = account_ids.len()))]
     pub async fn execute_batch_check_in(
@@ -540,6 +614,16 @@ impl CheckInExecutor {
             failed_count,
             results,
         })
+    }
+}
+
+// ========== Helper Functions ==========
+
+/// Create an error CheckInResult with a given message
+fn create_error_result(message: &str) -> CheckInResult {
+    CheckInResult {
+        success: false,
+        message: message.to_string(),
     }
 }
 

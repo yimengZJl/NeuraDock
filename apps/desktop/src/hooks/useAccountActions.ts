@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { Account, AccountDetail } from '@/lib/tauri-commands';
+import { useAccountMutation } from './useMutationFactory';
 
 export function useAccountActions() {
   const { t } = useTranslation();
@@ -41,73 +42,49 @@ export function useAccountActions() {
   };
 
   // Delete account mutation
-  const deleteAccountMutation = useMutation({
+  const deleteAccountMutation = useAccountMutation({
     mutationFn: async (accountId: string) => {
       await invoke('delete_account', { accountId });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      toast.success(t('accounts.deleteSuccess') || 'Account deleted successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to delete account:', error);
-      toast.error(t('common.error'));
-    },
+    successMessage: 'accounts.deleteSuccess',
+    logPrefix: 'Delete account',
   });
 
   // Toggle account enabled status
-  const toggleAccountMutation = useMutation({
+  const toggleAccountMutation = useAccountMutation({
     mutationFn: async ({ accountId, enabled }: { accountId: string; enabled: boolean }) => {
       await invoke('update_account_status', { accountId, enabled });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-    },
-    onError: (error) => {
-      console.error('Failed to toggle account:', error);
-      toast.error(t('common.error'));
-    },
+    logPrefix: 'Toggle account',
   });
 
   // Batch enable accounts
-  const batchEnableMutation = useMutation({
+  const batchEnableMutation = useAccountMutation({
     mutationFn: async (accountIds: string[]) => {
       await Promise.all(
         accountIds.map(id => invoke('update_account_status', { accountId: id, enabled: true }))
       );
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      toast.success(t('accounts.batchEnableSuccess') || 'Accounts enabled successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to enable accounts:', error);
-      toast.error(t('common.error'));
-    },
+    successMessage: 'accounts.batchEnableSuccess',
+    logPrefix: 'Batch enable accounts',
   });
 
   // Batch disable accounts
-  const batchDisableMutation = useMutation({
+  const batchDisableMutation = useAccountMutation({
     mutationFn: async (accountIds: string[]) => {
       await Promise.all(
         accountIds.map(id => invoke('update_account_status', { accountId: id, enabled: false }))
       );
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      toast.success(t('accounts.batchDisableSuccess') || 'Accounts disabled successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to disable accounts:', error);
-      toast.error(t('common.error'));
-    },
+    successMessage: 'accounts.batchDisableSuccess',
+    logPrefix: 'Batch disable accounts',
   });
 
   return {
     // State
     editingAccount,
     dialogOpen,
-    
+
     // Actions
     handleEdit,
     handleCreate,
@@ -116,7 +93,7 @@ export function useAccountActions() {
     toggleAccount: toggleAccountMutation.mutate,
     batchEnable: batchEnableMutation.mutate,
     batchDisable: batchDisableMutation.mutate,
-    
+
     // Loading states
     isDeleting: deleteAccountMutation.isPending,
     isToggling: toggleAccountMutation.isPending,
