@@ -1,6 +1,39 @@
+use serde::{Deserialize, Serialize};
+use specta::Type;
+
 use neuradock_domain::token::{ApiToken, TokenStatus};
 
-use super::TokenDto;
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct TokenDto {
+    pub id: i64,
+    pub account_id: String,
+    pub account_name: String,
+    pub provider_name: String,
+    pub name: String,
+    pub key: String,
+    pub masked_key: String,
+    pub status: i32,
+    pub status_text: String,
+    pub used_quota: i64,
+    pub remain_quota: i64,
+    pub unlimited_quota: bool,
+    pub usage_percentage: f64,
+    pub expired_time: Option<i64>,
+    pub expired_at: Option<String>,
+    pub is_active: bool,
+    pub is_expired: bool,
+    pub model_limits_enabled: bool,
+    pub model_limits_allowed: Vec<String>,
+    pub model_limits_denied: Vec<String>,
+    pub fetched_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct ProviderNodeDto {
+    pub id: String,
+    pub name: String,
+    pub base_url: String,
+}
 
 impl TokenDto {
     pub fn from_domain(token: &ApiToken, account_name: String, provider_name: String) -> Self {
