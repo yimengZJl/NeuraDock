@@ -2,6 +2,18 @@ use anyhow::Result;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
+/// Request configuration for fetching tokens
+#[derive(Debug, Clone)]
+pub struct FetchTokensRequest<'a> {
+    pub base_url: &'a str,
+    pub token_api_path: &'a str,
+    pub cookie_string: &'a str,
+    pub api_user_header: Option<&'a str>,
+    pub api_user: Option<&'a str>,
+    pub page: u32,
+    pub size: u32,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct TokenResponse {
     pub success: bool,
@@ -164,47 +176,38 @@ impl TokenClient {
         Ok(model_ids)
     }
 
-    pub async fn fetch_tokens(
-        &self,
-        base_url: &str,
-        token_api_path: &str,
-        cookie_string: &str,
-        api_user_header: Option<&str>,
-        api_user: Option<&str>,
-        page: u32,
-        size: u32,
-    ) -> Result<TokenResponse> {
+    pub async fn fetch_tokens(&self, request: FetchTokensRequest<'_>) -> Result<TokenResponse> {
         let url = format!(
             "{}?p={}&size={}",
-            Self::build_url(base_url, token_api_path),
-            page,
-            size
+            Self::build_url(request.base_url, request.token_api_path),
+            request.page,
+            request.size
         );
-        let normalized_base = base_url.trim_end_matches('/');
+        let normalized_base = request.base_url.trim_end_matches('/');
 
         log::info!("Fetching tokens from: {}", url);
         log::debug!(
             "Cookie length: {}, API user: {:?}",
-            cookie_string.len(),
-            api_user
+            request.cookie_string.len(),
+            request.api_user
         );
 
-        let mut request = self
+        let mut http_request = self
             .client
             .get(&url)
-            .header("Cookie", cookie_string)
+            .header("Cookie", request.cookie_string)
             .header("Accept", "application/json")
             .header("Accept-Encoding", "gzip, deflate, br")
             .header("Cache-Control", "no-store")
             .header("Referer", format!("{}/console/token", normalized_base));
 
-        if let Some(user) = api_user {
-            let header_name = api_user_header.unwrap_or("New-API-User");
+        if let Some(user) = request.api_user {
+            let header_name = request.api_user_header.unwrap_or("New-API-User");
             log::debug!("Adding {} header: {}", header_name, user);
-            request = request.header(header_name, user);
+            http_request = http_request.header(header_name, user);
         }
 
-        let response = request.send().await?;
+        let response = http_request.send().await?;
 
         if !response.status().is_success() {
             log::error!("HTTP request failed: {}", response.status());

@@ -1,3 +1,3 @@
 mod client;
 
-pub use client::{TokenClient, TokenData, TokenResponse};
+pub use client::{FetchTokensRequest, TokenClient, TokenData, TokenResponse};

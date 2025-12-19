@@ -8,7 +8,7 @@ use neuradock_domain::shared::{AccountId, ProviderId};
 use neuradock_domain::token::{
     ApiToken, ApiTokenConfig, ModelLimits, TokenId, TokenRepository, TokenStatus,
 };
-use neuradock_infrastructure::http::token::{TokenClient, TokenData};
+use neuradock_infrastructure::http::token::{FetchTokensRequest, TokenClient, TokenData};
 use neuradock_infrastructure::http::WafBypassService;
 use neuradock_infrastructure::persistence::repositories::SqliteWafCookiesRepository;
 
@@ -161,15 +161,15 @@ impl TokenService {
 
         let response = self
             .http_client
-            .fetch_tokens(
-                &base_url,
-                &token_api_path,
-                &cookie_string,
-                api_user_header_opt,
-                api_user_opt,
-                0,
-                10,
-            )
+            .fetch_tokens(FetchTokensRequest {
+                base_url: &base_url,
+                token_api_path: &token_api_path,
+                cookie_string: &cookie_string,
+                api_user_header: api_user_header_opt,
+                api_user: api_user_opt,
+                page: 0,
+                size: 10,
+            })
             .await;
 
         // Handle WAF challenge
@@ -203,15 +203,15 @@ impl TokenService {
 
                 // Retry with updated cookies
                 self.http_client
-                    .fetch_tokens(
-                        &base_url,
-                        &token_api_path,
-                        &updated_cookies,
-                        api_user_header_opt,
-                        api_user_opt,
-                        0,
-                        10,
-                    )
+                    .fetch_tokens(FetchTokensRequest {
+                        base_url: &base_url,
+                        token_api_path: &token_api_path,
+                        cookie_string: &updated_cookies,
+                        api_user_header: api_user_header_opt,
+                        api_user: api_user_opt,
+                        page: 0,
+                        size: 10,
+                    })
                     .await?
             }
             Err(e) => return Err(e),
