@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "tauri:dev": "npx --yes @tauri-apps/cli@2 dev",
     "tauri:build": "npx --yes @tauri-apps/cli@2 build",
-    "setup": "npm install --legacy-peer-deps"
+    "setup": "npm install --legacy-peer-deps",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -59,14 +62,19 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.9.4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^27.3.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.7.2",
-    "vite": "^6.0.1"
+    "vite": "^6.0.1",
+    "vitest": "^4.0.16"
   }
 }

@@ -631,6 +631,85 @@ fn create_error_result(message: &str) -> CheckInResult {
 mod tests {
     use super::*;
 
-    // Mock tests would go here
-    // Requires mockall for proper testing
+    #[test]
+    fn test_create_error_result() {
+        let result = create_error_result("Test error message");
+
+        assert!(!result.success);
+        assert_eq!(result.message, "Test error message");
+    }
+
+    #[test]
+    fn test_create_error_result_empty_message() {
+        let result = create_error_result("");
+
+        assert!(!result.success);
+        assert_eq!(result.message, "");
+    }
+
+    #[test]
+    fn test_account_check_in_result_structure() {
+        let result = AccountCheckInResult {
+            account_id: "test-account-123".to_string(),
+            account_name: "Test Account".to_string(),
+            success: true,
+            message: "Check-in successful".to_string(),
+            user_info: None,
+        };
+
+        assert_eq!(result.account_id, "test-account-123");
+        assert_eq!(result.account_name, "Test Account");
+        assert!(result.success);
+        assert_eq!(result.message, "Check-in successful");
+        assert!(result.user_info.is_none());
+    }
+
+    #[test]
+    fn test_batch_check_in_result_calculation() {
+        let results = vec![
+            AccountCheckInResult {
+                account_id: "1".to_string(),
+                account_name: "Account 1".to_string(),
+                success: true,
+                message: "OK".to_string(),
+                user_info: None,
+            },
+            AccountCheckInResult {
+                account_id: "2".to_string(),
+                account_name: "Account 2".to_string(),
+                success: false,
+                message: "Failed".to_string(),
+                user_info: None,
+            },
+            AccountCheckInResult {
+                account_id: "3".to_string(),
+                account_name: "Account 3".to_string(),
+                success: true,
+                message: "OK".to_string(),
+                user_info: None,
+            },
+        ];
+
+        let success_count = results.iter().filter(|r| r.success).count();
+        let failed_count = results.iter().filter(|r| !r.success).count();
+
+        assert_eq!(success_count, 2);
+        assert_eq!(failed_count, 1);
+        assert_eq!(results.len(), 3);
+    }
+
+    #[test]
+    fn test_batch_check_in_result_structure() {
+        let batch_result = BatchCheckInResult {
+            total: 5,
+            success_count: 3,
+            failed_count: 2,
+            results: vec![],
+        };
+
+        assert_eq!(batch_result.total, 5);
+        assert_eq!(batch_result.success_count, 3);
+        assert_eq!(batch_result.failed_count, 2);
+        assert_eq!(batch_result.total, batch_result.success_count + batch_result.failed_count);
+    }
 }
