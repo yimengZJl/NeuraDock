@@ -5,7 +5,9 @@ use std::sync::Arc;
 use neuradock_domain::account::{Account, AccountRepository};
 use neuradock_domain::check_in::{Provider, ProviderRepository};
 use neuradock_domain::shared::{AccountId, ProviderId};
-use neuradock_domain::token::{ApiToken, ModelLimits, TokenId, TokenRepository, TokenStatus};
+use neuradock_domain::token::{
+    ApiToken, ApiTokenConfig, ModelLimits, TokenId, TokenRepository, TokenStatus,
+};
 use neuradock_infrastructure::http::token::{TokenClient, TokenData};
 use neuradock_infrastructure::http::WafBypassService;
 use neuradock_infrastructure::persistence::repositories::SqliteWafCookiesRepository;
@@ -269,15 +271,17 @@ impl TokenService {
         Ok(ApiToken::new(
             TokenId::new(data.id),
             account_id,
-            data.name,
-            data.key,
-            status,
-            data.used_quota,
-            data.remain_quota,
-            data.unlimited_quota,
-            expired_time,
-            data.model_limits_enabled,
-            model_limits,
+            ApiTokenConfig {
+                name: data.name,
+                key: data.key,
+                status,
+                used_quota: data.used_quota,
+                remain_quota: data.remain_quota,
+                unlimited_quota: data.unlimited_quota,
+                expired_time,
+                model_limits_enabled: data.model_limits_enabled,
+                model_limits,
+            },
         ))
     }
 

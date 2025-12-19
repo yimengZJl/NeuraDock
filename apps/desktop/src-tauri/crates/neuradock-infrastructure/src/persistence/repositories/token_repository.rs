@@ -4,7 +4,9 @@ use sqlx::{FromRow, SqlitePool};
 use std::sync::Arc;
 
 use neuradock_domain::shared::{AccountId, DomainError};
-use neuradock_domain::token::{ApiToken, ModelLimits, TokenId, TokenRepository, TokenStatus};
+use neuradock_domain::token::{
+    ApiToken, ApiTokenConfig, ModelLimits, TokenId, TokenRepository, TokenStatus,
+};
 
 use crate::persistence::unit_of_work::RepositoryErrorMapper;
 use crate::persistence::SqliteRepositoryBase;
@@ -68,15 +70,17 @@ impl SqliteTokenRepository {
         Ok(ApiToken::new(
             TokenId::new(row.token_id),
             AccountId::from_string(&row.account_id),
-            row.token_name,
-            row.token_key,
-            status,
-            row.used_quota,
-            row.remain_quota,
-            row.unlimited_quota != 0,
-            expired_time,
-            row.model_limits_enabled != 0,
-            model_limits,
+            ApiTokenConfig {
+                name: row.token_name,
+                key: row.token_key,
+                status,
+                used_quota: row.used_quota,
+                remain_quota: row.remain_quota,
+                unlimited_quota: row.unlimited_quota != 0,
+                expired_time,
+                model_limits_enabled: row.model_limits_enabled != 0,
+                model_limits,
+            },
         ))
     }
 }
