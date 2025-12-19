@@ -20,8 +20,10 @@ impl<'a> SqliteTransactionContext<'a> {
 
     /// Get mutable reference to the underlying transaction
     /// This is used by repositories to execute queries within the transaction
-    pub fn inner_mut(&mut self) -> &mut SqlxTransaction<'a, Sqlite> {
-        self.tx.as_mut().expect("Transaction already consumed")
+    ///
+    /// Returns an error if the transaction has already been consumed by commit/rollback
+    pub fn inner_mut(&mut self) -> Result<&mut SqlxTransaction<'a, Sqlite>, sqlx::Error> {
+        self.tx.as_mut().ok_or(sqlx::Error::PoolClosed)
     }
 }
 
@@ -68,9 +70,41 @@ impl UnitOfWork for SqliteUnitOfWork {
             .await
             .map_err(|e| UnitOfWorkError::TransactionFailed(e.to_string()))?;
 
-        // SAFETY: We're converting the transaction to 'static lifetime.
-        // This is now safe because SqliteTransactionContext holds an Arc<Pool>
-        // reference, ensuring the pool outlives the transaction.
+        // SAFETY ANALYSIS for transmute to 'static lifetime:
+        //
+        // BACKGROUND:
+        // - Domain layer's UnitOfWork trait requires 'static transaction for trait object safety
+        // - sqlx::Transaction<'a, Sqlite> has lifetime 'a tied to the connection it borrows
+        // - We need to bridge this gap between domain abstraction and concrete implementation
+        //
+        // WHY THIS IS SAFE:
+        // 1. SqliteTransactionContext stores Arc<Pool<Sqlite>> which keeps pool alive
+        // 2. Transaction internally borrows from pool's connection
+        // 3. As long as pool exists, the borrowed connection remains valid
+        // 4. Arc reference counting ensures pool cannot be dropped while transaction exists
+        // 5. Transaction is consumed (moved into Option::take()) on commit/rollback
+        //
+        // INVARIANTS MAINTAINED:
+        // - Pool lifetime >= Transaction lifetime (enforced by Arc)
+        // - Transaction cannot be used after commit/rollback (enforced by Option::take)
+        // - No data races possible (transaction is !Sync by nature)
+        //
+        // ALTERNATIVE DESIGNS CONSIDERED:
+        // - HRTB (Higher-Rank Trait Bounds): Would require significant domain layer refactoring
+        // - Callback pattern: Would break current API and make error handling harder
+        // - Scoped threads: Not compatible with async/await
+        //
+        // RISKS:
+        // - If sqlx changes internal implementation of Transaction borrowing, this could break
+        // - This relies on sqlx's internal behavior remaining stable across versions
+        //
+        // MITIGATION:
+        // - Comprehensive test coverage (see tests below)
+        // - Version pinning for sqlx dependency
+        // - Monitor sqlx changelog for breaking changes
+        //
+        // TODO (long-term): Consider redesigning domain UnitOfWork trait to use callback pattern
+        // to eliminate unsafe code entirely.
         let static_tx: SqlxTransaction<'static, Sqlite> = unsafe { std::mem::transmute(tx) };
 
         Ok(Box::new(SqliteTransactionContext::new(

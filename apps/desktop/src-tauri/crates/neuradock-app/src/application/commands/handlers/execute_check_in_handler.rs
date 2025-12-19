@@ -152,73 +152,44 @@ impl ExecuteCheckInCommandHandler {
         }
     }
 
-    /// Save balance to balance_history table (one record per day, always update if exists)
+    /// Save balance to balance_history table (one record per day, uses deterministic ID to prevent duplicates)
     async fn save_balance_history(&self, account_id: &str, balance: &BalanceDto) {
-        let id = Uuid::new_v4().to_string();
         let now = Utc::now();
+        let date_str = now.format("%Y-%m-%d").to_string();
 
-        // Check if we already have a record today
-        let existing: Result<Option<(String,)>, _> = sqlx::query_as(
-            "SELECT id FROM balance_history WHERE account_id = ? AND DATE(recorded_at) = DATE(?) LIMIT 1",
+        // Generate deterministic ID based on account_id and date
+        // This ensures the same account on the same day always has the same ID
+        use sha2::{Sha256, Digest};
+        let mut hasher = Sha256::new();
+        hasher.update(account_id.as_bytes());
+        hasher.update(date_str.as_bytes());
+        let hash_result = hasher.finalize();
+        let id = format!("{:x}", hash_result);
+
+        // Use INSERT OR REPLACE to handle duplicates atomically
+        // SQLite will replace the existing record if ID already exists
+        let result = sqlx::query(
+            "INSERT OR REPLACE INTO balance_history (id, account_id, current_balance, total_consumed, total_income, recorded_at)
+             VALUES (?, ?, ?, ?, ?, ?)"
         )
+        .bind(&id)
         .bind(account_id)
+        .bind(balance.current_balance)
+        .bind(balance.total_consumed)
+        .bind(balance.total_income)
         .bind(now)
-        .fetch_optional(&*self.pool)
+        .execute(&*self.pool)
         .await;
 
-        match existing {
-            Ok(Some((existing_id,))) => {
-                // Record exists for today - always update with latest values
-                let result = sqlx::query(
-                    "UPDATE balance_history
-                     SET current_balance = ?, total_consumed = ?, total_income = ?, recorded_at = ?
-                     WHERE id = ?",
-                )
-                .bind(balance.current_balance)
-                .bind(balance.total_consumed)
-                .bind(balance.total_income)
-                .bind(now)
-                .bind(&existing_id)
-                .execute(&*self.pool)
-                .await;
-
-                match result {
-                    Ok(_) => {
-                        info!("Balance history updated for account {}: current=${:.2}, consumed=${:.2}, income=${:.2}",
-                            account_id, balance.current_balance, balance.total_consumed, balance.total_income);
-                    }
-                    Err(e) => {
-                        error!("Failed to update balance history: {}", e);
-                    }
-                }
-            }
-            Ok(None) => {
-                // Insert new record
-                let result = sqlx::query(
-                    "INSERT INTO balance_history (id, account_id, current_balance, total_consumed, total_income, recorded_at)
-                     VALUES (?, ?, ?, ?, ?, ?)"
-                )
-                .bind(&id)
-                .bind(account_id)
-                .bind(balance.current_balance)
-                .bind(balance.total_consumed)
-                .bind(balance.total_income)
-                .bind(now)
-                .execute(&*self.pool)
-                .await;
-
-                match result {
-                    Ok(_) => {
-                        info!("Balance history saved for account {}: current=${:.2}, consumed=${:.2}, income=${:.2}",
-                            account_id, balance.current_balance, balance.total_consumed, balance.total_income);
-                    }
-                    Err(e) => {
-                        error!("Failed to save balance history: {}", e);
-                    }
-                }
+        match result {
+            Ok(_) => {
+                info!(
+                    "Balance history saved/updated for account {}: current=${:.2}, consumed=${:.2}, income=${:.2}",
+                    account_id, balance.current_balance, balance.total_consumed, balance.total_income
+                );
             }
             Err(e) => {
-                error!("Failed to check balance history: {}", e);
+                error!("Failed to save/update balance history: {}", e);
             }
         }
     }
@@ -520,73 +491,44 @@ impl BatchExecuteCheckInCommandHandler {
         }
     }
 
-    /// Save balance to balance_history table (one record per day, always update if exists)
+    /// Save balance to balance_history table (one record per day, uses deterministic ID to prevent duplicates)
     async fn save_balance_history(&self, account_id: &str, balance: &BalanceDto) {
-        let id = Uuid::new_v4().to_string();
         let now = Utc::now();
+        let date_str = now.format("%Y-%m-%d").to_string();
 
-        // Check if we already have a record today
-        let existing: Result<Option<(String,)>, _> = sqlx::query_as(
-            "SELECT id FROM balance_history WHERE account_id = ? AND DATE(recorded_at) = DATE(?) LIMIT 1",
+        // Generate deterministic ID based on account_id and date
+        // This ensures the same account on the same day always has the same ID
+        use sha2::{Sha256, Digest};
+        let mut hasher = Sha256::new();
+        hasher.update(account_id.as_bytes());
+        hasher.update(date_str.as_bytes());
+        let hash_result = hasher.finalize();
+        let id = format!("{:x}", hash_result);
+
+        // Use INSERT OR REPLACE to handle duplicates atomically
+        // SQLite will replace the existing record if ID already exists
+        let result = sqlx::query(
+            "INSERT OR REPLACE INTO balance_history (id, account_id, current_balance, total_consumed, total_income, recorded_at)
+             VALUES (?, ?, ?, ?, ?, ?)"
         )
+        .bind(&id)
         .bind(account_id)
+        .bind(balance.current_balance)
+        .bind(balance.total_consumed)
+        .bind(balance.total_income)
         .bind(now)
-        .fetch_optional(&*self.pool)
+        .execute(&*self.pool)
         .await;
 
-        match existing {
-            Ok(Some((existing_id,))) => {
-                // Record exists for today - always update with latest values
-                let result = sqlx::query(
-                    "UPDATE balance_history
-                     SET current_balance = ?, total_consumed = ?, total_income = ?, recorded_at = ?
-                     WHERE id = ?",
-                )
-                .bind(balance.current_balance)
-                .bind(balance.total_consumed)
-                .bind(balance.total_income)
-                .bind(now)
-                .bind(&existing_id)
-                .execute(&*self.pool)
-                .await;
-
-                match result {
-                    Ok(_) => {
-                        info!("Balance history updated for account {}: current=${:.2}, consumed=${:.2}, income=${:.2}",
-                            account_id, balance.current_balance, balance.total_consumed, balance.total_income);
-                    }
-                    Err(e) => {
-                        error!("Failed to update balance history: {}", e);
-                    }
-                }
-            }
-            Ok(None) => {
-                // Insert new record
-                let result = sqlx::query(
-                    "INSERT INTO balance_history (id, account_id, current_balance, total_consumed, total_income, recorded_at)
-                     VALUES (?, ?, ?, ?, ?, ?)"
-                )
-                .bind(&id)
-                .bind(account_id)
-                .bind(balance.current_balance)
-                .bind(balance.total_consumed)
-                .bind(balance.total_income)
-                .bind(now)
-                .execute(&*self.pool)
-                .await;
-
-                match result {
-                    Ok(_) => {
-                        info!("Balance history saved for account {}: current=${:.2}, consumed=${:.2}, income=${:.2}",
-                            account_id, balance.current_balance, balance.total_consumed, balance.total_income);
-                    }
-                    Err(e) => {
-                        error!("Failed to save balance history: {}", e);
-                    }
-                }
+        match result {
+            Ok(_) => {
+                info!(
+                    "Balance history saved/updated for account {}: current=${:.2}, consumed=${:.2}, income=${:.2}",
+                    account_id, balance.current_balance, balance.total_consumed, balance.total_income
+                );
             }
             Err(e) => {
-                error!("Failed to check balance history: {}", e);
+                error!("Failed to save/update balance history: {}", e);
             }
         }
     }

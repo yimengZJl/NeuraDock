@@ -61,9 +61,14 @@ impl EventBus for InMemoryEventBus {
 
         info!("Publishing event: {}", event_type_name);
 
-        let handlers = self.handlers.read().await;
+        // Clone the handlers list and release lock immediately to avoid blocking
+        // This prevents long-running handlers from blocking subscribe/publish operations
+        let event_handlers = {
+            let handlers = self.handlers.read().await;
+            handlers.get(event_type_name).cloned()
+        }; // Lock released here
 
-        if let Some(event_handlers) = handlers.get(event_type_name) {
+        if let Some(event_handlers) = event_handlers {
             info!(
                 "Found {} handlers for event type: {}",
                 event_handlers.len(),
@@ -72,7 +77,7 @@ impl EventBus for InMemoryEventBus {
 
             let event_any = event.as_any();
 
-            // Execute all handlers for this event type
+            // Execute all handlers for this event type (lock already released)
             for handler in event_handlers {
                 match handler.handle_dynamic(event_any).await {
                     Ok(_) => {

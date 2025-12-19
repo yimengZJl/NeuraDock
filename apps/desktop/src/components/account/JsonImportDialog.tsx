@@ -16,6 +16,31 @@ import { cacheInvalidators } from '@/lib/cacheInvalidators';
 import { toast } from 'sonner';
 import { Upload, FileJson, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import * as z from 'zod';
+
+// Validation schemas for imported account data
+const cookiesSchema = z.union([
+  z.record(z.string(), z.string()), // Object format
+  z.string().refine((val) => { // String format (must be valid JSON object)
+    try {
+      const parsed = JSON.parse(val);
+      return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+    } catch {
+      return false;
+    }
+  }, { message: 'Cookies must be a valid JSON object string' })
+]);
+
+const importedAccountSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  provider: z.string().optional(),
+  provider_id: z.string().optional(),
+  cookies: cookiesSchema,
+  api_user: z.string().optional(),
+});
+
+const singleImportSchema = importedAccountSchema;
+const batchImportSchema = z.array(importedAccountSchema).min(1).max(100);
 
 interface ImportedAccountData {
   name?: string;
@@ -82,16 +107,6 @@ export function JsonImportDialog({ open, onOpenChange }: JsonImportDialogProps) 
 
   const isSubmitting = importSingleMutation.isPending || importBatchMutation.isPending;
 
-  // Helper function to validate imported account data
-  const isValidAccountData = (data: unknown): data is ImportedAccountData => {
-    if (typeof data !== 'object' || data === null) return false;
-    const account = data as Partial<ImportedAccountData>;
-    return !!(
-      account.cookies &&
-      (typeof account.cookies === 'object' || typeof account.cookies === 'string')
-    );
-  };
-
   const validateJson = () => {
     if (!jsonInput.trim()) {
       setValidationResult({
@@ -104,43 +119,47 @@ export function JsonImportDialog({ open, onOpenChange }: JsonImportDialogProps) 
     try {
       const parsed = JSON.parse(jsonInput);
 
-      // Check if it's an array (batch) or object (single)
-      if (Array.isArray(parsed)) {
-        // Batch mode
-        const accounts = parsed.map((item: unknown, index: number) => {
-          const account = item as Partial<ImportedAccountData>;
-          return {
-            name: account.name || `Account ${index + 1}`,
-            provider: account.provider || account.provider_id || providerPlaceholder,
-            valid: isValidAccountData(item),
-          };
-        });
+      // Try batch import schema first
+      const batchResult = batchImportSchema.safeParse(parsed);
+      if (batchResult.success) {
+        const accounts = batchResult.data.map((item, index) => ({
+          name: item.name || `Account ${index + 1}`,
+          provider: item.provider || item.provider_id || providerPlaceholder,
+          valid: true,
+        }));
 
         setValidationResult({
-          valid: accounts.every((a) => a.valid),
+          valid: true,
           accounts,
         });
         setImportMode('batch');
-      } else if (typeof parsed === 'object' && parsed !== null) {
-        // Single mode
-        const valid = !!parsed.cookies && (typeof parsed.cookies === 'object' || typeof parsed.cookies === 'string');
+        return;
+      }
+
+      // Try single import schema
+      const singleResult = singleImportSchema.safeParse(parsed);
+      if (singleResult.success) {
         setValidationResult({
-          valid,
+          valid: true,
           accounts: [
             {
-              name: parsed.name || 'Unnamed Account',
-              provider: parsed.provider || parsed.provider_id || providerPlaceholder,
-              valid,
+              name: singleResult.data.name || 'Unnamed Account',
+              provider: singleResult.data.provider || singleResult.data.provider_id || providerPlaceholder,
+              valid: true,
             },
           ],
         });
         setImportMode('single');
-      } else {
-        setValidationResult({
-          valid: false,
-          error: t('jsonImport.invalidFormat'),
-        });
+        return;
       }
+
+      // Both schemas failed, provide detailed error message
+      const error = batchResult.error || singleResult.error;
+      const firstError = error.errors[0];
+      setValidationResult({
+        valid: false,
+        error: firstError?.message || t('jsonImport.invalidFormat'),
+      });
     } catch (error) {
       setValidationResult({
         valid: false,

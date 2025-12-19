@@ -10,11 +10,24 @@ use neuradock_domain::account::AccountRepository;
 use neuradock_domain::check_in::Provider;
 use neuradock_domain::shared::AccountId;
 
+/// Task metadata for health monitoring
+#[derive(Debug, Clone)]
+struct TaskMetadata {
+    account_id: AccountId,
+    account_name: String,
+    started_at: chrono::DateTime<chrono::Utc>,
+    last_execution: Option<chrono::DateTime<chrono::Utc>>,
+}
+
 pub struct AutoCheckInScheduler {
     account_repo: Arc<dyn AccountRepository>,
     /// Active tasks mapped by account ID
     /// Using Mutex to allow modification from multiple contexts
     tasks: Arc<Mutex<HashMap<AccountId, JoinHandle<()>>>>,
+    /// Task metadata for health monitoring
+    task_metadata: Arc<Mutex<HashMap<AccountId, TaskMetadata>>>,
+    /// Health check task handle
+    health_check_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
 }
 
 impl AutoCheckInScheduler {
@@ -24,23 +37,99 @@ impl AutoCheckInScheduler {
         Ok(Self {
             account_repo,
             tasks: Arc::new(Mutex::new(HashMap::new())),
+            task_metadata: Arc::new(Mutex::new(HashMap::new())),
+            health_check_handle: Arc::new(Mutex::new(None)),
         })
     }
 
     pub async fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
         info!("✅ Auto check-in scheduler started (using tokio timer)");
+
+        // Start health check task
+        self.start_health_check_task().await;
+
         Ok(())
+    }
+
+    /// Start health check background task to monitor scheduled tasks
+    async fn start_health_check_task(&self) {
+        let tasks = Arc::clone(&self.tasks);
+        let metadata = Arc::clone(&self.task_metadata);
+
+        let handle = tokio::spawn(async move {
+            let mut check_interval = tokio::time::interval(Duration::from_secs(300)); // Check every 5 minutes
+
+            loop {
+                check_interval.tick().await;
+
+                let tasks_lock = tasks.lock().await;
+                let mut metadata_lock = metadata.lock().await;
+
+                let mut dead_tasks = Vec::new();
+
+                for (account_id, handle) in tasks_lock.iter() {
+                    if handle.is_finished() {
+                        warn!(
+                            "🔴 Health Check: Task for account {} has terminated unexpectedly",
+                            account_id.as_str()
+                        );
+                        dead_tasks.push(account_id.clone());
+                    } else if let Some(meta) = metadata_lock.get(account_id) {
+                        // Check if task hasn't executed for more than 25 hours (should execute daily)
+                        if let Some(last_exec) = meta.last_execution {
+                            let elapsed = chrono::Utc::now() - last_exec;
+                            if elapsed > chrono::Duration::hours(25) {
+                                warn!(
+                                    "⚠️  Health Check: Task for '{}' hasn't executed in {} hours",
+                                    meta.account_name,
+                                    elapsed.num_hours()
+                                );
+                            }
+                        }
+                    }
+                }
+
+                // Remove metadata for dead tasks
+                for account_id in dead_tasks {
+                    metadata_lock.remove(&account_id);
+                    error!(
+                        "🔴 Health Check: Removed dead task metadata for account {}",
+                        account_id.as_str()
+                    );
+                }
+
+                drop(tasks_lock);
+                drop(metadata_lock);
+            }
+        });
+
+        let mut health_check = self.health_check_handle.lock().await;
+        *health_check = Some(handle);
+
+        info!("✅ Health check task started (checking every 5 minutes)");
     }
 
     /// Stop all scheduled tasks
     pub async fn stop_all_tasks(&self) {
+        // Stop health check task first
+        let mut health_check = self.health_check_handle.lock().await;
+        if let Some(handle) = health_check.take() {
+            handle.abort();
+            info!("🛑 Health check task stopped");
+        }
+        drop(health_check);
+
         let mut tasks = self.tasks.lock().await;
+        let mut metadata = self.task_metadata.lock().await;
+
         info!("🛑 Stopping {} scheduled tasks...", tasks.len());
 
         for (account_id, handle) in tasks.drain() {
             info!("  ⏹️  Stopping task for account: {}", account_id.as_str());
             handle.abort();
         }
+
+        metadata.clear();
 
         info!("✅ All scheduled tasks stopped");
     }
@@ -134,6 +223,24 @@ impl AutoCheckInScheduler {
 
         // Clone account_id before moving it into the async closure
         let account_id_for_storage = account_id.clone();
+        let account_name_clone = account_name.clone();
+
+        // Clone task metadata for updating within the task
+        let task_metadata = Arc::clone(&self.task_metadata);
+
+        // Initialize metadata
+        {
+            let mut metadata = task_metadata.lock().await;
+            metadata.insert(
+                account_id_for_storage.clone(),
+                TaskMetadata {
+                    account_id: account_id_for_storage.clone(),
+                    account_name: account_name_clone.clone(),
+                    started_at: chrono::Utc::now(),
+                    last_execution: None,
+                },
+            );
+        }
 
         let handle = tokio::spawn(async move {
             loop {
@@ -191,6 +298,14 @@ impl AutoCheckInScheduler {
                     account_name,
                     Local::now().format("%Y-%m-%d %H:%M:%S %Z")
                 );
+
+                // Update last execution time
+                {
+                    let mut metadata = task_metadata.lock().await;
+                    if let Some(meta) = metadata.get_mut(&account_id) {
+                        meta.last_execution = Some(chrono::Utc::now());
+                    }
+                }
 
                 use crate::application::services::CheckInExecutor;
                 match CheckInExecutor::new(account_repo.clone(), true) {
