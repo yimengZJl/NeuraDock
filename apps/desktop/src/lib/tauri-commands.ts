@@ -76,9 +76,11 @@ export const accountCommands = {
     invoke<string[]>('import_accounts_batch', { jsonData }),
 
   exportToJson: (accountIds: string[], includeCredentials: boolean) =>
-    invoke<string>('export_accounts_to_json', { 
-      accountIds, 
-      includeCredentials 
+    invoke<string>('export_accounts_to_json', {
+      input: {
+        accountIds,
+        includeCredentials,
+      },
     }),
 };
 

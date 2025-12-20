@@ -53,7 +53,7 @@ export function useAccountActions() {
   // Toggle account enabled status
   const toggleAccountMutation = useAccountMutation({
     mutationFn: async ({ accountId, enabled }: { accountId: string; enabled: boolean }) => {
-      await invoke('update_account_status', { accountId, enabled });
+      await invoke('toggle_account', { accountId, enabled });
     },
     logPrefix: 'Toggle account',
   });
@@ -62,7 +62,7 @@ export function useAccountActions() {
   const batchEnableMutation = useAccountMutation({
     mutationFn: async (accountIds: string[]) => {
       await Promise.all(
-        accountIds.map(id => invoke('update_account_status', { accountId: id, enabled: true }))
+        accountIds.map((id) => invoke('toggle_account', { accountId: id, enabled: true }))
       );
     },
     successMessage: 'accounts.batchEnableSuccess',
@@ -73,7 +73,7 @@ export function useAccountActions() {
   const batchDisableMutation = useAccountMutation({
     mutationFn: async (accountIds: string[]) => {
       await Promise.all(
-        accountIds.map(id => invoke('update_account_status', { accountId: id, enabled: false }))
+        accountIds.map((id) => invoke('toggle_account', { accountId: id, enabled: false }))
       );
     },
     successMessage: 'accounts.batchDisableSuccess',
