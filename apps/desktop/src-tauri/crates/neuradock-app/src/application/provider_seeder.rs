@@ -1,9 +1,10 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use neuradock_domain::check_in::{Provider, ProviderConfig, ProviderRepository};
 use neuradock_domain::custom_node::{CustomProviderNode, CustomProviderNodeRepository};
 use neuradock_domain::shared::DomainError;
+use neuradock_domain::shared::ProviderId;
 use serde::Deserialize;
 use tracing::info;
 
@@ -53,6 +54,21 @@ pub async fn seed_builtin_providers(
         .map(|provider| provider.id().as_str().to_string())
         .collect();
 
+    let has_default_nodes = configs
+        .iter()
+        .any(|config| config.default_nodes.as_ref().map_or(false, |nodes| !nodes.is_empty()));
+
+    let mut base_urls_by_provider: HashMap<ProviderId, HashSet<String>> = HashMap::new();
+    if has_default_nodes {
+        let existing_nodes = custom_node_repo.find_all().await?;
+        for node in existing_nodes {
+            base_urls_by_provider
+                .entry(node.provider_id().clone())
+                .or_default()
+                .insert(node.base_url().to_string());
+        }
+    }
+
     let mut seeded_count = 0;
     for config in configs.iter() {
         if !existing_ids.contains(&config.id) {
@@ -82,21 +98,16 @@ pub async fn seed_builtin_providers(
                 continue;
             }
 
-            let provider_id_obj =
-                neuradock_domain::shared::ProviderId::from_string(&config.id);
-            let existing_nodes = custom_node_repo
-                .find_by_provider(&provider_id_obj)
-                .await?;
-            let existing_base_urls: HashSet<String> = existing_nodes
-                .into_iter()
-                .map(|node| node.base_url().to_string())
-                .collect();
+            let provider_id_obj = ProviderId::from_string(&config.id);
+            let base_urls = base_urls_by_provider
+                .entry(provider_id_obj.clone())
+                .or_default();
 
             for node in default_nodes.iter() {
                 if node.base_url == config.domain {
                     continue;
                 }
-                if existing_base_urls.contains(&node.base_url) {
+                if !base_urls.insert(node.base_url.clone()) {
                     continue;
                 }
 

@@ -17,7 +17,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
     return (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : 'system';
   });
-  const [isInitialized, setIsInitialized] = useState(false);
 
   const setTheme = (newTheme: Theme) => {
     localStorage.setItem(THEME_STORAGE_KEY, newTheme);
@@ -42,7 +41,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     };
 
     applyTheme(theme);
-    setIsInitialized(true);
 
     // Listen for system theme changes when theme is 'system'
     if (theme === 'system') {
