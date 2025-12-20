@@ -1,33 +1,9 @@
-use async_trait::async_trait;
-use reqwest::Client;
+use neuradock_domain::notification::NotificationMessage;
 use serde_json::json;
 
-use neuradock_domain::notification::{NotificationMessage, NotificationSender};
-use neuradock_domain::shared::DomainError;
-
-/// Feishu webhook notification sender
-pub struct FeishuWebhookSender {
-    webhook_key: String,
-    client: Client,
-}
-
-impl FeishuWebhookSender {
-    pub fn new(webhook_key: String) -> Self {
-        Self {
-            webhook_key,
-            client: Client::new(),
-        }
-    }
-
-    fn build_webhook_url(&self) -> String {
-        format!(
-            "https://open.feishu.cn/open-apis/bot/v2/hook/{}",
-            self.webhook_key
-        )
-    }
-
+impl super::FeishuWebhookSender {
     /// Build a rich text (post) message for Feishu
-    fn build_rich_message(&self, message: &NotificationMessage) -> serde_json::Value {
+    pub(super) fn build_rich_message(&self, message: &NotificationMessage) -> serde_json::Value {
         // Try to parse the content to check if it's a check-in success message with balance data
         // Accept both Chinese and English success title variants and fall back to content markers
         let title_lc = message.title.to_lowercase();
@@ -68,7 +44,7 @@ impl FeishuWebhookSender {
     }
 
     /// Build a card message for Feishu (for check-in success with balance data)
-    fn build_card_message(&self, message: &NotificationMessage) -> serde_json::Value {
+    pub(super) fn build_card_message(&self, message: &NotificationMessage) -> serde_json::Value {
         // Parse the content to extract account, provider and balance data
         let lines: Vec<&str> = message.content.lines().collect();
 
@@ -165,7 +141,7 @@ impl FeishuWebhookSender {
     }
 
     /// Build a simple text message for Feishu (fallback)
-    fn build_text_message(&self, message: &NotificationMessage) -> serde_json::Value {
+    pub(super) fn build_text_message(&self, message: &NotificationMessage) -> serde_json::Value {
         let text = if message.link.is_some() {
             format!("{}\n\n{}", message.title, message.content)
         } else {
@@ -178,107 +154,5 @@ impl FeishuWebhookSender {
                 "text": text
             }
         })
-    }
-}
-
-#[async_trait]
-impl NotificationSender for FeishuWebhookSender {
-    async fn send(&self, message: &NotificationMessage) -> Result<(), DomainError> {
-        let url = self.build_webhook_url();
-        let payload = self.build_rich_message(message);
-
-        let response = self
-            .client
-            .post(&url)
-            .header("Content-Type", "application/json")
-            .json(&payload)
-            .send()
-            .await
-            .map_err(|e| {
-                DomainError::Infrastructure(format!("Failed to send Feishu notification: {}", e))
-            })?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            return Err(DomainError::Infrastructure(format!(
-                "Feishu webhook failed with status {}: {}",
-                status, body
-            )));
-        }
-
-        // Parse response to check for errors
-        let resp_body: serde_json::Value = response.json().await.map_err(|e| {
-            DomainError::Infrastructure(format!("Failed to parse Feishu response: {}", e))
-        })?;
-
-        // Feishu returns {"code":0} for success
-        if let Some(code) = resp_body.get("code").and_then(|c| c.as_i64()) {
-            if code != 0 {
-                let msg = resp_body
-                    .get("msg")
-                    .and_then(|m| m.as_str())
-                    .unwrap_or("Unknown error");
-                return Err(DomainError::Infrastructure(format!(
-                    "Feishu webhook error code {}: {}",
-                    code, msg
-                )));
-            }
-        }
-
-        Ok(())
-    }
-
-    async fn test(&self) -> Result<(), DomainError> {
-        let test_message = NotificationMessage::new(
-            "测试通知",
-            "这是一条来自 NeuraDock 的测试通知，如果您收到此消息，说明通知渠道配置成功！",
-        );
-
-        self.send(&test_message).await
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_build_webhook_url() {
-        let sender = FeishuWebhookSender::new("test_key_123".to_string());
-        let url = sender.build_webhook_url();
-        assert_eq!(
-            url,
-            "https://open.feishu.cn/open-apis/bot/v2/hook/test_key_123"
-        );
-    }
-
-    #[test]
-    fn test_build_rich_message() {
-        let sender = FeishuWebhookSender::new("test_key".to_string());
-        let message = NotificationMessage::new("标题", "内容").with_link("https://example.com");
-
-        let payload = sender.build_rich_message(&message);
-
-        assert_eq!(payload["msg_type"], "post");
-        assert_eq!(payload["content"]["post"]["zh_cn"]["title"], "标题");
-    }
-
-    #[test]
-    fn test_build_text_message() {
-        let sender = FeishuWebhookSender::new("test_key".to_string());
-        let message = NotificationMessage::new("标题", "内容");
-
-        let payload = sender.build_text_message(&message);
-
-        assert_eq!(payload["msg_type"], "text");
-        assert!(payload["content"]["text"]
-            .as_str()
-            .unwrap()
-            .contains("标题"));
-        assert!(payload["content"]["text"]
-            .as_str()
-            .unwrap()
-            .contains("内容"));
     }
 }
