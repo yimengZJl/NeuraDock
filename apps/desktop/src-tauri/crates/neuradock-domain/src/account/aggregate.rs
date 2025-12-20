@@ -29,7 +29,7 @@ pub struct Account {
 
 impl Account {
     pub const DEFAULT_SESSION_EXPIRATION_DAYS: i64 = 30;
-    pub const DEFAULT_CHECK_IN_INTERVAL_HOURS: u8 = 23;
+    pub const DEFAULT_CHECK_IN_INTERVAL_HOURS: u8 = 0;
 
     pub fn new(
         name: String,
@@ -194,9 +194,9 @@ impl Account {
     }
 
     pub fn set_check_in_interval_hours(&mut self, hours: u8) -> Result<(), DomainError> {
-        if hours == 0 || hours > 24 {
+        if hours > 24 {
             return Err(DomainError::Validation(
-                "Check-in interval must be between 1 and 24 hours".to_string(),
+                "Check-in interval must be between 0 and 24 hours (0 means no limit)".to_string(),
             ));
         }
         self.check_in_interval_hours = hours;

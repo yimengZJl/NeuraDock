@@ -15,20 +15,24 @@ impl CheckInDomainService {
             ));
         }
 
-        // Check if check-in is too frequent
-        if let Some(last_check_in) = account.last_check_in() {
-            let now = chrono::Utc::now();
-            let elapsed = now.signed_duration_since(last_check_in);
-            let hours_since_last = elapsed.num_hours();
-            let min_interval = account.check_in_interval_hours() as i64;
+        // Check if check-in is too frequent (only if interval > 0)
+        let min_interval = account.check_in_interval_hours() as i64;
 
-            if hours_since_last < min_interval {
-                let hours_remaining = min_interval - hours_since_last;
-                return Err(DomainError::Validation(format!(
-                    "Check-in too frequent. Please wait {} hour(s) before next check-in. Last check-in: {}",
-                    hours_remaining,
-                    last_check_in.format("%Y-%m-%d %H:%M:%S UTC")
-                )));
+        // If interval is 0, no time restriction
+        if min_interval > 0 {
+            if let Some(last_check_in) = account.last_check_in() {
+                let now = chrono::Utc::now();
+                let elapsed = now.signed_duration_since(last_check_in);
+                let hours_since_last = elapsed.num_hours();
+
+                if hours_since_last < min_interval {
+                    let hours_remaining = min_interval - hours_since_last;
+                    return Err(DomainError::Validation(format!(
+                        "Check-in too frequent. Please wait {} hour(s) before next check-in. Last check-in: {}",
+                        hours_remaining,
+                        last_check_in.format("%Y-%m-%d %H:%M:%S UTC")
+                    )));
+                }
             }
         }
 

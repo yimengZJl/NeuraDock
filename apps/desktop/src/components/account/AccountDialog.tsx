@@ -24,6 +24,7 @@ interface AccountDialogProps {
     auto_checkin_enabled?: boolean;
     auto_checkin_hour?: number;
     auto_checkin_minute?: number;
+    check_in_interval_hours?: number;
   };
 }
 
@@ -61,11 +62,11 @@ export function AccountDialog({
         onOpenChange(false);
       } else if (mode === 'edit' && accountId) {
         // Check if cookies were actually changed
-        const originalCookiesJson = defaultValues?.cookies 
-          ? JSON.stringify(defaultValues.cookies, null, 2) 
+        const originalCookiesJson = defaultValues?.cookies
+          ? JSON.stringify(defaultValues.cookies, null, 2)
           : '{"session": ""}';
         const cookiesChanged = values.cookies_json !== originalCookiesJson;
-        
+
         const input: UpdateAccountInput = {
           account_id: accountId,
           name: values.name,
@@ -74,6 +75,7 @@ export function AccountDialog({
           auto_checkin_enabled: values.auto_checkin_enabled ?? null,
           auto_checkin_hour: values.auto_checkin_hour ?? null,
           auto_checkin_minute: values.auto_checkin_minute ?? null,
+          check_in_interval_hours: values.check_in_interval_hours ?? null,
         };
 
         await updateMutation.mutateAsync(input);
@@ -101,6 +103,7 @@ export function AccountDialog({
         auto_checkin_enabled: defaultValues.auto_checkin_enabled ?? false,
         auto_checkin_hour: defaultValues.auto_checkin_hour ?? 9,
         auto_checkin_minute: defaultValues.auto_checkin_minute ?? 0,
+        check_in_interval_hours: defaultValues.check_in_interval_hours ?? 0,
       }
     : undefined;
 

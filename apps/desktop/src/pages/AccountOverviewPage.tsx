@@ -566,6 +566,7 @@ export function AccountOverviewPage() {
           auto_checkin_enabled: (editingAccount ?? account).auto_checkin_enabled,
           auto_checkin_hour: (editingAccount ?? account).auto_checkin_hour,
           auto_checkin_minute: (editingAccount ?? account).auto_checkin_minute,
+          check_in_interval_hours: (editingAccount ?? account).check_in_interval_hours,
         }}
       />
 

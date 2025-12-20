@@ -36,6 +36,7 @@ const getAccountFormSchema = (t: any) => z.object({
   auto_checkin_enabled: z.boolean().optional(),
   auto_checkin_hour: z.number().min(0).max(23).optional(),
   auto_checkin_minute: z.number().min(0).max(59).optional(),
+  check_in_interval_hours: z.number().min(0).max(24).optional(),
 });
 
 export type AccountFormValues = z.infer<ReturnType<typeof getAccountFormSchema>>;
@@ -79,6 +80,7 @@ export function AccountForm({
       auto_checkin_enabled: defaultValues?.auto_checkin_enabled ?? false,
       auto_checkin_hour: defaultValues?.auto_checkin_hour ?? 9,
       auto_checkin_minute: defaultValues?.auto_checkin_minute ?? 0,
+      check_in_interval_hours: defaultValues?.check_in_interval_hours ?? 0,
     },
   });
 
@@ -283,6 +285,32 @@ export function AccountForm({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Check-in Interval Settings */}
+      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="space-y-2">
+          <Label htmlFor="check_in_interval_hours">{t('accountForm.checkInIntervalHours')}</Label>
+          <Select
+            value={watch('check_in_interval_hours')?.toString() || '0'}
+            onValueChange={(value) => setValue('check_in_interval_hours', parseInt(value))}
+            disabled={isSubmitting}
+          >
+            <SelectTrigger id="check_in_interval_hours">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 25 }, (_, i) => i).map((hours) => (
+                <SelectItem key={hours} value={hours.toString()}>
+                  {hours === 0 ? t('accountForm.noLimit') : `${hours} ${t('accountForm.hours')}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {t('accountForm.checkInIntervalDescription')}
+          </p>
+        </div>
       </div>
 
       {/* Help Text */}
