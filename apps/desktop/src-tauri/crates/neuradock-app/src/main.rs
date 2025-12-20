@@ -10,6 +10,7 @@ use presentation::ipc;
 use presentation::state::AppState;
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
+use std::time::Instant;
 
 fn install_panic_hook() {
     std::panic::set_hook(Box::new(|info| {
@@ -115,6 +116,7 @@ async fn main() {
             });
 
             tracing::info!("🚀 Starting app state initialization...");
+            let started_at = Instant::now();
             let init_result = rx.recv().map_err(|e| {
                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
                     as Box<dyn std::error::Error>
@@ -122,7 +124,10 @@ async fn main() {
             match init_result {
                 Ok(app_state) => {
                     app.manage(app_state);
-                    tracing::info!("✅ App state initialized successfully");
+                    tracing::info!(
+                        "✅ App state initialized successfully ({}ms)",
+                        started_at.elapsed().as_millis()
+                    );
                 }
                 Err(message) => {
                     tracing::error!("❌ Failed to initialize app state: {}", message);

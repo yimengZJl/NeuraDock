@@ -1,6 +1,7 @@
 use sqlx::SqlitePool;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Instant;
 use tauri::Manager;
 use tracing::{info, warn};
 
@@ -79,15 +80,27 @@ pub struct AppState {
 
 impl AppState {
     pub async fn new(app_handle: tauri::AppHandle) -> Result<Self, Box<dyn std::error::Error>> {
+        let startup_started_at = Instant::now();
+
         // Get app data directory (~/Library/Application Support/com.neuradock.app/)
+        let started_at = Instant::now();
         let app_data_dir = app_handle
             .path()
             .app_data_dir()
             .map_err(|e| format!("Failed to get app data directory: {}", e))?;
+        info!(
+            "✓ Resolved app data dir ({}ms)",
+            started_at.elapsed().as_millis()
+        );
 
         // Create directory if it doesn't exist
+        let started_at = Instant::now();
         std::fs::create_dir_all(&app_data_dir)
             .map_err(|e| format!("Failed to create app data directory: {}", e))?;
+        info!(
+            "✓ Ensured app data dir exists ({}ms)",
+            started_at.elapsed().as_millis()
+        );
 
         let db_filename = if cfg!(debug_assertions) {
             "neuradock-dev.db"
@@ -102,6 +115,7 @@ impl AppState {
 
         // Initialize encryption
         info!("🔐 Initializing encryption...");
+        let started_at = Instant::now();
         let key_manager = KeyManager::new(app_data_dir.clone());
         let salt = key_manager
             .initialize()
@@ -114,15 +128,23 @@ impl AppState {
             EncryptionService::from_password(encryption_password, &salt)
                 .map_err(|e| format!("Failed to create encryption service: {}", e))?,
         );
-        info!("✓ Encryption initialized");
+        info!(
+            "✓ Encryption initialized ({}ms)",
+            started_at.elapsed().as_millis()
+        );
 
         info!("🔌 Connecting to database...");
+        let started_at = Instant::now();
         let database = Database::new(db_path_str).await?;
-        info!("✓ Database connection established");
+        info!(
+            "✓ Database connection established ({}ms)",
+            started_at.elapsed().as_millis()
+        );
 
         info!("🔄 Running migrations...");
+        let started_at = Instant::now();
         database.run_migrations().await?;
-        info!("✓ Migrations completed");
+        info!("✓ Migrations completed ({}ms)", started_at.elapsed().as_millis());
 
         let pool = Arc::new(database.pool().clone());
         let db = Arc::new(database);
@@ -146,9 +168,15 @@ impl AppState {
         let provider_repo =
             Arc::new(SqliteProviderRepository::new(pool.clone())) as Arc<dyn ProviderRepository>;
 
+        info!("🌱 Seeding built-in providers...");
+        let started_at = Instant::now();
         seed_builtin_providers(provider_repo.clone(), custom_node_repo.clone())
             .await
             .map_err(|e| format!("Failed to seed built-in providers: {}", e))?;
+        info!(
+            "✓ Built-in providers seeded ({}ms)",
+            started_at.elapsed().as_millis()
+        );
 
         let provider_models_repo = Arc::new(SqliteProviderModelsRepository::new(pool.clone()));
         let waf_cookies_repo = Arc::new(SqliteWafCookiesRepository::new(pool.clone()));
@@ -168,6 +196,7 @@ impl AppState {
 
         // Initialize token services
         info!("🔧 Initializing token services...");
+        let started_at = Instant::now();
         let token_service = Arc::new(
             TokenService::new(
                 token_repo.clone(),
@@ -179,16 +208,21 @@ impl AppState {
         );
         let claude_config_service = Arc::new(ClaudeConfigService::new());
         let codex_config_service = Arc::new(CodexConfigService::new());
-        info!("✓ Token services initialized");
+        info!(
+            "✓ Token services initialized ({}ms)",
+            started_at.elapsed().as_millis()
+        );
 
         info!("📊 Initializing scheduler...");
         // Initialize scheduler
+        let started_at = Instant::now();
         let scheduler = Arc::new(AutoCheckInScheduler::new(account_repo.clone()).await?);
-        info!("✓ Scheduler initialized");
+        info!("✓ Scheduler initialized ({}ms)", started_at.elapsed().as_millis());
 
         info!("▶️  Starting scheduler...");
+        let started_at = Instant::now();
         scheduler.start().await?;
-        info!("✓ Scheduler started");
+        info!("✓ Scheduler started ({}ms)", started_at.elapsed().as_millis());
 
         // Initialize event bus and register event handlers
         info!("🔧 Initializing event bus...");
@@ -235,6 +269,7 @@ impl AppState {
 
         // Load existing schedules from database
         info!("📋 Loading auto check-in schedules...");
+        let started_at = Instant::now();
         let provider_list = provider_repo
             .find_all()
             .await
@@ -252,7 +287,10 @@ impl AppState {
         {
             warn!("⚠️  Failed to load schedules: {}", e);
         } else {
-            info!("✓ Auto check-in schedules loaded successfully");
+            info!(
+                "✓ Auto check-in schedules loaded ({}ms)",
+                started_at.elapsed().as_millis()
+            );
         }
 
         // Initialize command handlers
@@ -316,11 +354,20 @@ impl AppState {
 
         // Initialize config service
         info!("🔧 Initializing config service...");
+        let started_at = Instant::now();
         let config_service = Arc::new(
             ConfigService::new(&app_handle)
                 .map_err(|e| format!("Failed to initialize config service: {}", e))?,
         );
-        info!("✓ Config service initialized");
+        info!(
+            "✓ Config service initialized ({}ms)",
+            started_at.elapsed().as_millis()
+        );
+
+        info!(
+            "✅ AppState ready ({}ms)",
+            startup_started_at.elapsed().as_millis()
+        );
 
         Ok(Self {
             pool,
