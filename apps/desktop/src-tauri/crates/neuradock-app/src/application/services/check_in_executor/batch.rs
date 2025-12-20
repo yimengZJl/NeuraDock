@@ -3,11 +3,7 @@ use log::{error, warn};
 use std::collections::HashMap;
 use tracing::instrument;
 
-use neuradock_domain::{
-    account::Account,
-    check_in::Provider,
-    shared::AccountId,
-};
+use neuradock_domain::{account::Account, check_in::Provider, shared::AccountId};
 
 use super::types::{AccountCheckInResult, BatchCheckInResult};
 use super::CheckInExecutor;

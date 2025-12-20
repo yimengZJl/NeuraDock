@@ -52,7 +52,6 @@ impl LogLevel {
     }
 }
 
-
 /// Persistent configuration structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct AppConfig {

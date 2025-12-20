@@ -3,11 +3,7 @@ use log::info;
 use std::sync::Arc;
 use tracing::instrument;
 
-use neuradock_domain::{
-    account::AccountRepository,
-    check_in::Provider,
-    shared::AccountId,
-};
+use neuradock_domain::{account::AccountRepository, check_in::Provider, shared::AccountId};
 use neuradock_infrastructure::http::{CheckInResult, HttpClient, UserInfo};
 use neuradock_infrastructure::persistence::repositories::SqliteWafCookiesRepository;
 
@@ -63,7 +59,8 @@ impl CheckInExecutor {
         let account_id_obj = AccountId::from_string(account_id);
 
         // 1. Load and validate account
-        let account = validation::load_and_validate_account(&*self.account_repo, &account_id_obj).await?;
+        let account =
+            validation::load_and_validate_account(&*self.account_repo, &account_id_obj).await?;
         let account_name = account.name().to_string();
 
         info!("[{}] Starting check-in process", account_name);
@@ -82,12 +79,7 @@ impl CheckInExecutor {
 
         // 4. Execute check-in request
         let check_in_result = self
-            .perform_check_in_request(
-                &account,
-                provider,
-                &account_name,
-                &mut cookies,
-            )
+            .perform_check_in_request(&account, provider, &account_name, &mut cookies)
             .await;
 
         // 5. Fetch updated balance after successful check-in

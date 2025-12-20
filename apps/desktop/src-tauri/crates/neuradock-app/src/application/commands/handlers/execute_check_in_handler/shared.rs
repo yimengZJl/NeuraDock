@@ -2,7 +2,9 @@ use log::{error, info};
 use std::sync::Arc;
 
 use crate::application::dtos::BalanceDto;
-use crate::application::services::{BalanceHistoryService, ProviderModelsService, NotificationService};
+use crate::application::services::{
+    BalanceHistoryService, NotificationService, ProviderModelsService,
+};
 use neuradock_domain::{
     account::{Account, AccountRepository},
     check_in::Provider,

@@ -65,7 +65,8 @@ pub async fn get_all_notification_channels(
     state: State<'_, AppState>,
 ) -> Result<Vec<NotificationChannelDto>, CommandError> {
     let channels = state
-        .notification_channel_repo
+        .repositories
+        .notification_channel
         .find_all()
         .await
         .map_err(CommandError::from)?;

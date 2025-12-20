@@ -17,7 +17,8 @@ pub async fn configure_independent_key_claude(
 
     // Get the independent key
     let key = state
-        .independent_key_repo
+        .repositories
+        .independent_key
         .find_by_id(&id)
         .await
         .map_err(CommandError::from)?
@@ -25,7 +26,9 @@ pub async fn configure_independent_key_claude(
 
     // Check if key is active
     if !key.is_active() {
-        return Err(CommandError::validation("Cannot configure inactive API key. Please enable it first."));
+        return Err(CommandError::validation(
+            "Cannot configure inactive API key. Please enable it first.",
+        ));
     }
 
     // Call Claude config service directly with API key
@@ -47,7 +50,8 @@ pub async fn generate_independent_key_claude_temp(
 
     // Get the independent key
     let key = state
-        .independent_key_repo
+        .repositories
+        .independent_key
         .find_by_id(&id)
         .await
         .map_err(CommandError::from)?

@@ -47,12 +47,15 @@ pub async fn check_browser_available() -> Result<BrowserInfoDto, CommandError> {
 /// Get all providers (builtin + custom)
 #[tauri::command]
 #[specta::specta]
-pub async fn get_all_providers(state: State<'_, AppState>) -> Result<Vec<ProviderDto>, CommandError> {
+pub async fn get_all_providers(
+    state: State<'_, AppState>,
+) -> Result<Vec<ProviderDto>, CommandError> {
     log::info!("🔍 get_all_providers called");
 
     // Get all providers (builtin + custom from database)
     let all_providers = state
-        .provider_repo
+        .repositories
+        .provider
         .find_all()
         .await
         .map_err(CommandError::from)?;
@@ -65,7 +68,8 @@ pub async fn get_all_providers(state: State<'_, AppState>) -> Result<Vec<Provide
     log::info!("📊 Total providers loaded: {}", all_providers.len());
 
     let accounts = state
-        .account_repo
+        .repositories
+        .account
         .find_all()
         .await
         .map_err(CommandError::from)?;

@@ -10,11 +10,12 @@ use tauri::State;
 pub async fn get_balance_statistics(
     state: State<'_, AppState>,
 ) -> Result<BalanceStatisticsDto, CommandError> {
-    let pool = &*state.pool;
+    let pool = &*state.runtime.pool;
 
     // Get all accounts with their latest balances
     let accounts = state
-        .account_repo
+        .repositories
+        .account
         .find_enabled()
         .await
         .map_err(CommandError::from)?;

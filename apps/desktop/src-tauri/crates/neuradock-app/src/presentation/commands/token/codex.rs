@@ -18,7 +18,8 @@ pub async fn configure_codex_global(
 
     // Get token from cache
     let tokens = state
-        .token_service
+        .services
+        .token
         .get_cached_tokens(&account_id)
         .await
         .map_err(CommandError::from)?;
@@ -30,7 +31,8 @@ pub async fn configure_codex_global(
 
     let provider_id_obj = ProviderId::from_string(&provider_id);
     let provider = state
-        .provider_repo
+        .repositories
+        .provider
         .find_by_id(&provider_id_obj)
         .await
         .map_err(CommandError::from)?
@@ -38,7 +40,8 @@ pub async fn configure_codex_global(
 
     // Configure to Codex
     let result = state
-        .codex_config_service
+        .services
+        .codex_config
         .configure_global(
             token,
             provider.id().as_str(),
@@ -66,7 +69,8 @@ pub async fn generate_codex_temp_commands(
 
     // Get token from cache
     let tokens = state
-        .token_service
+        .services
+        .token
         .get_cached_tokens(&account_id)
         .await
         .map_err(CommandError::from)?;
@@ -78,7 +82,8 @@ pub async fn generate_codex_temp_commands(
 
     let provider_id_obj = ProviderId::from_string(&provider_id);
     let provider = state
-        .provider_repo
+        .repositories
+        .provider
         .find_by_id(&provider_id_obj)
         .await
         .map_err(CommandError::from)?
@@ -86,7 +91,8 @@ pub async fn generate_codex_temp_commands(
 
     // Generate temp commands
     let commands = state
-        .codex_config_service
+        .services
+        .codex_config
         .generate_temp_commands(
             token,
             provider.id().as_str(),
@@ -103,7 +109,8 @@ pub async fn generate_codex_temp_commands(
 #[specta::specta]
 pub async fn clear_codex_global(state: State<'_, AppState>) -> Result<String, CommandError> {
     state
-        .codex_config_service
+        .services
+        .codex_config
         .clear_global()
         .map_err(CommandError::from)
 }

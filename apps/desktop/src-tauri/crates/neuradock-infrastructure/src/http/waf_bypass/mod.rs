@@ -72,17 +72,12 @@ impl WafBypassService {
         );
 
         // 1. Launch browser with proper configuration
-        let (browser, handler_task, temp_dir) = self
-            .launch_browser_with_config(account_name)
-            .await?;
+        let (browser, handler_task, temp_dir) =
+            self.launch_browser_with_config(account_name).await?;
 
         // 2. Navigate to page and extract cookies
         let (browser, waf_cookies_result) = self
-            .navigate_and_extract_cookies(
-                browser,
-                login_url,
-                account_name,
-            )
+            .navigate_and_extract_cookies(browser, login_url, account_name)
             .await;
 
         // 3. Clean up browser resources (always execute even if error)

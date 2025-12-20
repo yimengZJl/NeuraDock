@@ -118,7 +118,9 @@ pub async fn get_check_in_stats(
 /// Get currently running check-in jobs
 #[tauri::command]
 #[specta::specta]
-pub async fn get_running_jobs(state: State<'_, AppState>) -> Result<Vec<RunningJobDto>, CommandError> {
+pub async fn get_running_jobs(
+    state: State<'_, AppState>,
+) -> Result<Vec<RunningJobDto>, CommandError> {
     let _ = state;
     Err(CommandError::infrastructure("Not implemented yet"))
 }
@@ -131,7 +133,8 @@ pub async fn get_check_in_streak(
     state: State<'_, AppState>,
 ) -> Result<dtos::CheckInStreakDto, CommandError> {
     state
-        .streak_queries
+        .queries
+        .streak
         .get_streak_stats(&account_id)
         .await
         .map_err(CommandError::from)
@@ -144,7 +147,8 @@ pub async fn get_all_check_in_streaks(
     state: State<'_, AppState>,
 ) -> Result<Vec<dtos::CheckInStreakDto>, CommandError> {
     state
-        .streak_queries
+        .queries
+        .streak
         .get_all_streaks()
         .await
         .map_err(CommandError::from)
@@ -160,7 +164,8 @@ pub async fn get_check_in_calendar(
     state: State<'_, AppState>,
 ) -> Result<dtos::CheckInCalendarDto, CommandError> {
     state
-        .streak_queries
+        .queries
+        .streak
         .get_calendar(&account_id, year, month)
         .await
         .map_err(CommandError::from)
@@ -175,7 +180,8 @@ pub async fn get_check_in_trend(
     state: State<'_, AppState>,
 ) -> Result<dtos::CheckInTrendDto, CommandError> {
     state
-        .streak_queries
+        .queries
+        .streak
         .get_trend(&account_id, days)
         .await
         .map_err(CommandError::from)
@@ -190,7 +196,8 @@ pub async fn get_check_in_day_detail(
     state: State<'_, AppState>,
 ) -> Result<dtos::CheckInDayDto, CommandError> {
     state
-        .streak_queries
+        .queries
+        .streak
         .get_day_detail(&account_id, &date)
         .await
         .map_err(CommandError::from)
@@ -201,7 +208,8 @@ pub async fn get_check_in_day_detail(
 #[specta::specta]
 pub async fn recalculate_check_in_streaks(state: State<'_, AppState>) -> Result<(), CommandError> {
     state
-        .streak_queries
+        .queries
+        .streak
         .recalculate_all_streaks()
         .await
         .map_err(CommandError::from)

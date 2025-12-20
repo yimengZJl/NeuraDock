@@ -41,9 +41,7 @@ pub async fn get_streak_stats(
 }
 
 /// Get streak statistics for all accounts
-pub async fn get_all_streaks(
-    db: &Arc<SqlitePool>,
-) -> Result<Vec<CheckInStreakDto>, DomainError> {
+pub async fn get_all_streaks(db: &Arc<SqlitePool>) -> Result<Vec<CheckInStreakDto>, DomainError> {
     let accounts = helpers::get_all_account_infos(db).await?;
     let mut results = Vec::new();
 

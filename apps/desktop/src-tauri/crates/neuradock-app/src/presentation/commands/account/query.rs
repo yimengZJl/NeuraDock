@@ -14,7 +14,8 @@ pub async fn get_all_accounts(
     let providers = state.provider_map().await.map_err(CommandError::from)?;
 
     state
-        .account_queries
+        .queries
+        .account
         .get_all_accounts(enabled_only, &providers)
         .await
         .map_err(CommandError::from)
@@ -29,7 +30,8 @@ pub async fn get_account_detail(
 ) -> Result<dtos::AccountDetailDto, CommandError> {
     let id = AccountId::from_string(&account_id);
     let account = state
-        .account_repo
+        .repositories
+        .account
         .find_by_id(&id)
         .await
         .map_err(CommandError::from)?

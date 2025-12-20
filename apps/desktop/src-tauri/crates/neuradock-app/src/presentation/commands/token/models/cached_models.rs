@@ -11,7 +11,8 @@ pub async fn get_cached_provider_models(
     log::info!("get_cached_provider_models: provider_id={}", provider_id);
 
     let cached = state
-        .provider_models_repo
+        .repositories
+        .provider_models
         .find_by_provider(&provider_id)
         .await
         .map_err(CommandError::from)?;

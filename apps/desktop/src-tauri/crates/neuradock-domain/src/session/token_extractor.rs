@@ -76,7 +76,7 @@ mod tests {
         let mut cookies = HashMap::new();
         cookies.insert("other".to_string(), "123".to_string());
         cookies.insert("sessionid".to_string(), "secret_token".to_string());
-        
+
         assert_eq!(SessionTokenExtractor::extract(&cookies), "secret_token");
     }
 
@@ -84,9 +84,15 @@ mod tests {
     fn test_extract_longest_heuristic() {
         let mut cookies = HashMap::new();
         cookies.insert("theme".to_string(), "dark".to_string());
-        cookies.insert("unknown_cookie".to_string(), "very_long_random_string_that_looks_like_a_token".to_string());
-        
-        assert_eq!(SessionTokenExtractor::extract(&cookies), "very_long_random_string_that_looks_like_a_token");
+        cookies.insert(
+            "unknown_cookie".to_string(),
+            "very_long_random_string_that_looks_like_a_token".to_string(),
+        );
+
+        assert_eq!(
+            SessionTokenExtractor::extract(&cookies),
+            "very_long_random_string_that_looks_like_a_token"
+        );
     }
 
     #[test]

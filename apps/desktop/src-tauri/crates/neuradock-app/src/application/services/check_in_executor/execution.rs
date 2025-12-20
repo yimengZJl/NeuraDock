@@ -12,10 +12,7 @@ pub async fn execute_page_visit_check_in(
 ) -> CheckInResult {
     info!("[{}] Visiting check-in page: {}", account_name, sign_in_url);
 
-    match http_client
-        .visit_login_page(sign_in_url, cookies)
-        .await
-    {
+    match http_client.visit_login_page(sign_in_url, cookies).await {
         Ok(_) => {
             info!("[{}] Check-in page visited successfully!", account_name);
             CheckInResult {

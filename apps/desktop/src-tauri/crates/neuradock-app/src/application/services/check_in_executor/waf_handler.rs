@@ -54,10 +54,7 @@ pub async fn retry_check_in_after_waf_refresh(
             result
         }
         Err(retry_err) => {
-            error!(
-                "[{}] Check-in retry failed: {}",
-                account_name, retry_err
-            );
+            error!("[{}] Check-in retry failed: {}", account_name, retry_err);
             create_error_result(&format!("Check-in failed after WAF retry: {}", retry_err))
         }
     }

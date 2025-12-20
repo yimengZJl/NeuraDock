@@ -1,6 +1,7 @@
 // Infrastructure layer - Technical implementations
 // Depends on domain layer, implements its interfaces
 
+pub mod bootstrap;
 pub mod browser;
 pub mod config;
 pub mod events;

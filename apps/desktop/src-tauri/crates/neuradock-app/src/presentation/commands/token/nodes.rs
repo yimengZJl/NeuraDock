@@ -1,5 +1,5 @@
-use crate::presentation::error::CommandError;
 use crate::application::dtos::ProviderNodeDto;
+use crate::presentation::error::CommandError;
 use crate::presentation::state::AppState;
 use tauri::State;
 
@@ -11,7 +11,8 @@ pub async fn get_provider_nodes(
 ) -> Result<Vec<ProviderNodeDto>, CommandError> {
     let provider_id_obj = neuradock_domain::shared::ProviderId::from_string(&provider_id);
     let provider = state
-        .provider_repo
+        .repositories
+        .provider
         .find_by_id(&provider_id_obj)
         .await
         .map_err(CommandError::from)?
@@ -25,7 +26,8 @@ pub async fn get_provider_nodes(
 
     // Add custom nodes
     let custom_nodes = state
-        .custom_node_repo
+        .repositories
+        .custom_node
         .find_by_provider(&provider_id_obj)
         .await
         .map_err(CommandError::from)?;
@@ -57,7 +59,8 @@ pub async fn add_custom_node(
     );
 
     state
-        .custom_node_repo
+        .repositories
+        .custom_node
         .create(&node)
         .await
         .map_err(CommandError::from)?;
@@ -74,7 +77,8 @@ pub async fn delete_custom_node(
     let id = neuradock_domain::custom_node::CustomNodeId::new(node_id);
 
     state
-        .custom_node_repo
+        .repositories
+        .custom_node
         .delete(&id)
         .await
         .map_err(CommandError::from)?;

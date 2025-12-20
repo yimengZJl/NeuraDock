@@ -24,10 +24,16 @@ pub(super) async fn cleanup_browser(
             info!("[{}] Browser closed successfully", account_name);
         }
         Ok(Err(e)) => {
-            warn!("[{}] Failed to close browser: {}, will force cleanup", account_name, e);
+            warn!(
+                "[{}] Failed to close browser: {}, will force cleanup",
+                account_name, e
+            );
         }
         Err(_) => {
-            warn!("[{}] Browser close timed out, continuing with cleanup", account_name);
+            warn!(
+                "[{}] Browser close timed out, continuing with cleanup",
+                account_name
+            );
         }
     }
 
@@ -55,7 +61,10 @@ pub(super) async fn cleanup_browser(
                 account_name, e
             );
         } else {
-            info!("[{}] Cleaned up temp profile directory after force kill", account_name);
+            info!(
+                "[{}] Cleaned up temp profile directory after force kill",
+                account_name
+            );
         }
     } else {
         info!("[{}] Cleaned up temp profile directory", account_name);
@@ -91,10 +100,7 @@ async fn force_kill_chrome_processes(temp_dir: &Path, account_name: &str) {
                     );
 
                     // Send SIGKILL to force terminate
-                    let _ = Command::new("kill")
-                        .arg("-9")
-                        .arg(pid.trim())
-                        .output();
+                    let _ = Command::new("kill").arg("-9").arg(pid.trim()).output();
                 }
             }
         }

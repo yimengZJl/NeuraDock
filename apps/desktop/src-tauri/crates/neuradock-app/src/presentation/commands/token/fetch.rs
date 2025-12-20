@@ -1,5 +1,5 @@
-use crate::presentation::error::CommandError;
 use crate::application::dtos::TokenDto;
+use crate::presentation::error::CommandError;
 use crate::presentation::state::AppState;
 use neuradock_domain::shared::AccountId;
 use tauri::State;
@@ -20,7 +20,8 @@ pub async fn fetch_account_tokens(
 
     // Fetch tokens from service
     let tokens = state
-        .token_service
+        .services
+        .token
         .fetch_and_cache_tokens(&account_id, force_refresh)
         .await
         .map_err(|e| {
@@ -32,7 +33,8 @@ pub async fn fetch_account_tokens(
 
     // Get account info to fill DTO
     let account = state
-        .account_repo
+        .repositories
+        .account
         .find_by_id(&account_id)
         .await
         .map_err(CommandError::from)?
@@ -41,7 +43,8 @@ pub async fn fetch_account_tokens(
     // Get provider info
     let provider_id = account.provider_id().as_str().to_string();
     let provider = state
-        .provider_repo
+        .repositories
+        .provider
         .find_by_id(account.provider_id())
         .await
         .map_err(CommandError::from)?

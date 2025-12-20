@@ -2,8 +2,8 @@ use anyhow::Context;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 
 fn main() -> anyhow::Result<()> {
-    let out_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../src/lib/tauri.ts");
+    let out_path =
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../src/lib/tauri.ts");
 
     std::fs::create_dir_all(out_path.parent().context("tauri.ts has no parent dir")?)
         .context("create apps/desktop/src/lib directory")?;

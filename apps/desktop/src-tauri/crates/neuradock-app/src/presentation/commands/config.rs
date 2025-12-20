@@ -7,7 +7,7 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub async fn get_log_level(state: State<'_, AppState>) -> Result<String, CommandError> {
-    let level = state.config_service.get_log_level();
+    let level = state.services.config.get_log_level();
     Ok(level.as_str().to_string())
 }
 
@@ -29,7 +29,8 @@ pub async fn set_log_level(level: String, state: State<'_, AppState>) -> Result<
     };
 
     state
-        .config_service
+        .services
+        .config
         .set_log_level(log_level)
         .map_err(|e| CommandError::infrastructure(format!("Failed to save log level: {}", e)))?;
     Ok(())

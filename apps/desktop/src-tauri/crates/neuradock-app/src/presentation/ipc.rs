@@ -1,9 +1,9 @@
 use tauri_specta::{collect_commands, collect_events, Builder};
 
 pub fn builder() -> Builder<tauri::Wry> {
+    use crate::presentation::commands::*;
     #[allow(unused_imports)]
     use crate::*;
-    use crate::presentation::commands::*;
 
     Builder::<tauri::Wry>::new()
         .commands(collect_commands![
@@ -88,4 +88,3 @@ pub fn builder() -> Builder<tauri::Wry> {
             crate::presentation::events::BalanceUpdated,
         ])
 }
-

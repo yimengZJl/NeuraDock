@@ -17,7 +17,7 @@ struct IndependentKeyRow {
     name: String,
     provider_type: String,
     custom_provider_name: Option<String>,
-    api_key: String,  // encrypted
+    api_key: String, // encrypted
     base_url: String,
     organization_id: Option<String>,
     description: Option<String>,
@@ -36,10 +36,9 @@ impl IndependentKeyRow {
             ))
         })?;
 
-        let provider_type = KeyProviderType::from_str(&self.provider_type)
-            .ok_or_else(|| {
-                DomainError::DataIntegrity(format!("Invalid provider_type: {}", self.provider_type))
-            })?;
+        let provider_type = KeyProviderType::from_str(&self.provider_type).ok_or_else(|| {
+            DomainError::DataIntegrity(format!("Invalid provider_type: {}", self.provider_type))
+        })?;
 
         let created_at = DateTime::parse_from_rfc3339(&self.created_at)
             .map_err(|e| DomainError::DataIntegrity(format!("Invalid created_at: {}", e)))?
@@ -83,7 +82,9 @@ impl SqliteIndependentKeyRepository {
 #[async_trait]
 impl IndependentKeyRepository for SqliteIndependentKeyRepository {
     async fn create(&self, key: &IndependentApiKey) -> Result<IndependentKeyId, DomainError> {
-        let api_key_encrypted = self.encryption.encrypt(key.api_key())
+        let api_key_encrypted = self
+            .encryption
+            .encrypt(key.api_key())
             .map_err(|e| DomainError::DataIntegrity(format!("Failed to encrypt API key: {}", e)))?;
         let created_at = key.created_at().to_rfc3339();
         let updated_at = key.updated_at().to_rfc3339();
@@ -114,8 +115,12 @@ impl IndependentKeyRepository for SqliteIndependentKeyRepository {
     }
 
     async fn update(&self, key: &IndependentApiKey) -> Result<(), DomainError> {
-        let id = key.id().ok_or_else(|| DomainError::NotFound("Key ID is required for update".to_string()))?;
-        let api_key_encrypted = self.encryption.encrypt(key.api_key())
+        let id = key
+            .id()
+            .ok_or_else(|| DomainError::NotFound("Key ID is required for update".to_string()))?;
+        let api_key_encrypted = self
+            .encryption
+            .encrypt(key.api_key())
             .map_err(|e| DomainError::DataIntegrity(format!("Failed to encrypt API key: {}", e)))?;
         let updated_at = key.updated_at().to_rfc3339();
 
@@ -209,7 +214,9 @@ impl IndependentKeyRepository for SqliteIndependentKeyRepository {
         .bind(provider_type.as_str())
         .fetch_all(&*self.pool)
         .await
-        .map_err(|e| RepositoryErrorMapper::map_sqlx_error(e, "Find independent keys by provider type"))?;
+        .map_err(|e| {
+            RepositoryErrorMapper::map_sqlx_error(e, "Find independent keys by provider type")
+        })?;
 
         rows.into_iter()
             .map(|r| r.to_domain(&self.encryption))

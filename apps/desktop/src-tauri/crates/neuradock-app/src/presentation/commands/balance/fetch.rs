@@ -22,7 +22,8 @@ pub async fn fetch_account_balance(
     // Get account
     let acc_id = AccountId::from_string(&account_id);
     let mut account = state
-        .account_repo
+        .repositories
+        .account
         .find_by_id(&acc_id)
         .await
         .map_err(CommandError::from)?
@@ -47,14 +48,16 @@ pub async fn fetch_account_balance(
     // Cache is stale or doesn't exist, or force_refresh is true - fetch fresh balance
     let provider_id = account.provider_id().as_str().to_string();
     let provider = state
-        .provider_repo
+        .repositories
+        .provider
         .find_by_id(account.provider_id())
         .await
         .map_err(CommandError::from)?
         .ok_or_else(|| CommandError::not_found(format!("Provider not found: {}", provider_id)))?;
 
     // Create executor
-    let executor = CheckInExecutor::new(state.account_repo.clone(), true).map_err(CommandError::from)?;
+    let executor = CheckInExecutor::new(state.repositories.account.clone(), true)
+        .map_err(CommandError::from)?;
 
     // Fetch balance only (without triggering check-in)
     let user_info = executor
@@ -78,7 +81,8 @@ pub async fn fetch_account_balance(
         balance_dto.total_income,
     );
     state
-        .account_repo
+        .repositories
+        .account
         .save(&account)
         .await
         .map_err(CommandError::from)?;
@@ -95,7 +99,7 @@ async fn save_balance_history(
     balance: &BalanceDto,
     state: &State<'_, AppState>,
 ) -> Result<(), CommandError> {
-    let pool = &*state.pool;
+    let pool = &*state.runtime.pool;
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now();
 

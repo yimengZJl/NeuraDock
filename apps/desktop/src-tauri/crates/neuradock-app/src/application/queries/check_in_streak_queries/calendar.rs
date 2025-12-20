@@ -101,15 +101,14 @@ pub async fn get_calendar(
         let date_str = date.format("%Y-%m-%d").to_string();
 
         if let Some(row) = daily_map.get(&date_str) {
-            let income_increment = prev_income
-                .and_then(|prev| {
-                    let diff = row.daily_total_income - prev;
-                    if diff > 0.0 {
-                        Some(diff)
-                    } else {
-                        None
-                    }
-                });
+            let income_increment = prev_income.and_then(|prev| {
+                let diff = row.daily_total_income - prev;
+                if diff > 0.0 {
+                    Some(diff)
+                } else {
+                    None
+                }
+            });
 
             let is_checked_in = income_increment.is_some() || prev_income.is_none();
 

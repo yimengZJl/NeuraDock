@@ -7,7 +7,10 @@ use neuradock_domain::account::Account;
 use neuradock_domain::shared::{AccountId, DomainError};
 
 impl super::SqliteAccountRepository {
-    pub(super) async fn find_by_id_impl(&self, id: &AccountId) -> Result<Option<Account>, DomainError> {
+    pub(super) async fn find_by_id_impl(
+        &self,
+        id: &AccountId,
+    ) -> Result<Option<Account>, DomainError> {
         let start = Instant::now();
 
         let query = format!(
@@ -39,7 +42,10 @@ impl super::SqliteAccountRepository {
         }
     }
 
-    pub(super) async fn find_by_ids_impl(&self, ids: &[AccountId]) -> Result<Vec<Account>, DomainError> {
+    pub(super) async fn find_by_ids_impl(
+        &self,
+        ids: &[AccountId],
+    ) -> Result<Vec<Account>, DomainError> {
         if ids.is_empty() {
             return Ok(Vec::new());
         }

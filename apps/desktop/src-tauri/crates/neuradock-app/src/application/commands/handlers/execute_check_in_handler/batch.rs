@@ -57,10 +57,7 @@ impl BatchExecuteCheckInCommandHandler {
 impl CommandHandler<BatchExecuteCheckInCommand> for BatchExecuteCheckInCommandHandler {
     type Result = BatchCheckInCommandResult;
 
-    async fn handle(
-        &self,
-        cmd: BatchExecuteCheckInCommand,
-    ) -> Result<Self::Result, DomainError> {
+    async fn handle(&self, cmd: BatchExecuteCheckInCommand) -> Result<Self::Result, DomainError> {
         info!(
             "Handling BatchExecuteCheckInCommand for {} accounts",
             cmd.account_ids.len()
@@ -168,7 +165,10 @@ impl CommandHandler<BatchExecuteCheckInCommand> for BatchExecuteCheckInCommandHa
                                 Some(balance)
                             }
                             Err(e) => {
-                                error!("Failed to update balance for account {}: {}", account_id, e);
+                                error!(
+                                    "Failed to update balance for account {}: {}",
+                                    account_id, e
+                                );
                                 None
                             }
                         }

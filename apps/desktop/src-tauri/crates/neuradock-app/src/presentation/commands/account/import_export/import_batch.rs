@@ -23,7 +23,13 @@ pub async fn import_accounts_batch(
 
     for input in inputs {
         let account_name = input.name.clone();
-        match import_single_account(input, &state.account_repo, &state.session_repo).await {
+        match import_single_account(
+            input,
+            &state.repositories.account,
+            &state.repositories.session,
+        )
+        .await
+        {
             Ok(account_id) => {
                 succeeded += 1;
                 if let Err(err) =

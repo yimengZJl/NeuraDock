@@ -17,7 +17,8 @@ pub async fn configure_claude_global(
 
     // Get token from cache
     let tokens = state
-        .token_service
+        .services
+        .token
         .get_cached_tokens(&account_id)
         .await
         .map_err(CommandError::from)?;
@@ -29,7 +30,8 @@ pub async fn configure_claude_global(
 
     // Configure to Claude Code
     let result = state
-        .claude_config_service
+        .services
+        .claude_config
         .configure_global(token, &base_url, model.as_deref())
         .map_err(CommandError::from)?;
 
@@ -50,7 +52,8 @@ pub async fn generate_claude_temp_commands(
 
     // Get token from cache
     let tokens = state
-        .token_service
+        .services
+        .token
         .get_cached_tokens(&account_id)
         .await
         .map_err(CommandError::from)?;
@@ -62,7 +65,8 @@ pub async fn generate_claude_temp_commands(
 
     // Generate temp commands
     let commands = state
-        .claude_config_service
+        .services
+        .claude_config
         .generate_temp_commands(token, &base_url, model.as_deref())
         .map_err(CommandError::from)?;
 
@@ -73,7 +77,8 @@ pub async fn generate_claude_temp_commands(
 #[specta::specta]
 pub async fn clear_claude_global(state: State<'_, AppState>) -> Result<String, CommandError> {
     state
-        .claude_config_service
+        .services
+        .claude_config
         .clear_global()
         .map_err(CommandError::from)
 }

@@ -28,8 +28,8 @@ pub(super) fn configure_global_with_key_impl(
 
     // Read existing config or create empty object
     let mut config: Value = if config_path.exists() {
-        let content = fs::read_to_string(&config_path)
-            .context("Failed to read existing settings.json")?;
+        let content =
+            fs::read_to_string(&config_path).context("Failed to read existing settings.json")?;
         serde_json::from_str(&content).context("Failed to parse existing settings.json")?
     } else {
         json!({})

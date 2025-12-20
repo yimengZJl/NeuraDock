@@ -19,7 +19,8 @@ pub async fn update_accounts_batch(
 
     // Load all existing accounts for matching
     let existing_accounts = state
-        .account_repo
+        .repositories
+        .account
         .find_all()
         .await
         .map_err(CommandError::from)?;
@@ -46,8 +47,8 @@ pub async fn update_accounts_batch(
                     &account_id,
                     input.cookies,
                     input.api_user,
-                    &state.account_repo,
-                    &state.session_repo,
+                    &state.repositories.account,
+                    &state.repositories.session,
                 )
                 .await
                 {
@@ -76,8 +77,12 @@ pub async fn update_accounts_batch(
             None => {
                 if create_if_not_exists {
                     // Create new account
-                    match import_single_account(input, &state.account_repo, &state.session_repo)
-                        .await
+                    match import_single_account(
+                        input,
+                        &state.repositories.account,
+                        &state.repositories.session,
+                    )
+                    .await
                     {
                         Ok(account_id) => {
                             created += 1;

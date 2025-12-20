@@ -13,7 +13,8 @@ pub async fn export_accounts_to_json(
 ) -> Result<String, CommandError> {
     let accounts = if input.account_ids.is_empty() {
         state
-            .account_repo
+            .repositories
+            .account
             .find_all()
             .await
             .map_err(CommandError::from)?
@@ -24,7 +25,8 @@ pub async fn export_accounts_to_json(
             .map(|id| AccountId::from_string(id))
             .collect();
         state
-            .account_repo
+            .repositories
+            .account
             .find_by_ids(&ids)
             .await
             .map_err(CommandError::from)?
@@ -39,8 +41,8 @@ pub async fn export_accounts_to_json(
             });
 
             if input.include_credentials {
-                data["cookies"] =
-                    serde_json::to_value(acc.credentials().cookies()).map_err(CommandError::from)?;
+                data["cookies"] = serde_json::to_value(acc.credentials().cookies())
+                    .map_err(CommandError::from)?;
                 data["api_user"] =
                     serde_json::Value::String(acc.credentials().api_user().to_string());
             }

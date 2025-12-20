@@ -59,7 +59,9 @@ async fn account_repo_update_account() {
     repo.save(&account).await.expect("Save account");
 
     // Update account
-    account.update_name("Updated Name".to_string()).expect("Update name");
+    account
+        .update_name("Updated Name".to_string())
+        .expect("Update name");
     repo.save(&account).await.expect("Update account");
 
     // Verify update
@@ -92,20 +94,14 @@ async fn account_repo_delete_account() {
     repo.save(&account).await.expect("Save account");
 
     // Verify exists
-    let found = repo
-        .find_by_id(account.id())
-        .await
-        .expect("Find account");
+    let found = repo.find_by_id(account.id()).await.expect("Find account");
     assert!(found.is_some());
 
     // Delete
     repo.delete(account.id()).await.expect("Delete account");
 
     // Verify deleted
-    let found = repo
-        .find_by_id(account.id())
-        .await
-        .expect("Find account");
+    let found = repo.find_by_id(account.id()).await.expect("Find account");
     assert!(found.is_none());
 }
 
@@ -133,10 +129,7 @@ async fn account_repo_find_by_ids_batch() {
     }
 
     // Batch find
-    let found = repo
-        .find_by_ids(&account_ids)
-        .await
-        .expect("Find by IDs");
+    let found = repo.find_by_ids(&account_ids).await.expect("Find by IDs");
 
     assert_eq!(found.len(), 5);
 }
@@ -205,7 +198,10 @@ async fn account_repo_credentials_encryption() {
 
     // Create account with sensitive cookies
     let mut cookies = HashMap::new();
-    cookies.insert("session".to_string(), "super_secret_session_token".to_string());
+    cookies.insert(
+        "session".to_string(),
+        "super_secret_session_token".to_string(),
+    );
     cookies.insert("auth".to_string(), "super_secret_auth_token".to_string());
     let credentials = Credentials::new(cookies.clone(), "sensitive_api_user".to_string());
 
@@ -219,13 +215,11 @@ async fn account_repo_credentials_encryption() {
     repo.save(&account).await.expect("Save account");
 
     // Verify credentials are encrypted in database by querying raw data
-    let raw_cookies: String = sqlx::query_scalar(
-        "SELECT cookies FROM accounts WHERE id = ?",
-    )
-    .bind(account.id().as_str())
-    .fetch_one(&pool)
-    .await
-    .expect("Fetch raw cookies");
+    let raw_cookies: String = sqlx::query_scalar("SELECT cookies FROM accounts WHERE id = ?")
+        .bind(account.id().as_str())
+        .fetch_one(&pool)
+        .await
+        .expect("Fetch raw cookies");
 
     // Encrypted data should not contain plaintext
     assert!(!raw_cookies.contains("super_secret_session_token"));
@@ -247,7 +241,10 @@ async fn account_repo_credentials_encryption() {
 #[tokio::test]
 async fn account_repo_concurrent_saves() {
     let (pool, encryption) = test_helpers::setup_in_memory_db().await;
-    let repo = Arc::new(SqliteAccountRepository::new(Arc::new(pool.clone()), encryption));
+    let repo = Arc::new(SqliteAccountRepository::new(
+        Arc::new(pool.clone()),
+        encryption,
+    ));
 
     // Create multiple accounts concurrently
     let mut handles = Vec::new();

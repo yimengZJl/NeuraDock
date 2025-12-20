@@ -5,22 +5,22 @@ use std::time::Duration;
 pub struct TimeoutConfig {
     /// WAF bypass wait time for page load
     pub waf_wait: Duration,
-    
+
     /// Check-in processing wait time
     pub check_in_processing: Duration,
-    
+
     /// Browser close timeout
     pub browser_close: Duration,
-    
+
     /// Browser launch timeout
     pub browser_launch: Duration,
-    
+
     /// Idle time before browser pool cleanup
     pub pool_idle: Duration,
-    
+
     /// HTTP request timeout
     pub http_request: Duration,
-    
+
     /// Database query timeout
     pub db_query: Duration,
 }
@@ -44,7 +44,7 @@ impl TimeoutConfig {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     /// Get the global timeout configuration
     pub fn global() -> &'static Self {
         &GLOBAL_TIMEOUT_CONFIG

@@ -8,9 +8,9 @@ mod presentation;
 use presentation::commands::*;
 use presentation::ipc;
 use presentation::state::AppState;
+use std::time::Instant;
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
-use std::time::Instant;
 
 fn install_panic_hook() {
     std::panic::set_hook(Box::new(|info| {
@@ -118,8 +118,10 @@ async fn main() {
             tracing::info!("🚀 Starting app state initialization...");
             let started_at = Instant::now();
             let init_result = rx.recv().map_err(|e| {
-                Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
-                    as Box<dyn std::error::Error>
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    e.to_string(),
+                )) as Box<dyn std::error::Error>
             })?;
             match init_result {
                 Ok(app_state) => {

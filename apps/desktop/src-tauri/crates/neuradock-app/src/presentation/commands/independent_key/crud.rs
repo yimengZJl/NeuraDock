@@ -15,7 +15,8 @@ pub async fn get_all_independent_keys(
     state: State<'_, AppState>,
 ) -> Result<Vec<IndependentKeyDto>, CommandError> {
     let keys = state
-        .independent_key_repo
+        .repositories
+        .independent_key
         .find_all()
         .await
         .map_err(CommandError::from)?;
@@ -34,7 +35,8 @@ pub async fn get_independent_key_by_id(
 ) -> Result<Option<IndependentKeyDto>, CommandError> {
     let id = IndependentKeyId::new(key_id);
     let key = state
-        .independent_key_repo
+        .repositories
+        .independent_key
         .find_by_id(&id)
         .await
         .map_err(CommandError::from)?;
@@ -52,12 +54,15 @@ pub async fn create_independent_key(
     state: State<'_, AppState>,
 ) -> Result<IndependentKeyDto, CommandError> {
     // Validate provider type
-    let provider_type = KeyProviderType::from_str(&input.provider_type)
-        .ok_or_else(|| CommandError::validation(format!("Invalid provider_type: {}", input.provider_type)))?;
+    let provider_type = KeyProviderType::from_str(&input.provider_type).ok_or_else(|| {
+        CommandError::validation(format!("Invalid provider_type: {}", input.provider_type))
+    })?;
 
     // Validate custom provider name for custom type
     if provider_type == KeyProviderType::Custom && input.custom_provider_name.is_none() {
-        return Err(CommandError::validation("custom_provider_name is required when provider_type is 'custom'"));
+        return Err(CommandError::validation(
+            "custom_provider_name is required when provider_type is 'custom'",
+        ));
     }
 
     // Create domain object
@@ -73,14 +78,16 @@ pub async fn create_independent_key(
 
     // Save to database
     let id = state
-        .independent_key_repo
+        .repositories
+        .independent_key
         .create(&key)
         .await
         .map_err(CommandError::from)?;
 
     // Retrieve the created key
     let created_key = state
-        .independent_key_repo
+        .repositories
+        .independent_key
         .find_by_id(&id)
         .await
         .map_err(CommandError::from)?
@@ -99,11 +106,14 @@ pub async fn update_independent_key(
 
     // Retrieve existing key
     let mut key = state
-        .independent_key_repo
+        .repositories
+        .independent_key
         .find_by_id(&id)
         .await
         .map_err(CommandError::from)?
-        .ok_or_else(|| CommandError::not_found(format!("Key with ID {} not found", input.key_id)))?;
+        .ok_or_else(|| {
+            CommandError::not_found(format!("Key with ID {} not found", input.key_id))
+        })?;
 
     // Update fields
     key.update(
@@ -116,7 +126,8 @@ pub async fn update_independent_key(
 
     // Save changes
     state
-        .independent_key_repo
+        .repositories
+        .independent_key
         .update(&key)
         .await
         .map_err(CommandError::from)?;
@@ -133,7 +144,8 @@ pub async fn delete_independent_key(
     let id = IndependentKeyId::new(key_id);
 
     state
-        .independent_key_repo
+        .repositories
+        .independent_key
         .delete(&id)
         .await
         .map_err(CommandError::from)?;
@@ -151,7 +163,8 @@ pub async fn toggle_independent_key(
     let id = IndependentKeyId::new(key_id);
 
     let mut key = state
-        .independent_key_repo
+        .repositories
+        .independent_key
         .find_by_id(&id)
         .await
         .map_err(CommandError::from)?
@@ -160,7 +173,8 @@ pub async fn toggle_independent_key(
     key.set_active(is_active);
 
     state
-        .independent_key_repo
+        .repositories
+        .independent_key
         .update(&key)
         .await
         .map_err(CommandError::from)?;

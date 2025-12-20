@@ -26,14 +26,16 @@ pub async fn fetch_provider_models(
     if !force_refresh {
         // Check if we have cached models that are not stale (24 hours)
         let is_stale = state
-            .provider_models_repo
+            .repositories
+            .provider_models
             .is_stale(&provider_id, 24)
             .await
             .map_err(CommandError::from)?;
 
         if !is_stale {
             if let Some(cached) = state
-                .provider_models_repo
+                .repositories
+                .provider_models
                 .find_by_provider(&provider_id)
                 .await
                 .map_err(CommandError::from)?
@@ -51,7 +53,8 @@ pub async fn fetch_provider_models(
     // Get account to retrieve cookies
     let account_id_obj = AccountId::from_string(&account_id);
     let account = state
-        .account_repo
+        .repositories
+        .account
         .find_by_id(&account_id_obj)
         .await
         .map_err(CommandError::from)?
@@ -60,7 +63,8 @@ pub async fn fetch_provider_models(
     // Get provider configuration
     let provider_id_obj = neuradock_domain::shared::ProviderId::from_string(&provider_id);
     let provider = state
-        .provider_repo
+        .repositories
+        .provider
         .find_by_id(&provider_id_obj)
         .await
         .map_err(CommandError::from)?
@@ -85,7 +89,7 @@ pub async fn fetch_provider_models(
     // Handle WAF bypass with caching (if provider requires it)
     if provider.needs_waf_bypass() {
         // Check for cached WAF cookies first
-        match state.waf_cookies_repo.get_valid(&provider_id).await {
+        match state.repositories.waf_cookies.get_valid(&provider_id).await {
             Ok(Some(cached_waf)) => {
                 log::info!(
                     "Using cached WAF cookies for provider {} (expires at {})",
@@ -145,7 +149,7 @@ pub async fn fetch_provider_models(
                 log::warn!("WAF challenge detected despite cached cookies, deleting cache");
 
                 // Delete cached WAF cookies
-                if let Err(inv_err) = state.waf_cookies_repo.delete(&provider_id).await {
+                if let Err(inv_err) = state.repositories.waf_cookies.delete(&provider_id).await {
                     log::warn!("Failed to delete WAF cookies cache: {}", inv_err);
                 }
 
@@ -162,7 +166,8 @@ pub async fn fetch_provider_models(
 
     // Cache the models
     state
-        .provider_models_repo
+        .repositories
+        .provider_models
         .save(&provider_id, &models)
         .await
         .map_err(CommandError::from)?;

@@ -38,7 +38,7 @@ fn builtin_provider_configs() -> Result<Vec<BuiltinProviderConfig>, DomainError>
     })
 }
 
-/// Ensure built-in providers from configuration exist in the database.
+/// Ensure built-in providers from embedded configuration exist in the database.
 pub async fn seed_builtin_providers(
     provider_repo: Arc<dyn ProviderRepository>,
     custom_node_repo: Arc<dyn CustomProviderNodeRepository>,
@@ -54,9 +54,12 @@ pub async fn seed_builtin_providers(
         .map(|provider| provider.id().as_str().to_string())
         .collect();
 
-    let has_default_nodes = configs
-        .iter()
-        .any(|config| config.default_nodes.as_ref().map_or(false, |nodes| !nodes.is_empty()));
+    let has_default_nodes = configs.iter().any(|config| {
+        config
+            .default_nodes
+            .as_ref()
+            .map_or(false, |nodes| !nodes.is_empty())
+    });
 
     let mut base_urls_by_provider: HashMap<ProviderId, HashSet<String>> = HashMap::new();
     if has_default_nodes {

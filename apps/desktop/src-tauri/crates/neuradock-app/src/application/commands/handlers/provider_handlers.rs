@@ -162,9 +162,7 @@ impl CommandHandler<UpdateProviderCommand> for UpdateProviderCommandHandler {
                 } else {
                     None
                 },
-                supports_check_in: cmd
-                    .supports_check_in
-                    .unwrap_or(current_supports_check_in),
+                supports_check_in: cmd.supports_check_in.unwrap_or(current_supports_check_in),
                 check_in_bugged: cmd.check_in_bugged.unwrap_or(current_check_in_bugged),
             },
             current_is_builtin,

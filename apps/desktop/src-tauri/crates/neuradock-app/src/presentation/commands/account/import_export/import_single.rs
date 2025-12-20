@@ -30,12 +30,14 @@ pub async fn import_account_from_json(
     let account_id = account.id().clone();
 
     state
-        .account_repo
+        .repositories
+        .account
         .save(&account)
         .await
         .map_err(CommandError::from)?;
 
-    create_and_save_default_session(account_id.clone(), &cookies, &state.session_repo).await?;
+    create_and_save_default_session(account_id.clone(), &cookies, &state.repositories.session)
+        .await?;
 
     let account_id_str = account_id.as_str().to_string();
     if let Err(err) = fetch_account_balance(account_id_str.clone(), Some(true), state.clone()).await

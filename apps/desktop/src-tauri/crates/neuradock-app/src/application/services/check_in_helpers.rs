@@ -1,9 +1,9 @@
 use anyhow::{Context, Result};
 use neuradock_domain::account::{Account, AccountRepository};
 use neuradock_domain::shared::AccountId;
+use neuradock_infrastructure::http::waf_bypass::WafBypassService;
 use std::collections::HashMap;
 use std::sync::Arc;
-use neuradock_infrastructure::http::waf_bypass::WafBypassService;
 
 /// Load and validate account from repository
 pub async fn load_and_validate_account(

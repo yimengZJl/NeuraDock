@@ -125,7 +125,11 @@ impl ProviderModelsService {
 
     /// Check if provider models should be auto-fetched
     pub async fn should_auto_fetch(&self, provider_id: &str) -> bool {
-        match self.provider_models_repo.find_by_provider(provider_id).await {
+        match self
+            .provider_models_repo
+            .find_by_provider(provider_id)
+            .await
+        {
             Ok(existing_models) => {
                 existing_models.is_none()
                     || existing_models

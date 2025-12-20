@@ -194,7 +194,11 @@ impl IndependentApiKey {
         if self.api_key.len() <= 12 {
             return "*".repeat(self.api_key.len());
         }
-        format!("{}...{}", &self.api_key[..8], &self.api_key[self.api_key.len() - 4..])
+        format!(
+            "{}...{}",
+            &self.api_key[..8],
+            &self.api_key[self.api_key.len() - 4..]
+        )
     }
 
     // Business logic

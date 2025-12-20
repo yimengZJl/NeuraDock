@@ -17,9 +17,13 @@ pub(super) async fn create_and_save_default_session(
     let session_token = SessionTokenExtractor::extract(cookies);
 
     let expires_at = Utc::now() + Duration::days(DEFAULT_SESSION_EXPIRATION_DAYS);
-    let session = Session::new(account_id, session_token, expires_at).map_err(CommandError::from)?;
+    let session =
+        Session::new(account_id, session_token, expires_at).map_err(CommandError::from)?;
 
-    session_repo.save(&session).await.map_err(CommandError::from)?;
+    session_repo
+        .save(&session)
+        .await
+        .map_err(CommandError::from)?;
     Ok(())
 }
 
@@ -42,7 +46,10 @@ pub(super) async fn import_single_account(
     .map_err(CommandError::from)?;
 
     let account_id = account.id().clone();
-    account_repo.save(&account).await.map_err(CommandError::from)?;
+    account_repo
+        .save(&account)
+        .await
+        .map_err(CommandError::from)?;
 
     create_and_save_default_session(account_id.clone(), &cookies, session_repo).await?;
 
@@ -69,7 +76,10 @@ pub(super) async fn update_account_cookies(
     account
         .update_credentials(credentials)
         .map_err(CommandError::from)?;
-    account_repo.save(&account).await.map_err(CommandError::from)?;
+    account_repo
+        .save(&account)
+        .await
+        .map_err(CommandError::from)?;
 
     create_and_save_default_session(account_id.clone(), &cookies, session_repo).await?;
 

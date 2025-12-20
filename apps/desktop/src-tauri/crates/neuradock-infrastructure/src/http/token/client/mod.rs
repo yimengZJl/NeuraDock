@@ -38,7 +38,9 @@ impl TokenClient {
 
 impl Default for TokenClient {
     fn default() -> Self {
-        Self::new().unwrap_or_else(|_| Self { client: Client::new() })
+        Self::new().unwrap_or_else(|_| Self {
+            client: Client::new(),
+        })
     }
 }
 
