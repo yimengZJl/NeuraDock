@@ -268,9 +268,11 @@ export function ConfigDialog({
 
                       <div className="grid gap-6 md:grid-cols-2">
                         <NodeSelector
+                          providerId={account.provider_id}
                           selectedNode={selectedNode}
                           onNodeChange={setSelectedNode}
                           nodes={nodes}
+                          onAfterNavigate={() => onOpenChange(false)}
                         />
 
                         <ModelSelector

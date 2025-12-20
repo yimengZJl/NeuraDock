@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, Server } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,14 @@ import { ProviderDialog, ProviderFormValues } from '@/components/provider/Provid
 import { useProviders } from '@/hooks/useProviders';
 import { useProviderActions } from '@/hooks/useProviderActions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProviderNodesDialog } from '@/components/provider/ProviderNodesDialog';
+import type { ProviderDto } from '@/hooks/useProviders';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export function ProvidersPage() {
   const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { data: providers = [], isLoading } = useProviders();
   const {
     dialogOpen,
@@ -26,6 +31,27 @@ export function ProvidersPage() {
   } = useProviderActions();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [nodesDialogOpen, setNodesDialogOpen] = useState(false);
+  const [nodesProvider, setNodesProvider] = useState<ProviderDto | null>(null);
+  const [pendingOpenProviderId, setPendingOpenProviderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const state = location.state as any;
+    const providerId = state?.openNodeManager?.providerId;
+    if (typeof providerId === 'string' && providerId) {
+      setPendingOpenProviderId(providerId);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    if (!pendingOpenProviderId) return;
+    const provider = providers.find((p) => p.id === pendingOpenProviderId);
+    if (!provider) return;
+    setNodesProvider(provider);
+    setNodesDialogOpen(true);
+    setPendingOpenProviderId(null);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [pendingOpenProviderId, providers, navigate, location.pathname]);
 
   // Filter providers
   const filteredProviders = useMemo(() => {
@@ -77,6 +103,11 @@ export function ProvidersPage() {
         api_user_key: values.api_user_key || undefined,
       });
     }
+  };
+
+  const handleManageNodes = (provider: ProviderDto) => {
+    setNodesProvider(provider);
+    setNodesDialogOpen(true);
   };
 
   return (
@@ -134,6 +165,7 @@ export function ProvidersPage() {
                     provider={provider}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onManageNodes={handleManageNodes}
                     isDeleting={deleteMutation.isPending}
                   />
                 ))}
@@ -158,6 +190,7 @@ export function ProvidersPage() {
                     provider={provider}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onManageNodes={handleManageNodes}
                     isDeleting={deleteMutation.isPending}
                   />
                 ))}
@@ -215,6 +248,15 @@ export function ProvidersPage() {
         }
         onSubmit={handleSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+      />
+
+      <ProviderNodesDialog
+        open={nodesDialogOpen}
+        onOpenChange={(open) => {
+          setNodesDialogOpen(open);
+          if (!open) setNodesProvider(null);
+        }}
+        provider={nodesProvider}
       />
     </PageContainer>
   );

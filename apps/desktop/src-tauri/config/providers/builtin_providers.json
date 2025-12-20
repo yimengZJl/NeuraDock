@@ -3,6 +3,17 @@
     "id": "anyrouter",
     "name": "AnyRouter",
     "domain": "https://anyrouter.top",
+    "default_nodes": [
+      { "name": "c.cspok.cn", "base_url": "https://c.cspok.cn" },
+      {
+        "name": "cn-shanghai.fcapp.run",
+        "base_url": "https://a-ocnfniawgw.cn-shanghai.fcapp.run"
+      },
+      {
+        "name": "cn-nb1.rainapp.top",
+        "base_url": "https://pmpjfbhq.cn-nb1.rainapp.top"
+      }
+    ],
     "login_path": "/login",
     "sign_in_path": "/api/user/sign_in",
     "user_info_path": "/api/user/self",

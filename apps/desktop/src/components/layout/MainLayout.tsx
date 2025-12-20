@@ -14,12 +14,6 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Main Content Area - Floating Canvas Style */}
       <main className="flex-1 min-w-0 p-2 pl-0 h-screen overflow-hidden relative">
         <div className="h-full w-full bg-background rounded-2xl shadow-sm border border-border/50 overflow-hidden flex flex-col relative">
-          {/* Window Drag Region */}
-          <div 
-            className="absolute top-0 left-0 right-0 h-8 z-40" 
-            data-tauri-drag-region 
-          />
-          
           <div className="flex-1 overflow-hidden p-0 relative z-0">
             {children}
           </div>

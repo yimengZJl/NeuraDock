@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
 import { Plus, Settings } from 'lucide-react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -12,26 +11,33 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import type { ProviderNode } from '@/types/token';
+import { useNavigate } from 'react-router-dom';
 
 interface NodeSelectorProps {
+  providerId: string;
   selectedNode: string;
   onNodeChange: (node: string) => void;
   nodes: ProviderNode[];
   disabled?: boolean;
+  onAfterNavigate?: () => void;
 }
 
 export function NodeSelector({
+  providerId,
   selectedNode,
   onNodeChange,
   nodes,
   disabled = false,
+  onAfterNavigate,
 }: NodeSelectorProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const handleManageNodes = () => {
-    toast.info(
-      t('token.manageNodesHint', 'Go to Settings > Nodes to manage your API endpoints.')
-    );
+    navigate('/providers', {
+      state: { openNodeManager: { providerId } },
+    });
+    onAfterNavigate?.();
   };
 
   return (

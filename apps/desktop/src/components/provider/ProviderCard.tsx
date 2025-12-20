@@ -23,6 +23,7 @@ import {
 import {
   MoreVertical,
   Edit,
+  Settings,
   Trash2,
   Globe,
   Shield,
@@ -37,6 +38,7 @@ interface ProviderCardProps {
   provider: ProviderDto;
   onEdit: (provider: ProviderDto) => void;
   onDelete: (providerId: string) => void;
+  onManageNodes?: (provider: ProviderDto) => void;
   isDeleting?: boolean;
 }
 
@@ -44,6 +46,7 @@ export function ProviderCard({
   provider,
   onEdit,
   onDelete,
+  onManageNodes,
   isDeleting = false,
 }: ProviderCardProps) {
   const { t } = useTranslation();
@@ -109,6 +112,12 @@ export function ProviderCard({
                     <Edit className="h-4 w-4 mr-2" />
                     {t('common.edit')}
                   </DropdownMenuItem>
+                  {onManageNodes && (
+                    <DropdownMenuItem onClick={() => onManageNodes(provider)}>
+                      <Settings className="h-4 w-4 mr-2" />
+                      {t('token.configDialog.manageNodes', 'Manage Nodes')}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => setShowDeleteConfirm(true)}

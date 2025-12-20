@@ -95,7 +95,6 @@ export function Sidebar() {
         "flex flex-col h-full items-center py-4 transition-all duration-300 select-none bg-sidebar/50 backdrop-blur-sm border-r border-border/40",
         collapsed ? "w-[72px]" : "w-40"
       )}
-      data-tauri-drag-region
     >
       {/* Drag Region Spacer (No Logo/Text) */}
       <div className="w-full h-6 shrink-0 mb-4" data-tauri-drag-region />

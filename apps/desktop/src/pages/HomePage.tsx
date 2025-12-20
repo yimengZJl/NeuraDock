@@ -1,4 +1,4 @@
-import { Users, DollarSign, TrendingUp, Wallet, Activity, Zap } from 'lucide-react';
+import { Users, DollarSign, TrendingUp, Wallet, Activity, Zap, Server } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBalanceStatistics } from '@/hooks/useBalance';
@@ -6,18 +6,20 @@ import { ProviderModelsSection } from '@/components/account/ProviderModelsSectio
 import { useTranslation } from 'react-i18next';
 import { motion, type Variants } from 'framer-motion';
 import { formatCurrency } from '@/lib/formatters';
+import { useNavigate } from 'react-router-dom';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageContent, Section } from '@/components/layout/PageContent';
 import { BentoGrid } from '@/components/layout/CardGrid';
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 export function HomePage() {
   const { data: accounts, isLoading } = useAccounts();
   const { data: statistics, isLoading: statsLoading } = useBalanceStatistics();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   if (isLoading || statsLoading) {
     return (
@@ -27,7 +29,6 @@ export function HomePage() {
     );
   }
 
-  const enabledAccounts = accounts?.filter(a => a.enabled).length || 0;
   const totalAccounts = accounts?.length || 0;
 
   // Improved animation variants
@@ -89,47 +90,33 @@ export function HomePage() {
                   <div className="text-4xl font-bold tracking-tight tabular-nums text-foreground">
                     {statsLoading ? '...' : statistics ? formatCurrency(statistics.total_current_balance) : '$0.00'}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                    <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    {t('dashboard.stats.availableBalance')}
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Income & Consumption Stack */}
-            <motion.div variants={item} className="space-y-4">
-              <Card className={interactiveCardClass}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.totalIncome')}</CardTitle>
-                  <div className="p-2 rounded-full bg-blue-50 dark:bg-blue-900/20">
-                    <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold tabular-nums text-foreground">
-                    {statsLoading ? '...' : statistics ? formatCurrency(statistics.total_income) : '$0.00'}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className={interactiveCardClass}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.historicalConsumption')}</CardTitle>
-                  <div className="p-2 rounded-full bg-orange-50 dark:bg-orange-900/20">
-                    <TrendingUp className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold tabular-nums text-foreground">
-                    {statsLoading ? '...' : statistics ? formatCurrency(statistics.total_consumed) : '$0.00'}
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border bg-background/60 px-3 py-2 backdrop-blur-sm">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <DollarSign className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                        <span>{t('dashboard.stats.totalIncome')}</span>
+                      </div>
+                      <div className="mt-1 text-lg font-semibold tabular-nums text-foreground">
+                        {statistics ? formatCurrency(statistics.total_income) : '$0.00'}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border bg-background/60 px-3 py-2 backdrop-blur-sm">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <TrendingUp className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+                        <span>{t('dashboard.stats.historicalConsumption')}</span>
+                      </div>
+                      <div className="mt-1 text-lg font-semibold tabular-nums text-foreground">
+                        {statistics ? formatCurrency(statistics.total_consumed) : '$0.00'}
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
 
             {/* Accounts Status */}
-            <motion.div variants={item}>
-              <Card className={cn(interactiveCardClass, "h-full flex flex-col justify-center")}>
+            <motion.div variants={item} className="md:col-span-2 lg:col-span-2">
+              <Card className={cn(interactiveCardClass, "h-full")}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.totalAccounts')}</CardTitle>
                   <div className="p-2 rounded-full bg-emerald-50 dark:bg-emerald-900/20">
@@ -138,10 +125,20 @@ export function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold tabular-nums text-foreground">{isLoading ? '...' : totalAccounts}</div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0">
-                      {enabledAccounts} {t('dashboard.stats.enabled')}
-                    </Badge>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button size="sm" className="shadow-sm" onClick={() => navigate('/accounts')}>
+                      <Users className="mr-2 h-4 w-4" />
+                      {t('nav.accounts')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="shadow-sm"
+                      onClick={() => navigate('/providers')}
+                    >
+                      <Server className="mr-2 h-4 w-4" />
+                      {t('nav.providers')}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

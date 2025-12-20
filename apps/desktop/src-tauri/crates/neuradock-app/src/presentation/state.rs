@@ -146,7 +146,7 @@ impl AppState {
         let provider_repo =
             Arc::new(SqliteProviderRepository::new(pool.clone())) as Arc<dyn ProviderRepository>;
 
-        seed_builtin_providers(provider_repo.clone())
+        seed_builtin_providers(provider_repo.clone(), custom_node_repo.clone())
             .await
             .map_err(|e| format!("Failed to seed built-in providers: {}", e))?;
 

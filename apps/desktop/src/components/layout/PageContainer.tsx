@@ -27,7 +27,7 @@ export function PageContainer({ children, className, title, actions, headerClass
         "gap-[var(--spacing-element-gap)]",
         "h-[var(--layout-page-header-height)]",
         headerClassName,
-      )}>
+      )} data-tauri-drag-region>
         <div className="flex items-center gap-[var(--spacing-element-gap)] min-w-0 shrink-0">
           {typeof title === 'string' ? (
             <h1 className="text-2xl font-bold tracking-tight truncate">{title}</h1>
@@ -36,7 +36,7 @@ export function PageContainer({ children, className, title, actions, headerClass
           )}
         </div>
 
-        <div className="flex items-center flex-1 justify-end min-w-0 gap-[var(--spacing-element-gap)]">
+        <div className="flex items-center flex-1 justify-end min-w-0 gap-[var(--spacing-element-gap)]" data-tauri-no-drag>
           {/* Page Actions (Search, Tabs, Buttons) */}
           {actions}
 
