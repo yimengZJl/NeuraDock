@@ -10,10 +10,6 @@ use presentation::state::AppState;
 use specta_typescript::Typescript;
 use tauri::Manager;
 use tauri_specta::{collect_commands, collect_events, Builder};
-use tokio::sync::OnceCell;
-
-// Global state cell to ensure initialization completes before use
-static STATE_CELL: OnceCell<()> = OnceCell::const_new();
 
 #[tokio::main]
 async fn main() {
@@ -146,20 +142,33 @@ async fn main() {
                 }
             }
 
-            // Initialize state asynchronously
+            // Initialize state and block startup until ready, so commands can't be invoked before
+            // `AppState` is managed.
+            let (tx, rx) = std::sync::mpsc::channel::<Result<AppState, String>>();
+            let init_handle = handle.clone();
             tauri::async_runtime::spawn(async move {
-                tracing::info!("🚀 Starting app state initialization...");
-                match AppState::new(handle.clone()).await {
-                    Ok(app_state) => {
-                        handle.manage(app_state);
-                        STATE_CELL.set(()).ok();
-                        tracing::info!("✅ App state initialized successfully");
-                    }
-                    Err(e) => {
-                        tracing::error!("❌ Failed to initialize app state: {}", e);
-                    }
-                }
+                let result = AppState::new(init_handle).await.map_err(|e| e.to_string());
+                let _ = tx.send(result);
             });
+
+            tracing::info!("🚀 Starting app state initialization...");
+            let init_result = rx.recv().map_err(|e| {
+                Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+                    as Box<dyn std::error::Error>
+            })?;
+            match init_result {
+                Ok(app_state) => {
+                    app.manage(app_state);
+                    tracing::info!("✅ App state initialized successfully");
+                }
+                Err(message) => {
+                    tracing::error!("❌ Failed to initialize app state: {}", message);
+                    return Err(Box::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        message,
+                    )));
+                }
+            }
 
             builder.mount_events(app);
 
