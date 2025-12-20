@@ -54,6 +54,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { PageContainer } from '@/components/layout/PageContainer';
+import { HeaderActions } from '@/components/layout/HeaderActions';
+import { createFadeUpItem, createStaggerContainer } from '@/lib/motion';
 
 type ProviderFilter = 'all' | 'openai' | 'anthropic' | 'custom';
 type StatusFilter = 'all' | 'active' | 'inactive';
@@ -186,21 +188,8 @@ export function TokensPage() {
     toggleMutation.mutate(key);
   };
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
+  const containerVariants = createStaggerContainer({ staggerChildren: 0.05 });
+  const itemVariants = createFadeUpItem({ y: 20, scale: 1 });
 
   return (
     <PageContainer
@@ -211,7 +200,7 @@ export function TokensPage() {
         </div>
       }
       actions={
-        <div className="flex items-center gap-2">
+        <HeaderActions className="gap-2">
           {/* Search */}
           <div className="relative w-48 lg:w-64 transition-all duration-200">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
@@ -257,7 +246,7 @@ export function TokensPage() {
             <Plus className="mr-2 h-4 w-4" />
             {t('token.addKey', 'Add API Key')}
           </Button>
-        </div>
+        </HeaderActions>
       }
     >
       <div className="space-y-5">

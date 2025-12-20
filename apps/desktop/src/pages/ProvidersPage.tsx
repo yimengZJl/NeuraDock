@@ -10,6 +10,7 @@ import { useProviders } from '@/hooks/useProviders';
 import { useProviderActions } from '@/hooks/useProviderActions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ProviderNodesDialog } from '@/components/provider/ProviderNodesDialog';
+import { HeaderActions, HeaderActionsSeparator } from '@/components/layout/HeaderActions';
 import type { ProviderDto } from '@/hooks/useProviders';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -114,7 +115,7 @@ export function ProvidersPage() {
     <PageContainer
       title={t('providers.title', '中转站管理')}
       actions={
-        <div className="flex items-center gap-3">
+        <HeaderActions>
           {/* Search */}
           <div className="relative w-64">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -126,14 +127,14 @@ export function ProvidersPage() {
             />
           </div>
 
-          <div className="w-px h-6 bg-border" />
+          <HeaderActionsSeparator />
 
           {/* Add Provider Button */}
           <Button onClick={handleCreate} size="sm" className="shadow-sm">
             <Plus className="mr-2 h-4 w-4" />
             {t('providers.addButton', '添加中转站')}
           </Button>
-        </div>
+        </HeaderActions>
       }
     >
       {/* Loading State */}

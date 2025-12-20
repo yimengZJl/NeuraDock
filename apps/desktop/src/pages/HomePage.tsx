@@ -14,6 +14,7 @@ import { BentoGrid } from '@/components/layout/CardGrid';
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { createFadeUpItem, createStaggerContainer } from '@/lib/motion';
 
 export function HomePage() {
   const { data: accounts, isLoading } = useAccounts();
@@ -31,31 +32,8 @@ export function HomePage() {
 
   const totalAccounts = accounts?.length || 0;
 
-  // Improved animation variants
-  const container: Variants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-        delayChildren: 0.1
-      }
-    }
-  };
-
-  const item: Variants = {
-    hidden: { opacity: 0, y: 10, scale: 0.98 },
-    show: { 
-      opacity: 1, 
-      y: 0, 
-      scale: 1,
-      transition: { 
-        type: 'spring',
-        stiffness: 260,
-        damping: 20
-      } 
-    }
-  };
+  const container: Variants = createStaggerContainer({ staggerChildren: 0.05, delayChildren: 0.1 });
+  const item: Variants = createFadeUpItem({ y: 10, scale: 0.98 });
 
   // Common card interactive styles
   const interactiveCardClass = "bg-card border shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98] cursor-pointer";

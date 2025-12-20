@@ -48,6 +48,7 @@ import { AccountDialog } from '@/components/account/AccountDialog';
 import { JsonImportDialog } from '@/components/account/JsonImportDialog';
 import { BatchUpdateDialog } from '@/components/account/BatchUpdateDialog';
 import { PageContainer } from '@/components/layout/PageContainer';
+import { HeaderActions, HeaderActionsSeparator } from '@/components/layout/HeaderActions';
 import { Account } from '@/lib/tauri-commands';
 import { cn } from '@/lib/utils';
 import { useCheckIn, useBatchCheckIn } from '@/hooks/useCheckIn';
@@ -237,7 +238,7 @@ export function AccountsPage() {
         </div>
       }
       actions={
-        <div className="flex items-center gap-3">
+        <HeaderActions>
           {/* Search */}
           <div className="relative w-64">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -272,7 +273,7 @@ export function AccountsPage() {
             </SelectContent>
           </Select>
 
-          <div className="w-px h-6 bg-border" />
+          <HeaderActionsSeparator />
 
           {/* Batch Check-in Button */}
           <Tooltip>
@@ -313,7 +314,7 @@ export function AccountsPage() {
             </TooltipContent>
           </Tooltip>
 
-          <div className="w-px h-6 bg-border" />
+          <HeaderActionsSeparator />
 
           {/* Add/Manage Dropdown */}
           <DropdownMenu>
@@ -341,7 +342,7 @@ export function AccountsPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </HeaderActions>
       }
     >
       <div className="flex-1 flex flex-col gap-6 overflow-hidden pt-2">
