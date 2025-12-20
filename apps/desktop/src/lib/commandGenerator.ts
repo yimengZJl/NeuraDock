@@ -1,11 +1,10 @@
-import type { TokenDto, AccountDto } from '@/types/token';
+import type { TokenDto } from '@/types/token';
 
 type AITool = 'claude' | 'codex' | 'gemini';
 
 interface GenerateCommandOptions {
   tool: AITool;
   token: TokenDto;
-  account: AccountDto;
   selectedNode: string;
   selectedModel: string;
   isSingleLine: boolean;
@@ -14,12 +13,11 @@ interface GenerateCommandOptions {
 export function generateCommand({
   tool,
   token,
-  account,
   selectedNode,
   selectedModel,
   isSingleLine,
 }: GenerateCommandOptions): string {
-  const baseUrl = selectedNode || account.provider_domain;
+  const baseUrl = selectedNode;
   const apiKey = token.key;
 
   const commands: Record<AITool, string> = {

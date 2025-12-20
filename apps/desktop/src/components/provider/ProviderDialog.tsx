@@ -16,11 +16,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Info, Globe, Shield, CalendarCheck, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { Card } from '@/components/ui/card';
 
 export interface ProviderFormValues {

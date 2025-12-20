@@ -53,10 +53,8 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
   } = useAccountOperations(account);
 
   const confirmDelete = async () => {
-    const success = await handleDelete();
-    if (success) {
-      setShowDeleteConfirm(false);
-    }
+    await handleDelete();
+    setShowDeleteConfirm(false);
   };
 
   // 从account对象获取自动签到设置

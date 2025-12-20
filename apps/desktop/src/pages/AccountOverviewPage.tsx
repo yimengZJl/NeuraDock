@@ -94,19 +94,6 @@ export function AccountOverviewPage() {
   const { data: streak } = useCheckInStreak(accountId ?? '', !!accountId);
   const { data: dayDetail } = useCheckInDayDetail(accountId ?? '', selectedDate, dayDetailDialogOpen && !!selectedDate);
 
-  // Check-in mutation
-  const checkInMutation = useMutation({
-    mutationFn: () => invoke('execute_check_in', { accountId: accountId! }),
-    onSuccess: () => {
-      toast.success(t('checkIn.success'));
-      queryClient.invalidateQueries({ queryKey: ['account', accountId] });
-      queryClient.invalidateQueries({ queryKey: ['check-in-calendar', accountId] });
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || t('checkIn.failed'));
-    },
-  });
-
   // Refresh balance mutation
   const refreshBalanceMutation = useMutation({
     mutationFn: () =>
@@ -570,15 +557,15 @@ export function AccountOverviewPage() {
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         mode="edit"
-        accountId={account.id}
+        accountId={editingAccount?.id ?? account.id}
         defaultValues={{
-          name: account.name,
-          provider_id: account.provider_id,
-          cookies: account.cookies,
-          api_user: account.api_user,
-          auto_checkin_enabled: account.auto_checkin_enabled,
-          auto_checkin_hour: account.auto_checkin_hour,
-          auto_checkin_minute: account.auto_checkin_minute,
+          name: (editingAccount ?? account).name,
+          provider_id: (editingAccount ?? account).provider_id,
+          cookies: editingAccount?.cookies,
+          api_user: editingAccount?.api_user,
+          auto_checkin_enabled: (editingAccount ?? account).auto_checkin_enabled,
+          auto_checkin_hour: (editingAccount ?? account).auto_checkin_hour,
+          auto_checkin_minute: (editingAccount ?? account).auto_checkin_minute,
         }}
       />
 

@@ -182,10 +182,8 @@ export function AccountsPage() {
   };
 
   const handleAccountCheckIn = (accountId: string) => {
+    setCheckingInIds((prev) => new Set(prev).add(accountId));
     checkInMutation.mutate(accountId, {
-      onMutate: () => {
-        setCheckingInIds((prev) => new Set(prev).add(accountId));
-      },
       onSettled: () => {
         setCheckingInIds((prev) => {
           const next = new Set(prev);

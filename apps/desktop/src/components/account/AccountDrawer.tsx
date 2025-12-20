@@ -30,7 +30,6 @@ import {
 } from 'lucide-react';
 import { Account } from '@/lib/tauri-commands';
 import type { TokenDto } from '@/types/token';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface AccountDrawerProps {
@@ -103,12 +102,17 @@ export function AccountDrawer({
     }
 
     if (account.session_expires_at) {
-      const now = Date.now() / 1000;
-      const daysUntilExpiry = (account.session_expires_at - now) / 86400;
+      const daysUntilExpiry =
+        account.session_days_remaining ??
+        (() => {
+          const ms = Date.parse(account.session_expires_at ?? '');
+          if (Number.isNaN(ms)) return null;
+          return (ms - Date.now()) / (1000 * 60 * 60 * 24);
+        })();
 
-      if (daysUntilExpiry < 0) {
+      if (daysUntilExpiry !== null && daysUntilExpiry < 0) {
         return <AlertCircle className="h-5 w-5 text-destructive" />;
-      } else if (daysUntilExpiry < 3) {
+      } else if (daysUntilExpiry !== null && daysUntilExpiry < 3) {
         return <AlertCircle className="h-5 w-5 text-orange-500" />;
       }
     }
@@ -122,15 +126,22 @@ export function AccountDrawer({
     }
 
     if (account.session_expires_at) {
-      const now = Date.now() / 1000;
-      const daysUntilExpiry = (account.session_expires_at - now) / 86400;
+      const daysUntilExpiry =
+        account.session_days_remaining ??
+        (() => {
+          const ms = Date.parse(account.session_expires_at ?? '');
+          if (Number.isNaN(ms)) return null;
+          return (ms - Date.now()) / (1000 * 60 * 60 * 24);
+        })();
 
-      if (daysUntilExpiry < 0) {
+      if (daysUntilExpiry !== null && daysUntilExpiry < 0) {
         return t('accountCard.sessionExpired');
-      } else if (daysUntilExpiry < 3) {
+      } else if (daysUntilExpiry !== null && daysUntilExpiry < 3) {
         return t('accountCard.sessionExpiresSoon', { days: Math.floor(daysUntilExpiry) });
       }
-      return t('accountCard.sessionValidDays', { days: Math.floor(daysUntilExpiry) });
+      if (daysUntilExpiry !== null) {
+        return t('accountCard.sessionValidDays', { days: Math.floor(daysUntilExpiry) });
+      }
     }
 
     return t('accountCard.active');
@@ -209,7 +220,7 @@ export function AccountDrawer({
                     <span className="text-xs font-medium">{t('accountCard.currentBalance')}</span>
                   </div>
                   <p className="text-xl font-bold font-mono">
-                    ${account.cached_remaining?.toFixed(2) ?? '0.00'}
+                    ${(account.current_balance ?? 0).toFixed(2)}
                   </p>
                 </Card>
 
@@ -229,7 +240,7 @@ export function AccountDrawer({
                     <span className="text-xs font-medium">{t('accountCard.historicalConsumption')}</span>
                   </div>
                   <p className="text-xl font-bold font-mono">
-                    ${((account.total_income ?? 0) - (account.cached_remaining ?? 0)).toFixed(2)}
+                    ${account.total_consumed?.toFixed(2) ?? '0.00'}
                   </p>
                 </Card>
               </div>
@@ -311,11 +322,13 @@ export function AccountDrawer({
                           <div className="flex-1 min-w-0">
                             <p className="font-mono text-sm truncate">{token.name || token.id}</p>
                             <div className="flex items-center gap-2 mt-1">
-                              {token.quota > 0 && (
-                                <span className="text-xs text-muted-foreground">
-                                  ${token.unlimited_quota ? '∞' : (token.quota - token.used_quota).toFixed(2)} {t('token.remaining')}
-                                </span>
-                              )}
+                              <span className="text-xs text-muted-foreground">
+                                $
+                                {token.unlimited_quota
+                                  ? '∞'
+                                  : token.remain_quota.toFixed(2)}{' '}
+                                {t('token.remaining')}
+                              </span>
                               {token.status === 1 ? (
                                 <Badge variant="outline" className="text-xs">
                                   {t('token.active')}

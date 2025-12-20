@@ -231,7 +231,7 @@ export function AccountsTable({
                   onClick={() => onAccountClick(account)}
                 >
                   <span className="text-xs text-muted-foreground font-mono">
-                    {formatLastCheckIn(account.last_check_in)}
+                    {formatLastCheckIn(account.last_check_in ?? undefined)}
                   </span>
                 </td>
                 <td className="p-2 align-middle pr-6">

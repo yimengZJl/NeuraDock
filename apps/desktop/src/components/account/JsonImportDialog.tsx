@@ -42,14 +42,6 @@ const importedAccountSchema = z.object({
 const singleImportSchema = importedAccountSchema;
 const batchImportSchema = z.array(importedAccountSchema).min(1).max(100);
 
-interface ImportedAccountData {
-  name?: string;
-  provider?: string;
-  provider_id?: string;
-  cookies: Record<string, string> | string;
-  api_user?: string;
-}
-
 interface JsonImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -92,9 +84,9 @@ export function JsonImportDialog({ open, onOpenChange }: JsonImportDialogProps) 
 
   const importBatchMutation = useMutation({
     mutationFn: accountCommands.importBatch,
-    onSuccess: (accountIds) => {
+    onSuccess: (result) => {
       cacheInvalidators.invalidateAllAccounts(queryClient);
-      toast.success(t('jsonImport.importBatchSuccess', { count: accountIds.length }));
+      toast.success(t('jsonImport.importBatchSuccess', { count: result.succeeded }));
       onOpenChange(false);
       setJsonInput('');
       setValidationResult(null);
@@ -155,7 +147,7 @@ export function JsonImportDialog({ open, onOpenChange }: JsonImportDialogProps) 
 
       // Both schemas failed, provide detailed error message
       const error = batchResult.error || singleResult.error;
-      const firstError = error.errors[0];
+      const firstError = error.issues[0];
       setValidationResult({
         valid: false,
         error: firstError?.message || t('jsonImport.invalidFormat'),

@@ -90,7 +90,7 @@ export function TokensPage() {
   const [keyToDelete, setKeyToDelete] = useState<IndependentKeyDto | null>(null);
 
   // Get independent keys
-  const { data: independentKeys = [], refetch, isLoading } = useQuery<IndependentKeyDto[]>({
+  const { data: independentKeys = [], refetch } = useQuery<IndependentKeyDto[]>({
     queryKey: ['independent-keys'],
     queryFn: async () => {
       const result = await invoke<IndependentKeyDto[]>('get_all_independent_keys');

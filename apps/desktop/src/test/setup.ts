@@ -1,4 +1,4 @@
-import { expect, afterEach, vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
@@ -8,7 +8,6 @@ afterEach(() => {
 });
 
 // Mock Tauri API
-global.window = Object.create(window);
 Object.defineProperty(window, '__TAURI_INTERNALS__', {
   value: {},
   writable: true,

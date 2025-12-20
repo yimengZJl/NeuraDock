@@ -1,20 +1,17 @@
 import { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { Account, AccountDetail } from '@/lib/tauri-commands';
+import { Account, AccountDetail, accountCommands } from '@/lib/tauri-commands';
 import { useAccountMutation } from './useMutationFactory';
 
 export function useAccountActions() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [editingAccount, setEditingAccount] = useState<AccountDetail | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Fetch account detail
   const fetchAccountDetail = async (accountId: string): Promise<AccountDetail> => {
-    return await invoke<AccountDetail>('get_account_detail', { accountId });
+    return await accountCommands.getDetail(accountId);
   };
 
   // Edit account
@@ -44,7 +41,7 @@ export function useAccountActions() {
   // Delete account mutation
   const deleteAccountMutation = useAccountMutation({
     mutationFn: async (accountId: string) => {
-      await invoke('delete_account', { accountId });
+      await accountCommands.delete(accountId);
     },
     successMessage: 'accounts.deleteSuccess',
     logPrefix: 'Delete account',
@@ -53,7 +50,7 @@ export function useAccountActions() {
   // Toggle account enabled status
   const toggleAccountMutation = useAccountMutation({
     mutationFn: async ({ accountId, enabled }: { accountId: string; enabled: boolean }) => {
-      await invoke('toggle_account', { accountId, enabled });
+      await accountCommands.toggle(accountId, enabled);
     },
     logPrefix: 'Toggle account',
   });
@@ -62,7 +59,7 @@ export function useAccountActions() {
   const batchEnableMutation = useAccountMutation({
     mutationFn: async (accountIds: string[]) => {
       await Promise.all(
-        accountIds.map((id) => invoke('toggle_account', { accountId: id, enabled: true }))
+        accountIds.map((id) => accountCommands.toggle(id, true))
       );
     },
     successMessage: 'accounts.batchEnableSuccess',
@@ -73,7 +70,7 @@ export function useAccountActions() {
   const batchDisableMutation = useAccountMutation({
     mutationFn: async (accountIds: string[]) => {
       await Promise.all(
-        accountIds.map((id) => invoke('toggle_account', { accountId: id, enabled: false }))
+        accountIds.map((id) => accountCommands.toggle(id, false))
       );
     },
     successMessage: 'accounts.batchDisableSuccess',

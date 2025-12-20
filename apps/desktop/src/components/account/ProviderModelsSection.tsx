@@ -2,10 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw, Package } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useState } from 'react';
 
 interface ProviderModelsSectionProps {
   providerId: string;
@@ -21,7 +20,6 @@ export function ProviderModelsSection({
 }: ProviderModelsSectionProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [isExpanded, setIsExpanded] = useState(false);
 
   // Fetch cached models (no API call, just read from database)
   const { data: models = [], isLoading } = useQuery<string[]>({

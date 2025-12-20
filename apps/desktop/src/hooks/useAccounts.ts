@@ -190,12 +190,12 @@ export function useImportAccountsBatch() {
 
   return useMutation({
     mutationFn: (jsonData: string) => accountCommands.importBatch(jsonData),
-    onSuccess: (accountIds) => {
+    onSuccess: (result) => {
       cacheInvalidators.invalidateAllAccounts(queryClient);
       toast.success(
         t('accounts.batchImportSuccess', {
           defaultValue: '成功导入 {{count}} 个账号',
-          count: accountIds.length,
+          count: result.succeeded,
         })
       );
     },

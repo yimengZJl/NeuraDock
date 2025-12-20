@@ -38,10 +38,17 @@ export function useCheckIn() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
-  return useMutation({
-    mutationFn: executeCheckIn,
+  return useMutation<CheckInResult, any, string | undefined>({
+    mutationFn: (accountId) => {
+      if (!accountId) {
+        return Promise.reject(new Error('accountId is required'));
+      }
+      return executeCheckIn(accountId);
+    },
     onSuccess: (data, accountId) => {
-      cacheInvalidators.invalidateAfterCheckIn(queryClient, accountId);
+      if (accountId) {
+        cacheInvalidators.invalidateAfterCheckIn(queryClient, accountId);
+      }
 
       if (data.success) {
         const balanceInfo = data.balance
@@ -60,7 +67,7 @@ export function useCheckIn() {
         );
       }
     },
-    onError: (error: any, accountId?: string) => {
+    onError: (error: any, accountId) => {
       console.error('Check-in error:', error);
       if (accountId) {
         queryClient.invalidateQueries({ queryKey: ['account', accountId] });

@@ -33,7 +33,7 @@ interface MutationFactoryOptions<TData = unknown, TVariables = unknown> {
   /**
    * Additional mutation options to merge
    */
-  options?: Omit<UseMutationOptions<TData, Error, TVariables>, 'mutationFn' | 'onSuccess' | 'onError'>;
+  options?: Omit<UseMutationOptions<TData, Error, TVariables, unknown>, 'mutationFn'>;
 }
 
 /**
@@ -66,8 +66,11 @@ export function useAccountMutation<TData = unknown, TVariables = unknown>(
     options = {},
   } = config;
 
+  const { onSuccess: userOnSuccess, onError: userOnError, ...restOptions } = options;
+
   return useMutation<TData, Error, TVariables>({
     mutationFn,
+    ...restOptions,
     onSuccess: (data, variables, context) => {
       // Invalidate specified query keys
       invalidateKeys.forEach(queryKey => {
@@ -81,7 +84,7 @@ export function useAccountMutation<TData = unknown, TVariables = unknown>(
       }
 
       // Call custom onSuccess if provided
-      options.onSuccess?.(data, variables, context);
+      userOnSuccess?.(data, variables, context, undefined as never);
     },
     onError: (error, variables, context) => {
       // Log error to console
@@ -93,8 +96,7 @@ export function useAccountMutation<TData = unknown, TVariables = unknown>(
       toast.error(message);
 
       // Call custom onError if provided
-      options.onError?.(error, variables, context);
+      userOnError?.(error, variables, context, undefined as never);
     },
-    ...options,
   });
 }

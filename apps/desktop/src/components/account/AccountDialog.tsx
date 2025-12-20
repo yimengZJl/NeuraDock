@@ -50,10 +50,10 @@ export function AccountDialog({
           name: values.name,
           provider_id: values.provider_id,
           cookies,
-          api_user: values.api_user || undefined,
-          auto_checkin_enabled: values.auto_checkin_enabled,
-          auto_checkin_hour: values.auto_checkin_hour,
-          auto_checkin_minute: values.auto_checkin_minute,
+          api_user: values.api_user ?? '',
+          auto_checkin_enabled: values.auto_checkin_enabled ?? null,
+          auto_checkin_hour: values.auto_checkin_hour ?? null,
+          auto_checkin_minute: values.auto_checkin_minute ?? null,
         };
 
         await createMutation.mutateAsync(input);
@@ -69,11 +69,11 @@ export function AccountDialog({
         const input: UpdateAccountInput = {
           account_id: accountId,
           name: values.name,
-          cookies: cookiesChanged ? cookies : undefined,  // Only send cookies if changed
-          api_user: values.api_user || undefined,
-          auto_checkin_enabled: values.auto_checkin_enabled,
-          auto_checkin_hour: values.auto_checkin_hour,
-          auto_checkin_minute: values.auto_checkin_minute,
+          cookies: cookiesChanged ? cookies : null, // Only send cookies if changed
+          api_user: values.api_user || null,
+          auto_checkin_enabled: values.auto_checkin_enabled ?? null,
+          auto_checkin_hour: values.auto_checkin_hour ?? null,
+          auto_checkin_minute: values.auto_checkin_minute ?? null,
         };
 
         await updateMutation.mutateAsync(input);

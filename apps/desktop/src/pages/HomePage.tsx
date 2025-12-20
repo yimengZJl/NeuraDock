@@ -1,10 +1,10 @@
-import { Users, DollarSign, TrendingUp, Wallet, Activity, ExternalLink, Zap } from 'lucide-react';
+import { Users, DollarSign, TrendingUp, Wallet, Activity, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useBalanceStatistics } from '@/hooks/useBalance';
 import { ProviderModelsSection } from '@/components/account/ProviderModelsSection';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { formatCurrency } from '@/lib/formatters';
 
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -31,7 +31,7 @@ export function HomePage() {
   const totalAccounts = accounts?.length || 0;
 
   // Improved animation variants
-  const container = {
+  const container: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -42,14 +42,14 @@ export function HomePage() {
     }
   };
 
-  const item = {
+  const item: Variants = {
     hidden: { opacity: 0, y: 10, scale: 0.98 },
     show: { 
       opacity: 1, 
       y: 0, 
       scale: 1,
       transition: { 
-        type: "spring",
+        type: 'spring',
         stiffness: 260,
         damping: 20
       } 
