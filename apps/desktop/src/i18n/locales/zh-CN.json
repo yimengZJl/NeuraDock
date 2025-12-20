@@ -405,6 +405,9 @@
     "clearing": "清除中...",
     "adding": "添加中...",
     "add": "添加",
+    "name": "名称",
+    "list": "列表",
+    "required": "必填",
     "default": "默认",
     "collapse": "收起",
     "unknownError": "未知错误"
@@ -748,6 +751,10 @@
     "noProviders": "暂无自定义中转站",
     "tryDifferentSearch": "尝试使用其他关键词搜索",
     "addFirstProvider": "点击\"添加中转站\"按钮创建您的第一个自定义中转站",
+    "noCustomNodes": "暂无自定义节点",
+    "addNode": "添加节点",
+    "endpoint": "API 端点",
+    "nodeNamePlaceholder": "例如：上海",
     "toast": {
       "createSuccess": "中转站创建成功",
       "createError": "创建失败: {{error}}",

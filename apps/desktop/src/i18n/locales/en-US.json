@@ -404,6 +404,9 @@
     "clearing": "Clearing...",
     "adding": "Adding...",
     "add": "Add",
+    "name": "Name",
+    "list": "List",
+    "required": "Required",
     "default": "Default",
     "collapse": "Collapse",
     "unknownError": "Unknown error"
@@ -747,6 +750,10 @@
     "noProviders": "No custom providers",
     "tryDifferentSearch": "Try different search terms",
     "addFirstProvider": "Click \"Add Provider\" button to create your first custom provider",
+    "noCustomNodes": "No custom endpoints yet.",
+    "addNode": "Add Endpoint",
+    "endpoint": "Endpoint",
+    "nodeNamePlaceholder": "e.g. Shanghai",
     "toast": {
       "createSuccess": "Provider created successfully",
       "createError": "Create failed: {{error}}",
