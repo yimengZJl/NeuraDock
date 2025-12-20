@@ -17,6 +17,7 @@ impl TokenClient {
         let client = Client::builder()
             .timeout(std::time::Duration::from_secs(30))
             .gzip(true) // Enable automatic gzip decompression
+            .no_proxy()
             .build()?;
 
         Ok(Self { client })

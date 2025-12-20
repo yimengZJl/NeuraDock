@@ -9,12 +9,24 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const THEME_STORAGE_KEY = 'neuradock-theme';
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('system');
+  const [theme, setThemeState] = useState<Theme>(() => {
+    // Initialize from localStorage
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    return (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : 'system';
+  });
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  const setTheme = (newTheme: Theme) => {
+    localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+    setThemeState(newTheme);
+  };
 
   useEffect(() => {
     const root = window.document.documentElement;
-    
+
     const applyTheme = (theme: Theme) => {
       root.classList.remove('light', 'dark');
 
@@ -30,11 +42,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     };
 
     applyTheme(theme);
+    setIsInitialized(true);
 
     // Listen for system theme changes when theme is 'system'
     if (theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      
+
       const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
         root.classList.remove('light', 'dark');
         root.classList.add(e.matches ? 'dark' : 'light');
@@ -44,7 +57,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (mediaQuery.addEventListener) {
         mediaQuery.addEventListener('change', handleChange);
         return () => mediaQuery.removeEventListener('change', handleChange);
-      } 
+      }
       // Fallback for older browsers
       else if (mediaQuery.addListener) {
         mediaQuery.addListener(handleChange);

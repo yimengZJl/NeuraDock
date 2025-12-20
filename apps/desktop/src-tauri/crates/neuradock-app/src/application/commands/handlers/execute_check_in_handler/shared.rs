@@ -11,6 +11,7 @@ use neuradock_domain::{
 use neuradock_infrastructure::http::UserInfo;
 
 /// Update account balance cache and save to balance_history
+/// Also records the check-in time
 pub async fn update_and_save_balance(
     account_repo: &Arc<dyn AccountRepository>,
     balance_history_service: &Arc<BalanceHistoryService>,
@@ -24,7 +25,10 @@ pub async fn update_and_save_balance(
         user_info.quota + user_info.used_quota,
     );
 
-    // Save updated account with new balance
+    // Record successful check-in time
+    account.record_check_in();
+
+    // Save updated account with new balance and check-in time
     if let Err(e) = account_repo.save(&account).await {
         error!("Failed to save account balance after check-in: {}", e);
     } else {

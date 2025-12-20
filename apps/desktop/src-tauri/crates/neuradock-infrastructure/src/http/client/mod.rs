@@ -29,6 +29,7 @@ impl HttpClient {
             .user_agent(USER_AGENT)
             .cookie_store(true)
             .timeout(Duration::from_secs(30))
+            .no_proxy()
             .build()
             .context("Failed to create HTTP client")?;
 

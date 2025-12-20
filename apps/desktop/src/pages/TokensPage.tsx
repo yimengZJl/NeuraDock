@@ -423,10 +423,10 @@ export function TokensPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full text-xs font-medium bg-background/50 hover:bg-background hover:text-primary transition-colors border-dashed hover:border-solid"
+                            className="w-full text-xs font-medium rounded-lg shadow-sm bg-gradient-to-r from-background/80 to-background/50 hover:from-primary/10 hover:to-primary/5 hover:text-primary hover:border-primary/30 transition-all duration-200"
                             onClick={() => handleConfigureKey(key, 'claude')}
                           >
-                            <Settings2 className="mr-1.5 h-3.5 w-3.5" />
+                            <Settings2 className="mr-2 h-3.5 w-3.5" />
                             {t('token.configureAI', 'Configure AI Tool')}
                           </Button>
                         </div>

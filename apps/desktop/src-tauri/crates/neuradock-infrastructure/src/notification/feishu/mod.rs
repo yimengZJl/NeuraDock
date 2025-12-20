@@ -11,9 +11,14 @@ pub struct FeishuWebhookSender {
 
 impl FeishuWebhookSender {
     pub fn new(webhook_key: String) -> Self {
+        let client = Client::builder()
+            .no_proxy()
+            .build()
+            .unwrap_or_else(|_| Client::new());
+
         Self {
             webhook_key,
-            client: Client::new(),
+            client,
         }
     }
 

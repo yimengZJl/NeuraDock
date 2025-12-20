@@ -372,9 +372,9 @@ export function AccountOverviewPage() {
 
                     {/* Configure Button */}
                     <Button
-                      className="w-full mt-auto rounded-lg shadow-sm"
-                      size="sm"
                       variant="outline"
+                      size="sm"
+                      className="w-full mt-auto text-xs font-medium rounded-lg shadow-sm bg-gradient-to-r from-background/80 to-background/50 hover:from-primary/10 hover:to-primary/5 hover:text-primary hover:border-primary/30 transition-all duration-200"
                       onClick={() => handleConfigureToken(token)}
                       disabled={!token.is_active}
                     >
