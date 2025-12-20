@@ -5,7 +5,9 @@
 /** Unified error type for API errors */
 export interface ApiError {
   message: string;
-  code?: string;
+  code?: number | string;
+  severity?: string;
+  recoverable?: boolean;
   details?: unknown;
 }
 
@@ -19,41 +21,80 @@ export function isApiError(error: unknown): error is ApiError {
   );
 }
 
+/** NeuraDock backend CommandError payload (Tauri command error) */
+export interface CommandErrorPayload {
+  code: number;
+  message: string;
+  severity: string;
+  recoverable: boolean;
+}
+
+export function isCommandErrorPayload(error: unknown): error is CommandErrorPayload {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof (error as CommandErrorPayload).code === 'number' &&
+    'message' in error &&
+    typeof (error as CommandErrorPayload).message === 'string' &&
+    'severity' in error &&
+    typeof (error as CommandErrorPayload).severity === 'string' &&
+    'recoverable' in error &&
+    typeof (error as CommandErrorPayload).recoverable === 'boolean'
+  );
+}
+
+function unwrapTauriError(error: unknown): unknown {
+  if (error && typeof error === 'object') {
+    const maybeWithError = error as { error?: unknown };
+    if (maybeWithError.error) return maybeWithError.error;
+  }
+  return error;
+}
+
 /** Extract error message from various error types */
 export function extractErrorMessage(
   error: unknown,
   fallback = 'Unknown error'
 ): string {
-  if (error instanceof Error) {
-    return error.message;
+  const unwrapped = unwrapTauriError(error);
+  if (isCommandErrorPayload(unwrapped)) {
+    return unwrapped.message;
   }
-  if (isApiError(error)) {
-    return error.message;
+  if (unwrapped instanceof Error) {
+    return unwrapped.message;
   }
-  if (typeof error === 'string') {
-    return error;
+  if (isApiError(unwrapped)) {
+    return unwrapped.message;
+  }
+  if (typeof unwrapped === 'string') {
+    return unwrapped;
   }
   return fallback;
 }
 
 /** Convert unknown error to ApiError */
 export function toApiError(error: unknown): ApiError {
-  if (isApiError(error)) {
-    return error;
+  const unwrapped = unwrapTauriError(error);
+  if (isCommandErrorPayload(unwrapped)) {
+    return unwrapped;
   }
-  if (error instanceof Error) {
+  if (isApiError(unwrapped)) {
+    return unwrapped;
+  }
+  if (unwrapped instanceof Error) {
     return {
-      message: error.message,
-      details: error,
+      message: unwrapped.message,
+      details: unwrapped,
     };
   }
-  if (typeof error === 'string') {
+  if (typeof unwrapped === 'string') {
     return {
-      message: error,
+      message: unwrapped,
     };
   }
   return {
     message: 'Unknown error',
-    details: error,
+    details: unwrapped,
   };
 }
