@@ -4,7 +4,7 @@ use neuradock_domain::account::AccountRepository;
 use neuradock_domain::check_in::Provider;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tracing::{info, instrument};
+use tracing::{debug, info, instrument, warn};
 
 impl super::AutoCheckInScheduler {
     /// Stop all scheduled tasks
@@ -62,20 +62,20 @@ impl super::AutoCheckInScheduler {
             now.format("%Y-%m-%d %H:%M:%S %Z")
         );
 
-        // 2. Get all accounts with auto check-in enabled
-        let accounts = account_repo.find_all().await?;
-        info!("Found {} total accounts", accounts.len());
+        // 2. Get only enabled accounts, then filter by auto check-in.
+        let accounts = account_repo.find_enabled().await?;
+        info!("Found {} enabled accounts", accounts.len());
 
         let mut scheduled_count = 0;
         for account in accounts {
-            info!(
+            debug!(
                 "Account: {} - enabled: {}, auto_checkin: {}",
                 account.name(),
                 account.is_enabled(),
                 account.auto_checkin_enabled()
             );
 
-            if account.auto_checkin_enabled() && account.is_enabled() {
+            if account.auto_checkin_enabled() {
                 let provider_id = account.provider_id().as_str();
                 if let Some(provider) = providers.get(provider_id) {
                     self.spawn_check_in_task(CheckInTaskConfig {
@@ -90,8 +90,8 @@ impl super::AutoCheckInScheduler {
                     .await;
                     scheduled_count += 1;
                 } else {
-                    info!(
-                        "⚠️  Provider '{}' not found for account {}",
+                    warn!(
+                        "Provider '{}' not found for account {}",
                         provider_id,
                         account.name()
                     );
