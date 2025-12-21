@@ -17,7 +17,7 @@
       "changes": "💰 Changes",
       "currentBalance": "Current Balance",
       "totalConsumed": "Total Consumed",
-      "totalIncome": "Total Income",
+      "totalQuota": "Total Quota",
       "error": "Error"
     }
   }

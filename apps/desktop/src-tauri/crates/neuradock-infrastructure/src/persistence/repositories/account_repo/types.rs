@@ -27,7 +27,7 @@ pub(super) struct AccountRow {
     pub last_balance_check_at: Option<DateTime<Utc>>,
     pub current_balance: Option<f64>,
     pub total_consumed: Option<f64>,
-    pub total_income: Option<f64>,
+    pub total_quota: Option<f64>,
 }
 
 impl AccountRow {
@@ -76,7 +76,7 @@ impl AccountRow {
         .last_balance_check_at(self.last_balance_check_at)
         .current_balance(self.current_balance)
         .total_consumed(self.total_consumed)
-        .total_income(self.total_income)
+        .total_quota(self.total_quota)
         .build())
     }
 }

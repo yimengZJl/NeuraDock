@@ -15,7 +15,7 @@ struct BalanceHistoryRow {
     account_id: String,
     current_balance: f64,
     total_consumed: f64,
-    total_income: f64,
+    total_quota: f64,
     recorded_at: DateTime<Utc>,
 }
 
@@ -26,7 +26,7 @@ impl BalanceHistoryRow {
             AccountId::from_string(&self.account_id),
             self.current_balance,
             self.total_consumed,
-            self.total_income,
+            self.total_quota,
             self.recorded_at,
         )
     }
@@ -35,7 +35,7 @@ impl BalanceHistoryRow {
 #[derive(FromRow)]
 struct DailySummaryRow {
     check_in_date: String,
-    daily_total_income: f64,
+    daily_total_quota: f64,
     daily_balance: f64,
     daily_consumed: f64,
 }
@@ -51,7 +51,7 @@ impl DailySummaryRow {
 
         Ok(BalanceHistoryDailySummary::restore(
             date,
-            self.daily_total_income,
+            self.daily_total_quota,
             self.daily_balance,
             self.daily_consumed,
         ))
@@ -79,7 +79,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
                 account_id,
                 current_balance,
                 total_consumed,
-                total_income,
+                total_quota,
                 recorded_at
             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
         "#;
@@ -91,7 +91,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
                     .bind(record.account_id().as_str())
                     .bind(record.current_balance())
                     .bind(record.total_consumed())
-                    .bind(record.total_income())
+                    .bind(record.total_quota())
                     .bind(record.recorded_at()),
                 "Save balance history",
             )
@@ -110,7 +110,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
                 account_id,
                 current_balance,
                 total_consumed,
-                total_income,
+                total_quota,
                 recorded_at
             FROM balance_history
             WHERE account_id = ?1
@@ -140,7 +140,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
                 account_id,
                 current_balance,
                 total_consumed,
-                total_income,
+                total_quota,
                 recorded_at
             FROM balance_history
             WHERE account_id = ?1 AND DATE(recorded_at) = ?2
@@ -168,7 +168,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
         let query = r#"
             SELECT
                 DATE(recorded_at) AS check_in_date,
-                MAX(total_income) AS daily_total_income,
+                MAX(total_quota) AS daily_total_quota,
                 MAX(current_balance) AS daily_balance,
                 MAX(total_consumed) AS daily_consumed
             FROM balance_history
@@ -198,7 +198,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
             WITH daily_summary AS (
                 SELECT
                     DATE(recorded_at) AS check_in_date,
-                    MAX(total_income) AS daily_total_income,
+                    MAX(total_quota) AS daily_total_quota,
                     MAX(current_balance) AS daily_balance,
                     MAX(total_consumed) AS daily_consumed
                 FROM balance_history
@@ -207,7 +207,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
             )
             SELECT
                 check_in_date,
-                daily_total_income,
+                daily_total_quota,
                 daily_balance,
                 daily_consumed
             FROM daily_summary
@@ -239,7 +239,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
             WITH daily_summary AS (
                 SELECT
                     DATE(recorded_at) AS check_in_date,
-                    MAX(total_income) AS daily_total_income,
+                    MAX(total_quota) AS daily_total_quota,
                     MAX(current_balance) AS daily_balance,
                     MAX(total_consumed) AS daily_consumed
                 FROM balance_history
@@ -248,7 +248,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
             )
             SELECT
                 check_in_date,
-                daily_total_income,
+                daily_total_quota,
                 daily_balance,
                 daily_consumed
             FROM daily_summary

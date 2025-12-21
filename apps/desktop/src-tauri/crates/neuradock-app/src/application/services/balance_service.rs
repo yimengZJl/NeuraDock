@@ -48,15 +48,15 @@ impl BalanceService {
             .ok_or_else(|| DomainError::AccountNotFound(account_id.to_string()))?;
 
         if !force_refresh && !account.is_balance_stale(MAX_CACHE_AGE_HOURS) {
-            if let (Some(current_balance), Some(total_consumed), Some(total_income)) = (
+            if let (Some(current_balance), Some(total_consumed), Some(total_quota)) = (
                 account.current_balance(),
                 account.total_consumed(),
-                account.total_income(),
+                account.total_quota(),
             ) {
                 return Ok(BalanceDto {
                     current_balance,
                     total_consumed,
-                    total_income,
+                    total_quota,
                 });
             }
         }
@@ -81,18 +81,18 @@ impl BalanceService {
             .await
             .map_err(|e| DomainError::Infrastructure(e.to_string()))?;
 
-        let current_balance = user_info.quota;
-        let total_consumed = user_info.used_quota;
+        let current_balance = user_info.current_balance;
+        let total_consumed = user_info.total_consumed;
         let balance_dto = BalanceDto {
             current_balance,
             total_consumed,
-            total_income: current_balance + total_consumed,
+            total_quota: current_balance + total_consumed,
         };
 
         account.update_balance(
             balance_dto.current_balance,
             balance_dto.total_consumed,
-            balance_dto.total_income,
+            balance_dto.total_quota,
         );
         self.account_repo.save(&account).await?;
 

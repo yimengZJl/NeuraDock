@@ -162,8 +162,8 @@ export function AccountsPage() {
       (sum, acc) => sum + (acc.current_balance || 0),
       0
     );
-    const total_income = filteredAccounts.reduce(
-      (sum, acc) => sum + (acc.total_income || 0),
+    const total_quota = filteredAccounts.reduce(
+      (sum, acc) => sum + (acc.total_quota || 0),
       0
     );
     const total_consumed = filteredAccounts.reduce(
@@ -173,7 +173,7 @@ export function AccountsPage() {
 
     return {
       total_current_balance,
-      total_income,
+      total_quota,
       total_consumed,
     };
   }, [filteredAccounts]);
@@ -364,13 +364,13 @@ export function AccountsPage() {
               </div>
             </Card>
 
-            {/* Total Income */}
+            {/* Total Quota */}
             <Card className="bg-card border shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98] cursor-pointer">
               <div className="p-6 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.totalIncome')}</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('dashboard.stats.totalQuota')}</p>
                   <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 font-mono mt-1">
-                    ${filteredStatistics.total_income.toFixed(2)}
+                    ${filteredStatistics.total_quota.toFixed(2)}
                   </p>
                 </div>
                 <div className="p-3 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">

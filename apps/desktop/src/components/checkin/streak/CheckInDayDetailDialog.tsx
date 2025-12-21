@@ -66,9 +66,9 @@ export function CheckInDayDetailDialog({
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">{t('streaks.totalIncome')}</span>
+                <span className="text-sm text-muted-foreground">{t('streaks.totalQuota')}</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">${dayData.total_income.toFixed(2)}</span>
+                  <span className="font-medium">${dayData.total_quota.toFixed(2)}</span>
                   {dayData.income_increment !== null && dayData.income_increment > 0 && (
                     <span className="text-xs text-green-600 dark:text-green-400 flex items-center bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 rounded">
                       <TrendingUp className="w-3 h-3 mr-0.5" />

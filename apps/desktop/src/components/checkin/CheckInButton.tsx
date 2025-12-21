@@ -103,9 +103,9 @@ export function CheckInButton({
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">{t('dashboard.total_income')}</p>
+                          <p className="text-xs text-muted-foreground">{t('dashboard.total_quota')}</p>
                           <p className="text-lg font-semibold text-green-600 dark:text-green-400">
-                            ${result.balance.total_income.toFixed(2)}
+                            ${result.balance.total_quota.toFixed(2)}
                           </p>
                         </div>
                       </div>

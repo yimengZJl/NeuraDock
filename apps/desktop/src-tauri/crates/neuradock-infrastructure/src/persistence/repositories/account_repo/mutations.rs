@@ -96,16 +96,16 @@ impl super::SqliteAccountRepository {
         if let (Some(current), Some(consumed), Some(income), Some(checked_at)) = (
             account.current_balance(),
             account.total_consumed(),
-            account.total_income(),
+            account.total_quota(),
             account.last_balance_check_at(),
         ) {
             let balance_query = r#"
-                INSERT INTO balances (account_id, current, total_consumed, total_income, last_checked_at)
+                INSERT INTO balances (account_id, current, total_consumed, total_quota, last_checked_at)
                 VALUES (?1, ?2, ?3, ?4, ?5)
                 ON CONFLICT(account_id) DO UPDATE SET
                     current = ?2,
                     total_consumed = ?3,
-                    total_income = ?4,
+                    total_quota = ?4,
                     last_checked_at = ?5
             "#;
 

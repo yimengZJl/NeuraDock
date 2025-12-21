@@ -72,10 +72,10 @@ export function HomePage() {
                     <div className="rounded-xl border bg-background/60 px-3 py-2 backdrop-blur-sm">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <DollarSign className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                        <span>{t('dashboard.stats.totalIncome')}</span>
+                        <span>{t('dashboard.stats.totalQuota')}</span>
                       </div>
                       <div className="mt-1 text-lg font-semibold tabular-nums text-foreground">
-                        {statistics ? formatCurrency(statistics.total_income) : '$0.00'}
+                        {statistics ? formatCurrency(statistics.total_quota) : '$0.00'}
                       </div>
                     </div>
                     <div className="rounded-xl border bg-background/60 px-3 py-2 backdrop-blur-sm">

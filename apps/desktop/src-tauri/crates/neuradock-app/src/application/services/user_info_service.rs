@@ -54,7 +54,7 @@ impl<'a> UserInfoService<'a> {
             Ok(info) => {
                 info!(
                     "[{}] Current balance: ${:.2}, Used: ${:.2}",
-                    account_name, info.quota, info.used_quota
+                    account_name, info.current_balance, info.total_consumed
                 );
                 Some(info.clone())
             }
@@ -84,7 +84,7 @@ impl<'a> UserInfoService<'a> {
                     Ok(info) => {
                         info!(
                             "[{}] Retry successful, balance: ${:.2}",
-                            account_name, info.quota
+                            account_name, info.current_balance
                         );
                         Some(info)
                     }
@@ -137,7 +137,7 @@ impl<'a> UserInfoService<'a> {
             Ok(updated_info) => {
                 info!(
                     "[{}] Updated balance: ${:.2}, Used: ${:.2}",
-                    account_name, updated_info.quota, updated_info.used_quota
+                    account_name, updated_info.current_balance, updated_info.total_consumed
                 );
                 Some(updated_info)
             }
@@ -171,7 +171,7 @@ impl<'a> UserInfoService<'a> {
 
         info!(
             "[{}] Balance fetched: ${:.2}, Used: ${:.2}",
-            account_name, user_info.quota, user_info.used_quota
+            account_name, user_info.current_balance, user_info.total_consumed
         );
 
         Ok(user_info)

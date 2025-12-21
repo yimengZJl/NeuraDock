@@ -39,7 +39,7 @@ impl BalanceHistoryService {
             AccountId::from_string(account_id),
             balance.current_balance,
             balance.total_consumed,
-            balance.total_income,
+            balance.total_quota,
             now,
         )?;
 
@@ -49,7 +49,7 @@ impl BalanceHistoryService {
             account_id,
             current_balance = balance.current_balance,
             total_consumed = balance.total_consumed,
-            total_income = balance.total_income,
+            total_quota = balance.total_quota,
             "Balance history saved/updated"
         );
 
@@ -68,7 +68,7 @@ impl BalanceHistoryService {
             Ok(Some(record)) => Ok(Some(BalanceDto {
                 current_balance: record.current_balance(),
                 total_consumed: record.total_consumed(),
-                total_income: record.total_income(),
+                total_quota: record.total_quota(),
             })),
             Ok(None) => Ok(None),
             Err(e) => {

@@ -22,9 +22,9 @@ pub async fn update_and_save_balance(
     user_info: &UserInfo,
 ) -> Result<BalanceDto, DomainError> {
     account.update_balance(
-        user_info.quota,
-        user_info.used_quota,
-        user_info.quota + user_info.used_quota,
+        user_info.current_balance,
+        user_info.total_consumed,
+        user_info.total_quota,
     );
 
     // Record successful check-in time
@@ -35,16 +35,16 @@ pub async fn update_and_save_balance(
         error!("Failed to save account balance after check-in: {}", e);
     } else {
         info!(
-            "Account {} balance updated in database: current=${:.2}, consumed=${:.2}, income=${:.2}",
-            account_id, user_info.quota, user_info.used_quota, user_info.quota + user_info.used_quota
+            "Account {} balance updated in database: current=${:.2}, consumed=${:.2}, total_quota=${:.2}",
+            account_id, user_info.current_balance, user_info.total_consumed, user_info.total_quota
         );
     }
 
     // Build balance DTO
     let balance = BalanceDto {
-        current_balance: user_info.quota,
-        total_consumed: user_info.used_quota,
-        total_income: user_info.quota + user_info.used_quota,
+        current_balance: user_info.current_balance,
+        total_consumed: user_info.total_consumed,
+        total_quota: user_info.total_quota,
     };
 
     // Save to balance_history table
@@ -96,7 +96,7 @@ pub async fn send_check_in_notification(
     account_name: &str,
     provider_name: &str,
     message: &str,
-    balance: Option<(f64, f64, f64)>, // (quota, used_quota, total_income)
+    balance: Option<(f64, f64, f64)>, // (current_balance, total_consumed, total_quota)
 ) {
     if let Some(notification_service) = notification_service {
         if success {

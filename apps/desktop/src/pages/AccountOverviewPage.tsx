@@ -415,16 +415,16 @@ export function AccountOverviewPage() {
 
                 <div className="h-px bg-border" />
 
-                {/* Total Income */}
+                {/* Total Quota */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <div className="p-1.5 rounded-md bg-blue-100/50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
                       <TrendingUp className="h-4 w-4" />
                     </div>
-                    <span>{t('accountCard.totalIncome')}</span>
+                    <span>{t('accountCard.totalQuota')}</span>
                   </div>
                   <p className="text-2xl font-bold font-mono text-blue-600 dark:text-blue-400">
-                    ${account.total_income?.toFixed(2) ?? '0.00'}
+                    ${account.total_quota?.toFixed(2) ?? '0.00'}
                   </p>
                 </div>
 

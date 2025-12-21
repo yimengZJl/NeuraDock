@@ -23,7 +23,7 @@ pub struct AccountDto {
     pub last_balance_check_at: Option<String>,
     pub current_balance: Option<f64>,
     pub total_consumed: Option<f64>,
-    pub total_income: Option<f64>,
+    pub total_quota: Option<f64>,
     pub is_balance_stale: bool,
     pub is_online: bool,
     // Session expiration info for frontend display
@@ -113,7 +113,7 @@ impl<'a> AccountDtoMapper<'a> {
             last_balance_check_at: acc.last_balance_check_at().map(|dt| dt.to_rfc3339()),
             current_balance: acc.current_balance(),
             total_consumed: acc.total_consumed(),
-            total_income: acc.total_income(),
+            total_quota: acc.total_quota(),
             is_balance_stale,
             is_online,
             session_expires_at: session_expires_at.map(|dt| dt.to_rfc3339()),

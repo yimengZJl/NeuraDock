@@ -132,7 +132,7 @@ export function BatchCheckInButton({
                               <span>{t('dashboard.current_balance')}: ${item.balance.current_balance.toFixed(2)}</span>
                               <span>{t('dashboard.consumed')}: ${item.balance.total_consumed.toFixed(2)}</span>
                               <span className="text-green-600 dark:text-green-400">
-                                {t('dashboard.total_income')}: ${item.balance.total_income.toFixed(2)}
+                                {t('dashboard.total_quota')}: ${item.balance.total_quota.toFixed(2)}
                               </span>
                             </div>
                           )}

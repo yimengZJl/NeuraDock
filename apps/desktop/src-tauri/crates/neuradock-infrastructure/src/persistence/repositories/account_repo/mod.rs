@@ -27,7 +27,7 @@ impl SqliteAccountRepository {
                 b.last_checked_at as last_balance_check_at,
                 b.current as current_balance,
                 b.total_consumed,
-                b.total_income
+                b.total_quota
             FROM accounts a
             LEFT JOIN sessions s ON a.id = s.account_id
             LEFT JOIN balances b ON a.id = b.account_id

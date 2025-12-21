@@ -17,7 +17,7 @@
       "changes": "💰 变化",
       "currentBalance": "当前余额",
       "totalConsumed": "历史消耗",
-      "totalIncome": "总收益",
+      "totalQuota": "总额度",
       "error": "错误信息"
     }
   }

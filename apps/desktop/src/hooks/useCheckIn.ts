@@ -12,7 +12,7 @@ export interface CheckInResult {
   balance?: {
     current_balance: number;
     total_consumed: number;
-    total_income: number;
+    total_quota: number;
   };
   error?: string;
 }

@@ -16,7 +16,7 @@ export function useSmartAccountBalance(account: Account) {
   const shouldFetchBalance = account.enabled && (
     !account.current_balance || 
     !account.total_consumed || 
-    account.total_income == null ||
+    account.total_quota == null ||
     !account.last_balance_check_at ||
     (new Date().getTime() - new Date(account.last_balance_check_at).getTime()) > maxCacheAgeMs
   );
@@ -29,10 +29,10 @@ export function useSmartAccountBalance(account: Account) {
 
   // Determine the balance to display: prefer fresh data, fallback to account properties
   const displayBalance = queryResult.data || (
-    account.current_balance != null && account.total_consumed != null && account.total_income != null ? {
+    account.current_balance != null && account.total_consumed != null && account.total_quota != null ? {
       current_balance: account.current_balance,
       total_consumed: account.total_consumed,
-      total_income: account.total_income,
+      total_quota: account.total_quota,
     } : null
   );
 

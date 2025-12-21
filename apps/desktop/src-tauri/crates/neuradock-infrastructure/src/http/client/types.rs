@@ -29,8 +29,12 @@ impl Default for RetryConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserInfo {
-    pub quota: f64,
-    pub used_quota: f64,
+    /// Current balance reported by the provider API (maps from `quota` field)
+    pub current_balance: f64,
+    /// Historical consumption reported by the provider API (maps from `used_quota` field)
+    pub total_consumed: f64,
+    /// Total quota (current + consumed). Upstream labels this as `total_income`.
+    pub total_quota: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

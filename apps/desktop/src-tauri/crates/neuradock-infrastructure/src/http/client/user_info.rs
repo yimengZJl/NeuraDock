@@ -164,9 +164,17 @@ impl super::HttpClient {
             anyhow::anyhow!("Missing or invalid 'used_quota' field in API response")
         })?;
 
-        let quota = (quota_bytes / 500000.0 * 100.0).round() / 100.0;
-        let used_quota = (used_quota_bytes / 500000.0 * 100.0).round() / 100.0;
+        let current_balance = (quota_bytes / 500000.0 * 100.0).round() / 100.0;
+        let total_consumed = (used_quota_bytes / 500000.0 * 100.0).round() / 100.0;
+        let total_quota = current_balance + total_consumed;
 
-        Ok(UserInfo { quota, used_quota })
+        // NOTE: Upstream's HTTP payload still calls `quota`, `used_quota`, and `total_income`.
+        // We normalize semantics right here so the rest of the app only deals with
+        // `current_balance`, `total_consumed`, and `total_quota` to avoid confusion.
+        Ok(UserInfo {
+            current_balance,
+            total_consumed,
+            total_quota,
+        })
     }
 }

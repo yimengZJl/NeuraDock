@@ -38,7 +38,7 @@ pub async fn get_trend(
 
     for row in rows {
         let income_increment = prev_income.map_or(0.0, |prev| {
-            let diff = row.daily_total_income() - prev;
+            let diff = row.daily_total_quota() - prev;
             if diff > 0.0 {
                 diff
             } else {
@@ -50,13 +50,13 @@ pub async fn get_trend(
 
         data_points.push(TrendDataPoint {
             date: row.check_in_date().format("%Y-%m-%d").to_string(),
-            total_income: row.daily_total_income(),
+            total_quota: row.daily_total_quota(),
             income_increment,
             current_balance: row.daily_balance(),
             is_checked_in,
         });
 
-        prev_income = Some(row.daily_total_income());
+        prev_income = Some(row.daily_total_quota());
     }
 
     let dto = CheckInTrendDto {
@@ -94,13 +94,13 @@ pub async fn get_day_detail(
             balance_history_repo
                 .find_daily_summary(&AccountId::from_string(account_id), prev_date)
                 .await?
-                .map(|s| s.daily_total_income())
+                .map(|s| s.daily_total_quota())
         } else {
             None
         };
 
         let income_increment = prev_income.and_then(|prev| {
-            let diff = row.daily_total_income() - prev;
+            let diff = row.daily_total_quota() - prev;
             if diff > 0.0 {
                 Some(diff)
             } else {
@@ -116,7 +116,7 @@ pub async fn get_day_detail(
             income_increment,
             current_balance: row.daily_balance(),
             total_consumed: row.daily_consumed(),
-            total_income: row.daily_total_income(),
+            total_quota: row.daily_total_quota(),
         })
     } else {
         warn!(
@@ -130,7 +130,7 @@ pub async fn get_day_detail(
             income_increment: None,
             current_balance: 0.0,
             total_consumed: 0.0,
-            total_income: 0.0,
+            total_quota: 0.0,
         })
     }
 }

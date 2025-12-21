@@ -18,7 +18,7 @@ pub struct Balance {
     account_id: AccountId,
     current: f64,
     total_consumed: f64,
-    total_income: f64,
+    total_quota: f64,
     last_checked_at: DateTime<Utc>,
 }
 
@@ -35,7 +35,7 @@ impl Balance {
             account_id,
             current,
             total_consumed: 0.0,
-            total_income: 0.0,
+            total_quota: 0.0,
             last_checked_at: Utc::now(),
         })
     }
@@ -45,14 +45,14 @@ impl Balance {
         account_id: AccountId,
         current: f64,
         total_consumed: f64,
-        total_income: f64,
+        total_quota: f64,
         last_checked_at: DateTime<Utc>,
     ) -> Self {
         Self {
             account_id,
             current,
             total_consumed,
-            total_income,
+            total_quota,
             last_checked_at,
         }
     }
@@ -94,7 +94,7 @@ impl Balance {
             ));
         }
 
-        self.total_income += amount;
+        self.total_quota += amount;
         self.current += amount;
         self.last_checked_at = Utc::now();
 
@@ -125,8 +125,8 @@ impl Balance {
         self.total_consumed
     }
 
-    pub fn total_income(&self) -> f64 {
-        self.total_income
+    pub fn total_quota(&self) -> f64 {
+        self.total_quota
     }
 
     pub fn last_checked_at(&self) -> DateTime<Utc> {
@@ -135,7 +135,7 @@ impl Balance {
 
     /// Calculate net change (income - consumed)
     pub fn net_change(&self) -> f64 {
-        self.total_income - self.total_consumed
+        self.total_quota - self.total_consumed
     }
 }
 
@@ -153,7 +153,7 @@ mod tests {
         let balance = create_test_balance();
         assert_eq!(balance.current(), 100.0);
         assert_eq!(balance.total_consumed(), 0.0);
-        assert_eq!(balance.total_income(), 0.0);
+        assert_eq!(balance.total_quota(), 0.0);
     }
 
     #[test]
@@ -182,7 +182,7 @@ mod tests {
     fn test_record_income() {
         let mut balance = create_test_balance();
         balance.record_income(50.0).unwrap();
-        assert_eq!(balance.total_income(), 50.0);
+        assert_eq!(balance.total_quota(), 50.0);
         assert_eq!(balance.current(), 150.0); // Current increases with income
     }
 

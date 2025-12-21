@@ -24,7 +24,7 @@ pub struct Account {
     last_balance_check_at: Option<DateTime<Utc>>,
     current_balance: Option<f64>,
     total_consumed: Option<f64>,
-    total_income: Option<f64>,
+    total_quota: Option<f64>,
 }
 
 impl Account {
@@ -66,7 +66,7 @@ impl Account {
             last_balance_check_at: None,
             current_balance: None,
             total_consumed: None,
-            total_income: None,
+            total_quota: None,
         })
     }
 
@@ -95,7 +95,7 @@ impl Account {
             last_balance_check_at: None,
             current_balance: None,
             total_consumed: None,
-            total_income: None,
+            total_quota: None,
         }
     }
 
@@ -231,8 +231,8 @@ impl Account {
         self.total_consumed
     }
 
-    pub fn total_income(&self) -> Option<f64> {
-        self.total_income
+    pub fn total_quota(&self) -> Option<f64> {
+        self.total_quota
     }
 
     pub fn update_session(&mut self, token: String, expires_at: DateTime<Utc>) {
@@ -253,10 +253,10 @@ impl Account {
         }
     }
 
-    pub fn update_balance(&mut self, current_balance: f64, total_consumed: f64, total_income: f64) {
+    pub fn update_balance(&mut self, current_balance: f64, total_consumed: f64, total_quota: f64) {
         self.current_balance = Some(current_balance);
         self.total_consumed = Some(total_consumed);
-        self.total_income = Some(total_income);
+        self.total_quota = Some(total_quota);
         self.last_balance_check_at = Some(Utc::now());
     }
 
@@ -290,7 +290,7 @@ pub struct AccountBuilder {
     last_balance_check_at: Option<DateTime<Utc>>,
     current_balance: Option<f64>,
     total_consumed: Option<f64>,
-    total_income: Option<f64>,
+    total_quota: Option<f64>,
 }
 
 impl AccountBuilder {
@@ -359,8 +359,8 @@ impl AccountBuilder {
         self
     }
 
-    pub fn total_income(mut self, income: Option<f64>) -> Self {
-        self.total_income = income;
+    pub fn total_quota(mut self, income: Option<f64>) -> Self {
+        self.total_quota = income;
         self
     }
 
@@ -383,7 +383,7 @@ impl AccountBuilder {
             last_balance_check_at: self.last_balance_check_at,
             current_balance: self.current_balance,
             total_consumed: self.total_consumed,
-            total_income: self.total_income,
+            total_quota: self.total_quota,
         }
     }
 }

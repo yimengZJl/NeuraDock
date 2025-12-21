@@ -227,10 +227,10 @@ export function AccountDrawer({
                 <Card className="p-4 border-border/50 bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/20">
                   <div className="flex items-center gap-2 text-muted-foreground mb-2">
                     <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-xs font-medium">{t('accountCard.totalIncome')}</span>
+                    <span className="text-xs font-medium">{t('accountCard.totalQuota')}</span>
                   </div>
                   <p className="text-xl font-bold font-mono">
-                    ${account.total_income?.toFixed(2) ?? '0.00'}
+                    ${account.total_quota?.toFixed(2) ?? '0.00'}
                   </p>
                 </Card>
 

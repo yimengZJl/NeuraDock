@@ -65,7 +65,7 @@ pub async fn get_calendar(
     let mut days = Vec::new();
     let mut prev_income: Option<f64> = None;
     let mut checked_in_days = 0u32;
-    let mut total_income_increment = 0.0;
+    let mut total_quota_increment = 0.0;
 
     let total_days = last_day.day();
 
@@ -76,7 +76,7 @@ pub async fn get_calendar(
 
         if let Some(row) = daily_map.get(&date_str) {
             let income_increment = prev_income.and_then(|prev| {
-                let diff = row.daily_total_income() - prev;
+                let diff = row.daily_total_quota() - prev;
                 if diff > 0.0 {
                     Some(diff)
                 } else {
@@ -89,10 +89,10 @@ pub async fn get_calendar(
             if is_checked_in {
                 checked_in_days += 1;
                 if let Some(inc) = income_increment {
-                    total_income_increment += inc;
-                } else if prev_income.is_none() && row.daily_total_income() > 0.0 {
+                    total_quota_increment += inc;
+                } else if prev_income.is_none() && row.daily_total_quota() > 0.0 {
                     // First record, count as income
-                    total_income_increment += row.daily_total_income();
+                    total_quota_increment += row.daily_total_quota();
                 }
             }
 
@@ -102,10 +102,10 @@ pub async fn get_calendar(
                 income_increment,
                 current_balance: row.daily_balance(),
                 total_consumed: row.daily_consumed(),
-                total_income: row.daily_total_income(),
+                total_quota: row.daily_total_quota(),
             });
 
-            prev_income = Some(row.daily_total_income());
+            prev_income = Some(row.daily_total_quota());
         } else {
             // No data for this day
             days.push(CheckInDayDto {
@@ -114,7 +114,7 @@ pub async fn get_calendar(
                 income_increment: None,
                 current_balance: 0.0,
                 total_consumed: 0.0,
-                total_income: 0.0,
+                total_quota: 0.0,
             });
         }
     }
@@ -129,7 +129,7 @@ pub async fn get_calendar(
         total_days,
         checked_in_days,
         check_in_rate,
-        total_income_increment,
+        total_quota_increment,
     };
 
     let dto = CheckInCalendarDto {
@@ -145,7 +145,7 @@ pub async fn get_calendar(
         dto.account_id,
         dto.month_stats.checked_in_days,
         dto.month_stats.check_in_rate,
-        dto.month_stats.total_income_increment
+        dto.month_stats.total_quota_increment
     );
 
     Ok(dto)

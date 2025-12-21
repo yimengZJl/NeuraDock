@@ -89,12 +89,12 @@ impl NotificationService {
                     account_id,
                     record.current_balance(),
                     record.total_consumed(),
-                    record.total_income()
+                    record.total_quota()
                 );
                 Some((
                     record.current_balance(),
                     record.total_consumed(),
-                    record.total_income(),
+                    record.total_quota(),
                 ))
             }
             Ok(None) => {
@@ -114,7 +114,7 @@ impl NotificationService {
         account_id: &str,
         account_name: &str,
         provider_name: &str,
-        balance: Option<(f64, f64, f64)>, // (current_balance, total_consumed, total_income)
+        balance: Option<(f64, f64, f64)>, // (current_balance, total_consumed, total_quota)
     ) -> Result<()> {
         let yesterday_balance = self.get_yesterday_balance(account_id).await;
 
@@ -160,7 +160,7 @@ impl NotificationService {
                     yesterday_current,
                     t("notification.label.totalConsumed"),
                     yesterday_consumed,
-                    t("notification.label.totalIncome"),
+                    t("notification.label.totalQuota"),
                     yesterday_income,
                     t("notification.label.today"),
                     t("notification.label.currentBalance"),
@@ -169,7 +169,7 @@ impl NotificationService {
                     t("notification.label.totalConsumed"),
                     today_consumed,
                     consumed_emoji,
-                    t("notification.label.totalIncome"),
+                    t("notification.label.totalQuota"),
                     today_income,
                     income_emoji,
                     t("notification.label.changes"),
@@ -179,7 +179,7 @@ impl NotificationService {
                     t("notification.label.totalConsumed"),
                     consumed_change,
                     "$",
-                    t("notification.label.totalIncome"),
+                    t("notification.label.totalQuota"),
                     income_change,
                     "$"
                 )
@@ -196,7 +196,7 @@ impl NotificationService {
                     today_current,
                     t("notification.label.totalConsumed"),
                     today_consumed,
-                    t("notification.label.totalIncome"),
+                    t("notification.label.totalQuota"),
                     today_income
                 )
             }

@@ -150,7 +150,7 @@ impl CommandHandler<ExecuteCheckInCommand> for ExecuteCheckInCommandHandler {
         let balance_tuple = result
             .user_info
             .as_ref()
-            .map(|info| (info.quota, info.used_quota, info.quota + info.used_quota));
+            .map(|info| (info.current_balance, info.total_consumed, info.total_quota));
 
         shared::send_check_in_notification(
             &self.notification_service,

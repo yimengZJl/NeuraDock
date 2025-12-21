@@ -50,9 +50,9 @@ export function AccountBalanceDisplay({
               </span>
             </div>
             <div className="flex justify-between items-baseline">
-              <span className="text-xs text-muted-foreground">{t('accountCard.totalIncome')}</span>
-              <span className="font-medium text-xs text-blue-600 dark:text-blue-400 truncate max-w-[120px]" title={formatCurrency(balance.total_income)}>
-                {formatCurrency(balance.total_income)}
+              <span className="text-xs text-muted-foreground">{t('accountCard.totalQuota')}</span>
+              <span className="font-medium text-xs text-blue-600 dark:text-blue-400 truncate max-w-[120px]" title={formatCurrency(balance.total_quota)}>
+                {formatCurrency(balance.total_quota)}
               </span>
             </div>
             <div className="flex justify-between items-baseline">

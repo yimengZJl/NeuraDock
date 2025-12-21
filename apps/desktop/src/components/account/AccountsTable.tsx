@@ -150,7 +150,7 @@ export function AccountsTable({
                 <SortableHeader label={t('management.balance', '余额')} columnKey="current_balance" className="justify-end" />
               </th>
               <th className="px-4 py-2 font-semibold bg-muted/50 backdrop-blur-sm">
-                <SortableHeader label={t('management.totalIncome', '总收入')} columnKey="total_income" className="justify-end" />
+                <SortableHeader label={t('management.totalQuota', '总收入')} columnKey="total_quota" className="justify-end" />
               </th>
               <th className="px-4 py-2 font-semibold bg-muted/50 backdrop-blur-sm">
                 <SortableHeader label={t('management.totalConsumed', '历史消耗')} columnKey="total_consumed" className="justify-end" />
@@ -209,8 +209,8 @@ export function AccountsTable({
                   onClick={() => onAccountClick(account)}
                 >
                   <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
-                    {account.total_income != null
-                      ? `$${account.total_income.toFixed(2)}`
+                    {account.total_quota != null
+                      ? `$${account.total_quota.toFixed(2)}`
                       : '-'
                     }
                   </span>

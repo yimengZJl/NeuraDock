@@ -188,9 +188,9 @@ impl CommandHandler<BatchExecuteCheckInCommand> for BatchExecuteCheckInCommandHa
                         }
                     } else {
                         result.user_info.as_ref().map(|info| BalanceDto {
-                            current_balance: info.quota,
-                            total_consumed: info.used_quota,
-                            total_income: info.quota + info.used_quota,
+                            current_balance: info.current_balance,
+                            total_consumed: info.total_consumed,
+                            total_quota: info.total_quota,
                         })
                     };
 
@@ -198,7 +198,7 @@ impl CommandHandler<BatchExecuteCheckInCommand> for BatchExecuteCheckInCommandHa
                     let balance_tuple = result
                         .user_info
                         .as_ref()
-                        .map(|info| (info.quota, info.used_quota, info.quota + info.used_quota));
+                        .map(|info| (info.current_balance, info.total_consumed, info.total_quota));
 
                     shared::send_check_in_notification(
                         &self.notification_service,

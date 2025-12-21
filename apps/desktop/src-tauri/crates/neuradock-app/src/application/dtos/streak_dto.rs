@@ -20,7 +20,7 @@ pub struct CheckInDayDto {
     pub income_increment: Option<f64>,
     pub current_balance: f64,
     pub total_consumed: f64,
-    pub total_income: f64,
+    pub total_quota: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -37,7 +37,7 @@ pub struct MonthStatsDto {
     pub total_days: u32,
     pub checked_in_days: u32,
     pub check_in_rate: f64, // 签到率百分比 (0.0 - 100.0)
-    pub total_income_increment: f64,
+    pub total_quota_increment: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -51,7 +51,7 @@ pub struct CheckInTrendDto {
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct TrendDataPoint {
     pub date: String,
-    pub total_income: f64,
+    pub total_quota: f64,
     pub income_increment: f64,
     pub current_balance: f64,
     pub is_checked_in: bool,

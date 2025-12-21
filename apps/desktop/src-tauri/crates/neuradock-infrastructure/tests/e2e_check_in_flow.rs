@@ -100,7 +100,7 @@ async fn e2e_complete_check_in_flow() {
         account_id.clone(),
         100.0, // current_balance
         20.0,  // total_consumed
-        120.0, // total_income
+        120.0, // total_quota
         Utc::now(),
     );
 
@@ -122,7 +122,7 @@ async fn e2e_complete_check_in_flow() {
 
     assert_eq!(latest_balance.current(), 100.0);
     assert_eq!(latest_balance.total_consumed(), 20.0);
-    assert_eq!(latest_balance.total_income(), 120.0);
+    assert_eq!(latest_balance.total_quota(), 120.0);
 
     println!("✓ Step 5: Balance verification passed");
 
@@ -151,7 +151,7 @@ async fn e2e_complete_check_in_flow() {
     println!(
         "✅ Balance updated: {:.2} / {:.2}",
         latest_balance.current(),
-        latest_balance.total_income()
+        latest_balance.total_quota()
     );
     println!("✅ Balance history recorded");
     println!("\n🎉 Complete check-in flow E2E test PASSED!");

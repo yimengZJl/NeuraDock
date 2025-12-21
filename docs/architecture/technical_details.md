@@ -372,7 +372,7 @@ CREATE TABLE accounts (
     last_balance_check_at TIMESTAMP,
     current_balance REAL,
     total_consumed REAL,
-    total_income REAL,
+    total_quota REAL,
     
     -- 签到记录
     last_check_in TIMESTAMP,
@@ -480,7 +480,7 @@ CREATE TABLE balance_history (
     account_id TEXT NOT NULL,
     current_balance REAL NOT NULL,
     total_consumed REAL NOT NULL,
-    total_income REAL NOT NULL,
+    total_quota REAL NOT NULL,
     recorded_at TIMESTAMP NOT NULL,
     
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
@@ -1178,7 +1178,7 @@ pub async fn get_balance_with_cache(
                 return Ok(BalanceInfo {
                     current_balance: account.current_balance(),
                     total_consumed: account.total_consumed(),
-                    total_income: account.total_income(),
+                    total_quota: account.total_quota(),
                     cached: true,
                 });
             }

@@ -14,5 +14,5 @@ pub struct BalanceUpdated {
     pub account_id: String,
     pub current_balance: f64,
     pub total_consumed: f64,
-    pub total_income: f64,
+    pub total_quota: f64,
 }

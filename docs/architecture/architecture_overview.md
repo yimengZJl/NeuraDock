@@ -228,7 +228,7 @@ balances (
     account_id TEXT REFERENCES accounts(id),
     current_balance REAL,
     total_consumed REAL,
-    total_income REAL,
+    total_quota REAL,
     last_check_at TEXT,
     created_at TEXT, updated_at TEXT
 )
@@ -239,7 +239,7 @@ balance_history (
     account_id TEXT REFERENCES accounts(id),
     current_balance REAL NOT NULL,
     total_consumed REAL NOT NULL,
-    total_income REAL NOT NULL,
+    total_quota REAL NOT NULL,
     recorded_at TEXT NOT NULL
 )
 

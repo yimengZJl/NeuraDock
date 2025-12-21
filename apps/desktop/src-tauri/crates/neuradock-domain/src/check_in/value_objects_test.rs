@@ -3,12 +3,12 @@ mod tests {
     use super::super::value_objects::*;
 
     #[test]
-    fn test_balance_new_calculates_total_income_correctly() {
+    fn test_balance_new_calculates_total_quota_correctly() {
         let balance = Balance::new(100.0, 50.0);
 
         assert_eq!(balance.current_balance, 100.0);
         assert_eq!(balance.total_consumed, 50.0);
-        assert_eq!(balance.total_income, 150.0); // 100 + 50
+        assert_eq!(balance.total_quota, 150.0); // 100 + 50
     }
 
     #[test]
@@ -17,7 +17,7 @@ mod tests {
 
         assert_eq!(balance.current_balance, 100.0);
         assert_eq!(balance.total_consumed, 0.0);
-        assert_eq!(balance.total_income, 100.0);
+        assert_eq!(balance.total_quota, 100.0);
     }
 
     #[test]
@@ -26,7 +26,7 @@ mod tests {
 
         assert_eq!(balance.current_balance, 0.0);
         assert_eq!(balance.total_consumed, 50.0);
-        assert_eq!(balance.total_income, 50.0);
+        assert_eq!(balance.total_quota, 50.0);
     }
 
     #[test]
@@ -35,7 +35,7 @@ mod tests {
 
         assert_eq!(balance.current_balance, 0.0);
         assert_eq!(balance.total_consumed, 0.0);
-        assert_eq!(balance.total_income, 0.0);
+        assert_eq!(balance.total_quota, 0.0);
     }
 
     #[test]
@@ -44,7 +44,7 @@ mod tests {
 
         assert_eq!(balance.current_balance, 999999.99);
         assert_eq!(balance.total_consumed, 123456.78);
-        assert_eq!(balance.total_income, 1123456.77);
+        assert_eq!(balance.total_quota, 1123456.77);
     }
 
     #[test]
@@ -52,7 +52,7 @@ mod tests {
         let balance = Balance::new(10.5, 20.3);
 
         // Use approximate comparison for floating point
-        assert!((balance.total_income - 30.8).abs() < 0.0001);
+        assert!((balance.total_quota - 30.8).abs() < 0.0001);
     }
 
     #[test]
@@ -122,6 +122,6 @@ mod tests {
 
         assert_eq!(cloned.current_balance, balance.current_balance);
         assert_eq!(cloned.total_consumed, balance.total_consumed);
-        assert_eq!(cloned.total_income, balance.total_income);
+        assert_eq!(cloned.total_quota, balance.total_quota);
     }
 }

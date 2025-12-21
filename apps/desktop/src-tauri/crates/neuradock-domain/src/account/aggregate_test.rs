@@ -310,13 +310,13 @@ mod tests {
 
         assert!(account.current_balance().is_none());
         assert!(account.total_consumed().is_none());
-        assert!(account.total_income().is_none());
+        assert!(account.total_quota().is_none());
 
         account.update_balance(100.0, 50.0, 150.0);
 
         assert_eq!(account.current_balance(), Some(100.0));
         assert_eq!(account.total_consumed(), Some(50.0));
-        assert_eq!(account.total_income(), Some(150.0));
+        assert_eq!(account.total_quota(), Some(150.0));
         assert!(account.last_balance_check_at().is_some());
     }
 

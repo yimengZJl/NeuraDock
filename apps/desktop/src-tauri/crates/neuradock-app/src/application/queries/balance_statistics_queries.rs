@@ -43,13 +43,13 @@ impl BalanceStatisticsQueryService {
         let mut provider_stats: HashMap<String, ProviderBalanceDto> = HashMap::new();
         let mut total_current_balance = 0.0;
         let mut total_consumed = 0.0;
-        let mut total_income = 0.0;
+        let mut total_quota = 0.0;
 
         for account in accounts {
             let cached = match (
                 account.current_balance(),
                 account.total_consumed(),
-                account.total_income(),
+                account.total_quota(),
             ) {
                 (Some(cb), Some(tc), Some(ti)) => Some((cb, tc, ti)),
                 _ => None,
@@ -66,7 +66,7 @@ impl BalanceStatisticsQueryService {
                         (
                             balance.current_balance,
                             balance.total_consumed,
-                            balance.total_income,
+                            balance.total_quota,
                         )
                     })
             };
@@ -89,25 +89,25 @@ impl BalanceStatisticsQueryService {
                         provider_name,
                         current_balance: 0.0,
                         total_consumed: 0.0,
-                        total_income: 0.0,
+                        total_quota: 0.0,
                         account_count: 0,
                     });
 
             stat.current_balance += current_balance;
             stat.total_consumed += consumed;
-            stat.total_income += income;
+            stat.total_quota += income;
             stat.account_count += 1;
 
             total_current_balance += current_balance;
             total_consumed += consumed;
-            total_income += income;
+            total_quota += income;
         }
 
         Ok(BalanceStatisticsDto {
             providers: provider_stats.into_values().collect(),
             total_current_balance,
             total_consumed,
-            total_income,
+            total_quota,
         })
     }
 }

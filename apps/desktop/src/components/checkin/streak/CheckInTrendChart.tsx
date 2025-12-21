@@ -37,7 +37,7 @@ export function CheckInTrendChart({ data, className }: CheckInTrendChartProps) {
   const chartData = data.map((point) => ({
     date: dateFormatter.format(new Date(point.date)),
     fullDate: new Date(point.date).toLocaleDateString(),
-    income: point.total_income,
+    income: point.total_quota,
     increment: point.income_increment,
     balance: point.current_balance,
     checkedIn: point.is_checked_in,
@@ -87,7 +87,7 @@ export function CheckInTrendChart({ data, className }: CheckInTrendChartProps) {
                     <p className="font-semibold mb-2 text-foreground">{data.fullDate}</p>
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between gap-4">
-                        <span className="text-muted-foreground">{t('streaks.trendTotalIncome')}:</span>
+                        <span className="text-muted-foreground">{t('streaks.trendTotalQuota')}:</span>
                         <span className="font-mono font-semibold text-primary">
                           {detailedCurrencyFormatter.format(data.income)}
                         </span>

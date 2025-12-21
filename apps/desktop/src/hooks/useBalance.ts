@@ -8,7 +8,7 @@ import { extractErrorMessage } from '@/lib/errorHandling';
 export interface BalanceDto {
   current_balance: number;
   total_consumed: number;
-  total_income: number;
+  total_quota: number;
 }
 
 export interface ProviderBalanceDto {
@@ -16,7 +16,7 @@ export interface ProviderBalanceDto {
   provider_name: string;
   current_balance: number;
   total_consumed: number;
-  total_income: number;
+  total_quota: number;
   account_count: number;
 }
 
@@ -24,7 +24,7 @@ export interface BalanceStatisticsDto {
   providers: ProviderBalanceDto[];
   total_current_balance: number;
   total_consumed: number;
-  total_income: number;
+  total_quota: number;
 }
 
 // Query: Fetch account balance

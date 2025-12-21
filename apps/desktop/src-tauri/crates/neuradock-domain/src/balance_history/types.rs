@@ -9,7 +9,7 @@ pub struct BalanceHistoryRecord {
     account_id: AccountId,
     current_balance: f64,
     total_consumed: f64,
-    total_income: f64,
+    total_quota: f64,
     recorded_at: DateTime<Utc>,
 }
 
@@ -19,7 +19,7 @@ impl BalanceHistoryRecord {
         account_id: AccountId,
         current_balance: f64,
         total_consumed: f64,
-        total_income: f64,
+        total_quota: f64,
         recorded_at: DateTime<Utc>,
     ) -> Result<Self, DomainError> {
         if id.is_empty() {
@@ -37,9 +37,9 @@ impl BalanceHistoryRecord {
                 "Total consumed cannot be negative".to_string(),
             ));
         }
-        if total_income < 0.0 {
+        if total_quota < 0.0 {
             return Err(DomainError::Validation(
-                "Total income cannot be negative".to_string(),
+                "Total quota cannot be negative".to_string(),
             ));
         }
 
@@ -48,7 +48,7 @@ impl BalanceHistoryRecord {
             account_id,
             current_balance,
             total_consumed,
-            total_income,
+            total_quota,
             recorded_at,
         })
     }
@@ -58,7 +58,7 @@ impl BalanceHistoryRecord {
         account_id: AccountId,
         current_balance: f64,
         total_consumed: f64,
-        total_income: f64,
+        total_quota: f64,
         recorded_at: DateTime<Utc>,
     ) -> Self {
         Self {
@@ -66,7 +66,7 @@ impl BalanceHistoryRecord {
             account_id,
             current_balance,
             total_consumed,
-            total_income,
+            total_quota,
             recorded_at,
         }
     }
@@ -87,8 +87,8 @@ impl BalanceHistoryRecord {
         self.total_consumed
     }
 
-    pub fn total_income(&self) -> f64 {
-        self.total_income
+    pub fn total_quota(&self) -> f64 {
+        self.total_quota
     }
 
     pub fn recorded_at(&self) -> DateTime<Utc> {
@@ -99,7 +99,7 @@ impl BalanceHistoryRecord {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BalanceHistoryDailySummary {
     check_in_date: NaiveDate,
-    daily_total_income: f64,
+    daily_total_quota: f64,
     daily_balance: f64,
     daily_consumed: f64,
 }
@@ -107,11 +107,11 @@ pub struct BalanceHistoryDailySummary {
 impl BalanceHistoryDailySummary {
     pub fn new(
         check_in_date: NaiveDate,
-        daily_total_income: f64,
+        daily_total_quota: f64,
         daily_balance: f64,
         daily_consumed: f64,
     ) -> Result<Self, DomainError> {
-        if daily_total_income < 0.0 {
+        if daily_total_quota < 0.0 {
             return Err(DomainError::Validation(
                 "Daily total income cannot be negative".to_string(),
             ));
@@ -129,7 +129,7 @@ impl BalanceHistoryDailySummary {
 
         Ok(Self {
             check_in_date,
-            daily_total_income,
+            daily_total_quota,
             daily_balance,
             daily_consumed,
         })
@@ -137,13 +137,13 @@ impl BalanceHistoryDailySummary {
 
     pub fn restore(
         check_in_date: NaiveDate,
-        daily_total_income: f64,
+        daily_total_quota: f64,
         daily_balance: f64,
         daily_consumed: f64,
     ) -> Self {
         Self {
             check_in_date,
-            daily_total_income,
+            daily_total_quota,
             daily_balance,
             daily_consumed,
         }
@@ -153,8 +153,8 @@ impl BalanceHistoryDailySummary {
         self.check_in_date
     }
 
-    pub fn daily_total_income(&self) -> f64 {
-        self.daily_total_income
+    pub fn daily_total_quota(&self) -> f64 {
+        self.daily_total_quota
     }
 
     pub fn daily_balance(&self) -> f64 {

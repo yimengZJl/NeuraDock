@@ -79,7 +79,7 @@ pub struct CheckInCompleted {
 pub struct CheckInBalance {
     pub current_balance: f64,
     pub total_consumed: f64,
-    pub total_income: f64,
+    pub total_quota: f64,
 }
 
 impl_domain_event!(CheckInCompleted);
@@ -90,7 +90,7 @@ pub struct BalanceUpdated {
     pub account_id: AccountId,
     pub current_balance: f64,
     pub total_consumed: f64,
-    pub total_income: f64,
+    pub total_quota: f64,
     pub occurred_at: DateTime<Utc>,
 }
 

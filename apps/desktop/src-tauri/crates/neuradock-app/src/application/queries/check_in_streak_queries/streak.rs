@@ -110,7 +110,7 @@ fn calculate_streak_stats(
 
     for row in rows {
         let date = row.check_in_date();
-        let is_checked_in = prev_income.is_none_or(|prev| row.daily_total_income() > prev);
+        let is_checked_in = prev_income.is_none_or(|prev| row.daily_total_quota() > prev);
 
         if is_checked_in {
             current_streak = match last_check_in_date {
@@ -133,7 +133,7 @@ fn calculate_streak_stats(
             }
         }
 
-        prev_income = Some(row.daily_total_income());
+        prev_income = Some(row.daily_total_quota());
     }
 
     StreakComputation {

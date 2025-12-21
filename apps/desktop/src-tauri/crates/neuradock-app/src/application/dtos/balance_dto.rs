@@ -7,7 +7,7 @@ use neuradock_domain::check_in::Balance;
 pub struct BalanceDto {
     pub current_balance: f64,
     pub total_consumed: f64,
-    pub total_income: f64,
+    pub total_quota: f64,
 }
 
 impl From<Balance> for BalanceDto {
@@ -15,7 +15,7 @@ impl From<Balance> for BalanceDto {
         Self {
             current_balance: b.current_balance,
             total_consumed: b.total_consumed,
-            total_income: b.total_income,
+            total_quota: b.total_quota,
         }
     }
 }
@@ -26,7 +26,7 @@ pub struct ProviderBalanceDto {
     pub provider_name: String,
     pub current_balance: f64,
     pub total_consumed: f64,
-    pub total_income: f64,
+    pub total_quota: f64,
     pub account_count: i32,
 }
 
@@ -35,5 +35,5 @@ pub struct BalanceStatisticsDto {
     pub providers: Vec<ProviderBalanceDto>,
     pub total_current_balance: f64,
     pub total_consumed: f64,
-    pub total_income: f64,
+    pub total_quota: f64,
 }
