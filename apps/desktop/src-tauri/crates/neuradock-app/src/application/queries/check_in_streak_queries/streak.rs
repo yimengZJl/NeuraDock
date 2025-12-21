@@ -1,22 +1,25 @@
 use chrono::NaiveDate;
 use log::{info, warn};
-use sqlx::SqlitePool;
-use std::sync::Arc;
 
 use crate::application::dtos::CheckInStreakDto;
+use neuradock_domain::account::AccountRepository;
+use neuradock_domain::balance_history::{BalanceHistoryDailySummary, BalanceHistoryRepository};
+use neuradock_domain::check_in::ProviderRepository;
 use neuradock_domain::shared::DomainError;
 
 use super::helpers;
-use super::types::{DailySummaryRow, StreakComputation};
+use super::types::StreakComputation;
 
 /// Get streak statistics for a single account
 pub async fn get_streak_stats(
-    db: &Arc<SqlitePool>,
+    account_repo: &dyn AccountRepository,
+    provider_repo: &dyn ProviderRepository,
+    balance_history_repo: &dyn BalanceHistoryRepository,
     account_id: &str,
 ) -> Result<CheckInStreakDto, DomainError> {
     // Get account metadata and calculate streak from raw data
-    let account_info = helpers::get_account_info(db, account_id).await?;
-    let daily_rows = helpers::fetch_all_daily_summaries(db, account_id).await?;
+    let account_info = helpers::get_account_info(account_repo, provider_repo, account_id).await?;
+    let daily_rows = helpers::fetch_all_daily_summaries(balance_history_repo, account_id).await?;
     let streak = calculate_streak_stats(account_id, &daily_rows);
 
     let dto = CheckInStreakDto {
@@ -41,12 +44,17 @@ pub async fn get_streak_stats(
 }
 
 /// Get streak statistics for all accounts
-pub async fn get_all_streaks(db: &Arc<SqlitePool>) -> Result<Vec<CheckInStreakDto>, DomainError> {
-    let accounts = helpers::get_all_account_infos(db).await?;
+pub async fn get_all_streaks(
+    account_repo: &dyn AccountRepository,
+    provider_repo: &dyn ProviderRepository,
+    balance_history_repo: &dyn BalanceHistoryRepository,
+) -> Result<Vec<CheckInStreakDto>, DomainError> {
+    let accounts = helpers::get_all_account_infos(account_repo, provider_repo).await?;
     let mut results = Vec::new();
 
     for account in accounts {
-        let daily_rows = helpers::fetch_all_daily_summaries(db, &account.account_id).await?;
+        let daily_rows =
+            helpers::fetch_all_daily_summaries(balance_history_repo, &account.account_id).await?;
         let streak = calculate_streak_stats(&account.account_id, &daily_rows);
 
         results.push(CheckInStreakDto {
@@ -70,14 +78,10 @@ pub async fn get_all_streaks(db: &Arc<SqlitePool>) -> Result<Vec<CheckInStreakDt
 }
 
 /// Recalculate all streaks from balance_history
-pub async fn recalculate_all_streaks(db: &Arc<SqlitePool>) -> Result<(), DomainError> {
-    use crate::application::ResultExt;
-
-    let accounts_query = "SELECT DISTINCT account_id FROM balance_history";
-    let account_ids: Vec<String> = sqlx::query_scalar(accounts_query)
-        .fetch_all(&**db)
-        .await
-        .to_repo_err()?;
+pub async fn recalculate_all_streaks(
+    balance_history_repo: &dyn BalanceHistoryRepository,
+) -> Result<(), DomainError> {
+    let account_ids = balance_history_repo.list_distinct_account_ids().await?;
 
     info!(
         "[streak] recalc_all_streaks requested accounts={} (derived on demand)",
@@ -87,7 +91,10 @@ pub async fn recalculate_all_streaks(db: &Arc<SqlitePool>) -> Result<(), DomainE
     Ok(())
 }
 
-fn calculate_streak_stats(account_id: &str, rows: &[DailySummaryRow]) -> StreakComputation {
+fn calculate_streak_stats(
+    account_id: &str,
+    rows: &[BalanceHistoryDailySummary],
+) -> StreakComputation {
     let mut prev_income: Option<f64> = None;
     let mut current_streak = 0u32;
     let mut longest_streak = 0u32;
@@ -102,18 +109,8 @@ fn calculate_streak_stats(account_id: &str, rows: &[DailySummaryRow]) -> StreakC
     }
 
     for row in rows {
-        let date = match NaiveDate::parse_from_str(&row.check_in_date, "%Y-%m-%d") {
-            Ok(date) => date,
-            Err(e) => {
-                warn!(
-                    "[streak] skip invalid date row account_id={} value={} err={}",
-                    account_id, row.check_in_date, e
-                );
-                continue;
-            }
-        };
-
-        let is_checked_in = prev_income.is_none_or(|prev| row.daily_total_income > prev);
+        let date = row.check_in_date();
+        let is_checked_in = prev_income.is_none_or(|prev| row.daily_total_income() > prev);
 
         if is_checked_in {
             current_streak = match last_check_in_date {
@@ -136,7 +133,7 @@ fn calculate_streak_stats(account_id: &str, rows: &[DailySummaryRow]) -> StreakC
             }
         }
 
-        prev_income = Some(row.daily_total_income);
+        prev_income = Some(row.daily_total_income());
     }
 
     StreakComputation {

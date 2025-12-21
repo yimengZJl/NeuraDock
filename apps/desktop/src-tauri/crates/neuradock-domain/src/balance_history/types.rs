@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::shared::{AccountId, DomainError};
@@ -96,3 +96,72 @@ impl BalanceHistoryRecord {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BalanceHistoryDailySummary {
+    check_in_date: NaiveDate,
+    daily_total_income: f64,
+    daily_balance: f64,
+    daily_consumed: f64,
+}
+
+impl BalanceHistoryDailySummary {
+    pub fn new(
+        check_in_date: NaiveDate,
+        daily_total_income: f64,
+        daily_balance: f64,
+        daily_consumed: f64,
+    ) -> Result<Self, DomainError> {
+        if daily_total_income < 0.0 {
+            return Err(DomainError::Validation(
+                "Daily total income cannot be negative".to_string(),
+            ));
+        }
+        if daily_balance < 0.0 {
+            return Err(DomainError::Validation(
+                "Daily balance cannot be negative".to_string(),
+            ));
+        }
+        if daily_consumed < 0.0 {
+            return Err(DomainError::Validation(
+                "Daily consumed cannot be negative".to_string(),
+            ));
+        }
+
+        Ok(Self {
+            check_in_date,
+            daily_total_income,
+            daily_balance,
+            daily_consumed,
+        })
+    }
+
+    pub fn restore(
+        check_in_date: NaiveDate,
+        daily_total_income: f64,
+        daily_balance: f64,
+        daily_consumed: f64,
+    ) -> Self {
+        Self {
+            check_in_date,
+            daily_total_income,
+            daily_balance,
+            daily_consumed,
+        }
+    }
+
+    pub fn check_in_date(&self) -> NaiveDate {
+        self.check_in_date
+    }
+
+    pub fn daily_total_income(&self) -> f64 {
+        self.daily_total_income
+    }
+
+    pub fn daily_balance(&self) -> f64 {
+        self.daily_balance
+    }
+
+    pub fn daily_consumed(&self) -> f64 {
+        self.daily_consumed
+    }
+}

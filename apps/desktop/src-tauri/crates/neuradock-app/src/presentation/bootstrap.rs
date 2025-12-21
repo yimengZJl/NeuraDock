@@ -151,7 +151,7 @@ pub async fn build_app_state(
 
     let notification_service = Arc::new(NotificationService::new(
         notification_channel_repo.clone(),
-        pool.clone(),
+        balance_history_repo.clone(),
     ));
     let token_service = build_token_service(
         token_repo.clone(),
@@ -165,7 +165,11 @@ pub async fn build_app_state(
     let config_service = build_config_service(&app_handle)?;
 
     let account_queries = Arc::new(AccountQueryService::new(account_repo.clone()));
-    let streak_queries = Arc::new(CheckInStreakQueries::new(pool.clone()));
+    let streak_queries = Arc::new(CheckInStreakQueries::new(
+        account_repo.clone(),
+        provider_repo.clone(),
+        balance_history_repo.clone(),
+    ));
 
     // Initialize check-in related services
     let provider_models_service = Arc::new(ProviderModelsService::new(

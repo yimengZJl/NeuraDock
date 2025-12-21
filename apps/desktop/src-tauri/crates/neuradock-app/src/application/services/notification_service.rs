@@ -1,32 +1,32 @@
 use anyhow::Result;
 use chrono::Utc;
 use log::{error, info};
-use sqlx::{FromRow, SqlitePool};
 use std::sync::Arc;
 
 use crate::application::services::i18n::t;
+use neuradock_domain::balance_history::BalanceHistoryRepository;
 use neuradock_domain::notification::{
     NotificationChannelRepository, NotificationMessage, NotificationSender,
 };
+use neuradock_domain::shared::AccountId;
 use neuradock_infrastructure::notification::create_sender;
-
-#[derive(FromRow)]
-struct YesterdayBalanceRow {
-    current_balance: f64,
-    total_consumed: f64,
-    total_income: f64,
-}
 
 /// Notification application service
 /// Coordinates sending notifications through enabled channels
 pub struct NotificationService {
     channel_repo: Arc<dyn NotificationChannelRepository>,
-    db: Arc<SqlitePool>,
+    balance_history_repo: Arc<dyn BalanceHistoryRepository>,
 }
 
 impl NotificationService {
-    pub fn new(channel_repo: Arc<dyn NotificationChannelRepository>, db: Arc<SqlitePool>) -> Self {
-        Self { channel_repo, db }
+    pub fn new(
+        channel_repo: Arc<dyn NotificationChannelRepository>,
+        balance_history_repo: Arc<dyn BalanceHistoryRepository>,
+    ) -> Self {
+        Self {
+            channel_repo,
+            balance_history_repo,
+        }
     }
 
     /// Send notification to all enabled channels
@@ -79,31 +79,25 @@ impl NotificationService {
     /// Get yesterday's balance data from balance_history
     async fn get_yesterday_balance(&self, account_id: &str) -> Option<(f64, f64, f64)> {
         let yesterday = (Utc::now() - chrono::Duration::days(1)).date_naive();
-        let yesterday_str = yesterday.format("%Y-%m-%d").to_string();
 
-        let query = r#"
-            SELECT
-                current_balance,
-                total_consumed,
-                total_income
-            FROM balance_history
-            WHERE account_id = ?1 AND DATE(recorded_at) = ?2
-            ORDER BY recorded_at DESC
-            LIMIT 1
-        "#;
-
-        match sqlx::query_as::<_, YesterdayBalanceRow>(query)
-            .bind(account_id)
-            .bind(&yesterday_str)
-            .fetch_optional(&*self.db)
+        match self
+            .balance_history_repo
+            .find_latest_by_account_id_on_date(&AccountId::from_string(account_id), yesterday)
             .await
         {
-            Ok(Some(row)) => {
+            Ok(Some(record)) => {
                 info!(
                     "Found yesterday's balance for account {}: current={}, consumed={}, income={}",
-                    account_id, row.current_balance, row.total_consumed, row.total_income
+                    account_id,
+                    record.current_balance(),
+                    record.total_consumed(),
+                    record.total_income()
                 );
-                Some((row.current_balance, row.total_consumed, row.total_income))
+                Some((
+                    record.current_balance(),
+                    record.total_consumed(),
+                    record.total_income(),
+                ))
             }
             Ok(None) => {
                 info!("No yesterday balance found for account {}", account_id);

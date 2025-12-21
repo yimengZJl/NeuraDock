@@ -1,71 +1,82 @@
-use sqlx::SqlitePool;
-use std::sync::Arc;
+use std::collections::HashMap;
 
-use crate::application::ResultExt;
-use neuradock_domain::shared::DomainError;
+use neuradock_domain::account::AccountRepository;
+use neuradock_domain::balance_history::{BalanceHistoryDailySummary, BalanceHistoryRepository};
+use neuradock_domain::check_in::{Provider, ProviderRepository};
+use neuradock_domain::shared::{AccountId, DomainError};
 
-use super::types::{AccountInfoRow, AccountListRow, DailySummaryRow};
+pub struct AccountInfo {
+    pub account_id: String,
+    pub name: String,
+    pub provider_id: String,
+    pub provider_name: String,
+}
 
 /// Get account metadata (name + provider)
 pub async fn get_account_info(
-    db: &Arc<SqlitePool>,
+    account_repo: &dyn AccountRepository,
+    provider_repo: &dyn ProviderRepository,
     account_id: &str,
-) -> Result<AccountInfoRow, DomainError> {
-    let query = r#"
-        SELECT
-            a.name as name,
-            a.provider_id as provider_id,
-            COALESCE(p.name, a.provider_id) as provider_name
-        FROM accounts a
-        LEFT JOIN providers p ON p.id = a.provider_id
-        WHERE a.id = ?1
-    "#;
+) -> Result<AccountInfo, DomainError> {
+    let account = account_repo
+        .find_by_id(&AccountId::from_string(account_id))
+        .await?
+        .ok_or_else(|| DomainError::AccountNotFound(account_id.to_string()))?;
 
-    let row: Option<AccountInfoRow> = sqlx::query_as(query)
-        .bind(account_id)
-        .fetch_optional(&**db)
-        .await
-        .to_repo_err()?;
+    let provider_name = provider_repo
+        .find_by_id(account.provider_id())
+        .await?
+        .map(|p| p.name().to_string())
+        .unwrap_or_else(|| account.provider_id().as_str().to_string());
 
-    row.ok_or_else(|| DomainError::AccountNotFound(account_id.to_string()))
+    Ok(AccountInfo {
+        account_id: account.id().as_str().to_string(),
+        name: account.name().to_string(),
+        provider_id: account.provider_id().as_str().to_string(),
+        provider_name,
+    })
 }
 
 pub async fn get_all_account_infos(
-    db: &Arc<SqlitePool>,
-) -> Result<Vec<AccountListRow>, DomainError> {
-    let query = r#"
-        SELECT
-            a.id as account_id,
-            a.name as name,
-            a.provider_id as provider_id,
-            COALESCE(p.name, a.provider_id) as provider_name
-        FROM accounts a
-        LEFT JOIN providers p ON p.id = a.provider_id
-        ORDER BY name ASC
-    "#;
+    account_repo: &dyn AccountRepository,
+    provider_repo: &dyn ProviderRepository,
+) -> Result<Vec<AccountInfo>, DomainError> {
+    let accounts = account_repo.find_all().await?;
+    let providers = provider_repo.find_all().await?;
 
-    sqlx::query_as(query).fetch_all(&**db).await.to_repo_err()
+    let provider_map: HashMap<String, Provider> = providers
+        .into_iter()
+        .map(|p| (p.id().as_str().to_string(), p))
+        .collect();
+
+    let mut infos = accounts
+        .into_iter()
+        .map(|account| {
+            let provider_id = account.provider_id().as_str().to_string();
+            let provider_name = provider_map
+                .get(&provider_id)
+                .map(|p| p.name().to_string())
+                .unwrap_or_else(|| provider_id.clone());
+
+            AccountInfo {
+                account_id: account.id().as_str().to_string(),
+                name: account.name().to_string(),
+                provider_id,
+                provider_name,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    infos.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(infos)
 }
 
 pub async fn fetch_all_daily_summaries(
-    db: &Arc<SqlitePool>,
+    balance_history_repo: &dyn BalanceHistoryRepository,
     account_id: &str,
-) -> Result<Vec<DailySummaryRow>, DomainError> {
-    let query = r#"
-        SELECT
-            DATE(recorded_at) AS check_in_date,
-            MAX(total_income) AS daily_total_income,
-            MAX(current_balance) AS daily_balance,
-            MAX(total_consumed) AS daily_consumed
-        FROM balance_history
-        WHERE account_id = ?1
-        GROUP BY DATE(recorded_at)
-        ORDER BY check_in_date ASC
-    "#;
-
-    sqlx::query_as(query)
-        .bind(account_id)
-        .fetch_all(&**db)
+) -> Result<Vec<BalanceHistoryDailySummary>, DomainError> {
+    balance_history_repo
+        .list_all_daily_summaries(&AccountId::from_string(account_id))
         .await
-        .to_repo_err()
 }
+
