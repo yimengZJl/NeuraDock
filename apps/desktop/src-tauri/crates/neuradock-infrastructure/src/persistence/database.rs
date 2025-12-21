@@ -21,6 +21,7 @@ impl Database {
             OpenOptions::new()
                 .create(true)
                 .write(true)
+                .truncate(false)
                 .open(path)
                 .map_err(|e| {
                     DomainError::Infrastructure(format!("Failed to create DB file: {}", e))

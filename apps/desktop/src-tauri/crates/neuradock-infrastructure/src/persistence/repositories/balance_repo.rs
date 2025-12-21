@@ -17,7 +17,7 @@ struct BalanceRow {
 }
 
 impl BalanceRow {
-    fn to_balance(self) -> Balance {
+    fn into_balance(self) -> Balance {
         Balance::restore(
             AccountId::from_string(&self.account_id),
             self.current,
@@ -82,7 +82,7 @@ impl BalanceRepository for SqliteBalanceRepository {
             )
             .await?;
 
-        Ok(row.map(|r| r.to_balance()))
+        Ok(row.map(|r| r.into_balance()))
     }
 
     async fn delete(&self, account_id: &AccountId) -> Result<(), DomainError> {
@@ -106,7 +106,7 @@ impl BalanceRepository for SqliteBalanceRepository {
             .fetch_all(sqlx::query_as(query), "Find all balances")
             .await?;
 
-        Ok(rows.into_iter().map(|r| r.to_balance()).collect())
+        Ok(rows.into_iter().map(|r| r.into_balance()).collect())
     }
 
     async fn find_stale_balances(&self, hours_threshold: i64) -> Result<Vec<Balance>, DomainError> {
@@ -118,6 +118,6 @@ impl BalanceRepository for SqliteBalanceRepository {
             .fetch_all(sqlx::query_as(query).bind(threshold), "Find stale balances")
             .await?;
 
-        Ok(rows.into_iter().map(|r| r.to_balance()).collect())
+        Ok(rows.into_iter().map(|r| r.into_balance()).collect())
     }
 }

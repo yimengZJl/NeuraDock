@@ -191,9 +191,7 @@ pub async fn get_check_in_day_detail(
 /// Recalculate check-in streaks for all accounts
 #[tauri::command]
 #[specta::specta]
-pub async fn recalculate_check_in_streaks(
-    queries: State<'_, Queries>,
-) -> Result<(), CommandError> {
+pub async fn recalculate_check_in_streaks(queries: State<'_, Queries>) -> Result<(), CommandError> {
     queries
         .streak
         .recalculate_all_streaks()

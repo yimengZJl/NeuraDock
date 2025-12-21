@@ -32,7 +32,12 @@ impl BalanceStatisticsQueryService {
         let providers = self.provider_repo.find_all().await?;
         let providers_by_id = providers
             .iter()
-            .map(|provider| (provider.id().as_str().to_string(), provider.name().to_string()))
+            .map(|provider| {
+                (
+                    provider.id().as_str().to_string(),
+                    provider.name().to_string(),
+                )
+            })
             .collect::<HashMap<_, _>>();
 
         let mut provider_stats: HashMap<String, ProviderBalanceDto> = HashMap::new();
@@ -76,16 +81,17 @@ impl BalanceStatisticsQueryService {
                 .cloned()
                 .unwrap_or_else(|| "Unknown".to_string());
 
-            let stat = provider_stats
-                .entry(provider_id.to_string())
-                .or_insert(ProviderBalanceDto {
-                    provider_id: provider_id.to_string(),
-                    provider_name,
-                    current_balance: 0.0,
-                    total_consumed: 0.0,
-                    total_income: 0.0,
-                    account_count: 0,
-                });
+            let stat =
+                provider_stats
+                    .entry(provider_id.to_string())
+                    .or_insert(ProviderBalanceDto {
+                        provider_id: provider_id.to_string(),
+                        provider_name,
+                        current_balance: 0.0,
+                        total_consumed: 0.0,
+                        total_income: 0.0,
+                        account_count: 0,
+                    });
 
             stat.current_balance += current_balance;
             stat.total_consumed += consumed;
@@ -105,4 +111,3 @@ impl BalanceStatisticsQueryService {
         })
     }
 }
-

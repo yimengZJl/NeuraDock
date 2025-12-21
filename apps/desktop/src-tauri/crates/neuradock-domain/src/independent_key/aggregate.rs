@@ -1,6 +1,9 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use std::str::FromStr;
+
+use crate::shared::DomainError;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Type)]
 pub struct IndependentKeyId(i64);
@@ -23,15 +26,6 @@ pub enum KeyProviderType {
 }
 
 impl KeyProviderType {
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s.to_lowercase().as_str() {
-            "openai" => Some(Self::OpenAI),
-            "anthropic" => Some(Self::Anthropic),
-            "custom" => Some(Self::Custom),
-            _ => None,
-        }
-    }
-
     pub fn as_str(&self) -> &str {
         match self {
             Self::OpenAI => "openai",
@@ -53,6 +47,21 @@ impl KeyProviderType {
             Self::OpenAI => "OpenAI",
             Self::Anthropic => "Anthropic (Claude)",
             Self::Custom => "Custom",
+        }
+    }
+}
+
+impl FromStr for KeyProviderType {
+    type Err = DomainError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "openai" => Ok(Self::OpenAI),
+            "anthropic" => Ok(Self::Anthropic),
+            "custom" => Ok(Self::Custom),
+            _ => Err(DomainError::InvalidInput(format!(
+                "Invalid provider type: {s}"
+            ))),
         }
     }
 }

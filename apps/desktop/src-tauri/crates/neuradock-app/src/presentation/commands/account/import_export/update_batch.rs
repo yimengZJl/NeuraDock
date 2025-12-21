@@ -76,12 +76,8 @@ pub async fn update_accounts_batch(
             None => {
                 if create_if_not_exists {
                     // Create new account
-                    match import_single_account(
-                        input,
-                        &repositories.account,
-                        &repositories.session,
-                    )
-                    .await
+                    match import_single_account(input, &repositories.account, &repositories.session)
+                        .await
                     {
                         Ok(account_id) => {
                             created += 1;

@@ -1,3 +1,4 @@
+use std::cmp::Reverse;
 use std::collections::HashMap;
 
 /// Service to extract the most likely session token from a set of cookies
@@ -54,7 +55,7 @@ impl SessionTokenExtractor {
         // Sort by length descending
         let mut values: Vec<&String> = cookies.values().filter(|v| !v.is_empty()).collect();
         if !values.is_empty() {
-            values.sort_by(|a, b| b.len().cmp(&a.len()));
+            values.sort_by_key(|val| Reverse(val.len()));
             return values[0].clone();
         }
 

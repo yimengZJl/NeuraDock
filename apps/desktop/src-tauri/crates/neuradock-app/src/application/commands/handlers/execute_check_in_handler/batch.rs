@@ -76,10 +76,13 @@ impl CommandHandler<BatchExecuteCheckInCommand> for BatchExecuteCheckInCommandHa
         let proxy_config = self.proxy_config_repo.get().await?;
         let proxy_url = proxy_config.proxy_url();
 
-        let executor =
-            CheckInExecutor::with_proxy(self.account_repo.clone(), self.headless_browser, proxy_url)
-                .to_infra_err()?
-                .with_waf_cookies_repo(self.waf_cookies_repo.clone());
+        let executor = CheckInExecutor::with_proxy(
+            self.account_repo.clone(),
+            self.headless_browser,
+            proxy_url,
+        )
+        .to_infra_err()?
+        .with_waf_cookies_repo(self.waf_cookies_repo.clone());
 
         for account_id in cmd.account_ids {
             // Load account to get provider_id

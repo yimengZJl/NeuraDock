@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::{FromRow, SqlitePool};
+use std::str::FromStr;
 use std::sync::Arc;
 
 use crate::persistence::RepositoryErrorMapper;
@@ -27,7 +28,10 @@ struct IndependentKeyRow {
 }
 
 impl IndependentKeyRow {
-    fn to_domain(self, encryption: &EncryptionService) -> Result<IndependentApiKey, DomainError> {
+    fn try_into_domain(
+        self,
+        encryption: &EncryptionService,
+    ) -> Result<IndependentApiKey, DomainError> {
         // Decrypt API key
         let api_key = encryption.decrypt(&self.api_key).map_err(|e| {
             DomainError::DataIntegrity(format!(
@@ -36,8 +40,11 @@ impl IndependentKeyRow {
             ))
         })?;
 
-        let provider_type = KeyProviderType::from_str(&self.provider_type).ok_or_else(|| {
-            DomainError::DataIntegrity(format!("Invalid provider_type: {}", self.provider_type))
+        let provider_type = KeyProviderType::from_str(&self.provider_type).map_err(|e| {
+            DomainError::DataIntegrity(format!(
+                "Invalid provider_type: {} ({e})",
+                self.provider_type
+            ))
         })?;
 
         let created_at = DateTime::parse_from_rfc3339(&self.created_at)
@@ -175,7 +182,7 @@ impl IndependentKeyRepository for SqliteIndependentKeyRepository {
         .map_err(|e| RepositoryErrorMapper::map_sqlx_error(e, "Find independent key by ID"))?;
 
         match row {
-            Some(r) => Ok(Some(r.to_domain(&self.encryption)?)),
+            Some(r) => Ok(Some(r.try_into_domain(&self.encryption)?)),
             None => Ok(None),
         }
     }
@@ -194,7 +201,7 @@ impl IndependentKeyRepository for SqliteIndependentKeyRepository {
         .map_err(|e| RepositoryErrorMapper::map_sqlx_error(e, "Find all independent keys"))?;
 
         rows.into_iter()
-            .map(|r| r.to_domain(&self.encryption))
+            .map(|r| r.try_into_domain(&self.encryption))
             .collect()
     }
 
@@ -219,7 +226,7 @@ impl IndependentKeyRepository for SqliteIndependentKeyRepository {
         })?;
 
         rows.into_iter()
-            .map(|r| r.to_domain(&self.encryption))
+            .map(|r| r.try_into_domain(&self.encryption))
             .collect()
     }
 
@@ -238,7 +245,7 @@ impl IndependentKeyRepository for SqliteIndependentKeyRepository {
         .map_err(|e| RepositoryErrorMapper::map_sqlx_error(e, "Find active independent keys"))?;
 
         rows.into_iter()
-            .map(|r| r.to_domain(&self.encryption))
+            .map(|r| r.try_into_domain(&self.encryption))
             .collect()
     }
 }

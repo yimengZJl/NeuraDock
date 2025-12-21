@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use std::str::FromStr;
 
 use neuradock_domain::proxy_config::{ProxyConfig, ProxyType};
 

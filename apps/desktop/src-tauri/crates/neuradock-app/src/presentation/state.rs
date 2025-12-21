@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::application::commands::handlers::*;
@@ -10,16 +9,11 @@ use crate::application::services::{
     ProviderModelsQueryService, ProxyConfigService, TokenService,
 };
 use neuradock_domain::account::AccountRepository;
-use neuradock_domain::check_in::{Provider, ProviderRepository};
+use neuradock_domain::check_in::ProviderRepository;
 use neuradock_domain::custom_node::CustomProviderNodeRepository;
 use neuradock_domain::independent_key::IndependentKeyRepository;
 use neuradock_domain::notification::NotificationChannelRepository;
-use neuradock_domain::proxy_config::ProxyConfigRepository;
 use neuradock_domain::session::SessionRepository;
-use neuradock_domain::shared::DomainError;
-use neuradock_infrastructure::persistence::repositories::{
-    SqliteProviderModelsRepository, SqliteWafCookiesRepository,
-};
 
 /// Command handlers container
 #[derive(Clone)]
@@ -47,9 +41,6 @@ pub struct Repositories {
     pub custom_node: Arc<dyn CustomProviderNodeRepository>,
     pub independent_key: Arc<dyn IndependentKeyRepository>,
     pub provider: Arc<dyn ProviderRepository>,
-    pub proxy_config: Arc<dyn ProxyConfigRepository>,
-    pub provider_models: Arc<SqliteProviderModelsRepository>,
-    pub waf_cookies: Arc<SqliteWafCookiesRepository>,
 }
 
 #[derive(Clone)]
@@ -81,13 +72,5 @@ pub struct AppState {
 impl AppState {
     pub async fn new(app_handle: tauri::AppHandle) -> Result<Self, Box<dyn std::error::Error>> {
         crate::presentation::bootstrap::build_app_state(app_handle).await
-    }
-
-    pub async fn provider_map(&self) -> Result<HashMap<String, Provider>, DomainError> {
-        let providers = self.repositories.provider.find_all().await?;
-        Ok(providers
-            .into_iter()
-            .map(|provider| (provider.id().as_str().to_string(), provider))
-            .collect())
     }
 }

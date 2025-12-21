@@ -36,7 +36,10 @@ impl ProviderModelsQueryService {
     }
 
     pub async fn get_cached(&self, provider_id: &str) -> Result<Vec<String>, DomainError> {
-        let cached = self.provider_models_repo.find_by_provider(provider_id).await?;
+        let cached = self
+            .provider_models_repo
+            .find_by_provider(provider_id)
+            .await?;
         Ok(cached.map(|c| c.models).unwrap_or_default())
     }
 
@@ -50,7 +53,10 @@ impl ProviderModelsQueryService {
         if !force_refresh {
             let is_stale = self.provider_models_repo.is_stale(&provider_id, 24).await?;
             if !is_stale {
-                if let Some(cached) = self.provider_models_repo.find_by_provider(&provider_id).await?
+                if let Some(cached) = self
+                    .provider_models_repo
+                    .find_by_provider(&provider_id)
+                    .await?
                 {
                     return Ok(cached.models);
                 }
@@ -96,7 +102,12 @@ impl ProviderModelsQueryService {
         let cookie_string = build_cookie_string(&cookies);
         let api_user = account.credentials().api_user();
 
-        let proxy_url = self.proxy_config_repo.get().await.ok().and_then(|c| c.proxy_url());
+        let proxy_url = self
+            .proxy_config_repo
+            .get()
+            .await
+            .ok()
+            .and_then(|c| c.proxy_url());
         let client = TokenClient::with_proxy(proxy_url)
             .map_err(|e| DomainError::Infrastructure(e.to_string()))?;
 
@@ -125,7 +136,9 @@ impl ProviderModelsQueryService {
             }
         };
 
-        self.provider_models_repo.save(&provider_id, &models).await?;
+        self.provider_models_repo
+            .save(&provider_id, &models)
+            .await?;
         Ok(models)
     }
 
@@ -159,7 +172,12 @@ impl ProviderModelsQueryService {
             Some(api_user_header)
         };
 
-        let proxy_url = self.proxy_config_repo.get().await.ok().and_then(|c| c.proxy_url());
+        let proxy_url = self
+            .proxy_config_repo
+            .get()
+            .await
+            .ok()
+            .and_then(|c| c.proxy_url());
         let waf_service = WafBypassService::with_proxy(true, proxy_url.clone());
         let client = TokenClient::with_proxy(proxy_url)
             .map_err(|e| DomainError::Infrastructure(e.to_string()))?;
@@ -177,7 +195,9 @@ impl ProviderModelsQueryService {
                     let new_cookies = waf_service
                         .get_waf_cookies(&provider.login_url(), &account_id)
                         .await
-                        .map_err(|e| DomainError::Infrastructure(format!("WAF bypass failed: {e}")))?;
+                        .map_err(|e| {
+                            DomainError::Infrastructure(format!("WAF bypass failed: {e}"))
+                        })?;
 
                     let _ = self.waf_cookies_repo.save(&provider_id, &new_cookies).await;
                     for (k, v) in new_cookies {
@@ -203,7 +223,9 @@ impl ProviderModelsQueryService {
         )
         .await?;
 
-        self.provider_models_repo.save(&provider_id, &models).await?;
+        self.provider_models_repo
+            .save(&provider_id, &models)
+            .await?;
         Ok(models)
     }
 }
@@ -278,4 +300,3 @@ async fn fetch_models_with_waf_retry(
         }
     }
 }
-

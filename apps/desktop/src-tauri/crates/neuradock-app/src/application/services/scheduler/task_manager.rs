@@ -103,10 +103,4 @@ impl super::AutoCheckInScheduler {
 
         Ok(())
     }
-
-    pub async fn shutdown(self) -> Result<(), Box<dyn std::error::Error>> {
-        info!("🛑 Shutting down auto check-in scheduler");
-        self.stop_all_tasks().await;
-        Ok(())
-    }
 }

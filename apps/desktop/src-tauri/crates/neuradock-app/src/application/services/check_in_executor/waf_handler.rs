@@ -8,6 +8,7 @@ use super::execution::create_error_result;
 use crate::application::services::waf_cookie_manager::WafCookieManager;
 
 /// Retry check-in after refreshing WAF cookies
+#[allow(clippy::too_many_arguments)]
 pub async fn retry_check_in_after_waf_refresh(
     waf_manager: &WafCookieManager,
     http_client: &HttpClient,

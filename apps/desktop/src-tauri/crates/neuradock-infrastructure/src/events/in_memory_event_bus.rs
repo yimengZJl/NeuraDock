@@ -12,8 +12,10 @@ use neuradock_domain::shared::DomainError;
 /// This is a simple implementation that dispatches events synchronously
 /// In production, you might want to use a message queue for better scalability
 pub struct InMemoryEventBus {
-    handlers: Arc<RwLock<HashMap<String, Vec<Arc<dyn DynamicEventHandler>>>>>,
+    handlers: Arc<RwLock<EventHandlers>>,
 }
+
+type EventHandlers = HashMap<String, Vec<Arc<dyn DynamicEventHandler>>>;
 
 impl InMemoryEventBus {
     pub fn new() -> Self {

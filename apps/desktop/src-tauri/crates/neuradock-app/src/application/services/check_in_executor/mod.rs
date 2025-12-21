@@ -11,7 +11,6 @@ use crate::application::services::user_info_service::UserInfoService;
 use crate::application::services::waf_cookie_manager::WafCookieManager;
 
 mod balance;
-mod batch;
 mod execution;
 mod types;
 mod validation;
@@ -75,7 +74,7 @@ impl CheckInExecutor {
 
         // 2. Validate using domain service
         if let Some(error_result) =
-            validation::validate_check_in_eligibility(&account, provider, account_id, &account_name)
+            validation::validate_check_in_eligibility(&account, provider, &account_name)
         {
             return Ok(error_result);
         }
@@ -104,7 +103,6 @@ impl CheckInExecutor {
         .await;
 
         Ok(AccountCheckInResult {
-            account_id: account_id.to_string(),
             account_name,
             success: check_in_result.success,
             message: check_in_result.message,

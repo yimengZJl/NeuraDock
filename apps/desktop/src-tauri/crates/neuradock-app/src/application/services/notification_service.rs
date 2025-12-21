@@ -5,9 +5,7 @@ use std::sync::Arc;
 
 use crate::application::services::i18n::t;
 use neuradock_domain::balance_history::BalanceHistoryRepository;
-use neuradock_domain::notification::{
-    NotificationChannelRepository, NotificationMessage, NotificationSender,
-};
+use neuradock_domain::notification::{NotificationChannelRepository, NotificationMessage};
 use neuradock_domain::shared::AccountId;
 use neuradock_infrastructure::notification::create_sender;
 
@@ -238,13 +236,5 @@ impl NotificationService {
         let message = NotificationMessage::new(t("notification.checkIn.failure.title"), content);
 
         self.send_to_all(&message).await
-    }
-
-    /// Test notification channel
-    pub async fn test_channel(&self, sender: Arc<dyn NotificationSender>) -> Result<()> {
-        sender
-            .test()
-            .await
-            .map_err(|e| anyhow::anyhow!(e.to_string()))
     }
 }

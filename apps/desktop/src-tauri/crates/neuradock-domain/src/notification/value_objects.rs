@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::fmt;
+use std::str::FromStr;
 
 use crate::shared::DomainError;
 
@@ -54,15 +55,18 @@ impl ChannelType {
             ChannelType::Email => "email",
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Result<Self, DomainError> {
+impl FromStr for ChannelType {
+    type Err = DomainError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "feishu" => Ok(ChannelType::Feishu),
             "dingtalk" => Ok(ChannelType::DingTalk),
             "email" => Ok(ChannelType::Email),
             _ => Err(DomainError::InvalidInput(format!(
-                "Unknown channel type: {}",
-                s
+                "Unknown channel type: {s}"
             ))),
         }
     }

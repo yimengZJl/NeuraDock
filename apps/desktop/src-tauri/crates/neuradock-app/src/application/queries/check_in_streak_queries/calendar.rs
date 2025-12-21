@@ -42,15 +42,15 @@ pub async fn get_calendar(
 
     if rows.is_empty() {
         warn!(
-            "[streak] calendar query empty result account_id={} month={}",
-            account_id,
-            format!("{:04}-{:02}", year, month)
+            "[streak] calendar query empty result account_id={} month={:04}-{:02}",
+            account_id, year, month
         );
     } else {
         info!(
-            "[streak] calendar query account_id={} month={} rows={}",
+            "[streak] calendar query account_id={} month={:04}-{:02} rows={}",
             account_id,
-            format!("{:04}-{:02}", year, month),
+            year,
+            month,
             rows.len()
         );
     }

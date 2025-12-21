@@ -6,23 +6,21 @@ use tracing::{info, warn};
 
 use crate::application::commands::handlers::*;
 use crate::application::event_handlers::SchedulerReloadEventHandler;
-use crate::application::queries::{AccountQueryService, CheckInStreakQueries};
 use crate::application::queries::BalanceStatisticsQueryService;
+use crate::application::queries::{AccountQueryService, CheckInStreakQueries};
 use crate::application::services::{
     AutoCheckInScheduler, BalanceHistoryService, BalanceService, ClaudeConfigService,
     CodexConfigService, ConfigService, NotificationService, ProviderModelsQueryService,
     ProviderModelsService, ProxyConfigService, TokenService,
 };
-use crate::presentation::state::{
-    AppState, CommandHandlers, Queries, Repositories, Services,
-};
+use crate::presentation::state::{AppState, CommandHandlers, Queries, Repositories, Services};
 use neuradock_domain::account::AccountRepository;
+use neuradock_domain::balance_history::BalanceHistoryRepository;
 use neuradock_domain::check_in::{Provider, ProviderRepository};
 use neuradock_domain::custom_node::CustomProviderNodeRepository;
 use neuradock_domain::events::account_events::*;
 use neuradock_domain::independent_key::IndependentKeyRepository;
 use neuradock_domain::notification::NotificationChannelRepository;
-use neuradock_domain::balance_history::BalanceHistoryRepository;
 use neuradock_domain::proxy_config::ProxyConfigRepository;
 use neuradock_domain::session::SessionRepository;
 use neuradock_domain::token::TokenRepository;
@@ -31,11 +29,10 @@ use neuradock_infrastructure::events::InMemoryEventBus;
 use neuradock_infrastructure::notification::SqliteNotificationChannelRepository;
 use neuradock_infrastructure::persistence::{
     repositories::{
-        SqliteAccountRepository, SqliteCustomProviderNodeRepository,
-        SqliteIndependentKeyRepository, SqliteProviderModelsRepository, SqliteProviderRepository,
-        SqliteProxyConfigRepository, SqliteSessionRepository, SqliteTokenRepository,
-        SqliteBalanceHistoryRepository,
-        SqliteWafCookiesRepository,
+        SqliteAccountRepository, SqliteBalanceHistoryRepository,
+        SqliteCustomProviderNodeRepository, SqliteIndependentKeyRepository,
+        SqliteProviderModelsRepository, SqliteProviderRepository, SqliteProxyConfigRepository,
+        SqliteSessionRepository, SqliteTokenRepository, SqliteWafCookiesRepository,
     },
     Database,
 };
@@ -134,8 +131,8 @@ pub async fn build_app_state(
         Arc::new(SqliteProviderRepository::new(pool.clone())) as Arc<dyn ProviderRepository>;
     let provider_models_repo = Arc::new(SqliteProviderModelsRepository::new(pool.clone()));
     let waf_cookies_repo = Arc::new(SqliteWafCookiesRepository::new(pool.clone()));
-    let proxy_config_repo = Arc::new(SqliteProxyConfigRepository::new(pool.clone()))
-        as Arc<dyn ProxyConfigRepository>;
+    let proxy_config_repo =
+        Arc::new(SqliteProxyConfigRepository::new(pool.clone())) as Arc<dyn ProxyConfigRepository>;
     let balance_history_repo = Arc::new(SqliteBalanceHistoryRepository::new(pool.clone()))
         as Arc<dyn BalanceHistoryRepository>;
 
@@ -350,9 +347,6 @@ pub async fn build_app_state(
             custom_node: custom_node_repo,
             independent_key: independent_key_repo,
             provider: provider_repo,
-            proxy_config: proxy_config_repo.clone(),
-            provider_models: provider_models_repo,
-            waf_cookies: waf_cookies_repo,
         },
         services: Services {
             token: token_service,

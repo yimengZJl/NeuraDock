@@ -26,6 +26,7 @@ pub fn builder() -> Builder<tauri::Wry> {
             get_balance_statistics,
             // Provider commands
             add_provider,
+            check_browser_available,
             get_all_providers,
             create_provider,
             update_provider,

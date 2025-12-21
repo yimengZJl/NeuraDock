@@ -22,11 +22,7 @@ pub async fn get_trend(
     let start_date = end_date - chrono::Duration::days(days as i64 - 1);
 
     let rows = balance_history_repo
-        .list_daily_summaries_in_range(
-            &AccountId::from_string(account_id),
-            start_date,
-            end_date,
-        )
+        .list_daily_summaries_in_range(&AccountId::from_string(account_id), start_date, end_date)
         .await?;
 
     info!(

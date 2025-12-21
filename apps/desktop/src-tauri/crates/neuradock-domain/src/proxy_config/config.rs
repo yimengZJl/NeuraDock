@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use std::str::FromStr;
 
 use crate::shared::DomainError;
 
@@ -19,14 +20,17 @@ impl ProxyType {
             ProxyType::Socks5 => "socks5",
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Result<Self, DomainError> {
+impl FromStr for ProxyType {
+    type Err = DomainError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "http" | "https" => Ok(ProxyType::Http),
             "socks5" => Ok(ProxyType::Socks5),
             _ => Err(DomainError::Validation(format!(
-                "Invalid proxy type: {}. Must be 'http' or 'socks5'",
-                s
+                "Invalid proxy type: {s}. Must be 'http' or 'socks5'"
             ))),
         }
     }
@@ -57,11 +61,7 @@ impl ProxyConfig {
     }
 
     /// Create a new enabled proxy configuration
-    pub fn new(
-        proxy_type: ProxyType,
-        host: String,
-        port: u16,
-    ) -> Result<Self, DomainError> {
+    pub fn new(proxy_type: ProxyType, host: String, port: u16) -> Result<Self, DomainError> {
         // Validate host
         if host.trim().is_empty() {
             return Err(DomainError::Validation(
@@ -257,7 +257,10 @@ mod tests {
         assert_eq!(config.proxy_type(), ProxyType::Http);
         assert_eq!(config.host(), "127.0.0.1");
         assert_eq!(config.port(), 7890);
-        assert_eq!(config.proxy_url(), Some("http://127.0.0.1:7890".to_string()));
+        assert_eq!(
+            config.proxy_url(),
+            Some("http://127.0.0.1:7890".to_string())
+        );
     }
 
     #[test]
@@ -274,9 +277,14 @@ mod tests {
         let mut config = ProxyConfig::new_disabled();
 
         // Enable with valid settings
-        config.update(true, ProxyType::Socks5, "localhost".to_string(), 1080).unwrap();
+        config
+            .update(true, ProxyType::Socks5, "localhost".to_string(), 1080)
+            .unwrap();
         assert!(config.is_enabled());
-        assert_eq!(config.proxy_url(), Some("socks5://localhost:1080".to_string()));
+        assert_eq!(
+            config.proxy_url(),
+            Some("socks5://localhost:1080".to_string())
+        );
 
         // Disable
         config.disable();

@@ -77,7 +77,7 @@ impl<'a> AccountDtoMapper<'a> {
         self
     }
 
-    pub fn to_dto(self) -> AccountDto {
+    pub fn into_dto(self) -> AccountDto {
         let acc = self.account;
 
         // Check if balance is stale (> 24 hours old)
@@ -144,7 +144,7 @@ impl<'a> AccountDetailDtoMapper<'a> {
         self
     }
 
-    pub fn to_dto(self) -> AccountDetailDto {
+    pub fn into_dto(self) -> AccountDetailDto {
         let acc = self.account;
 
         AccountDetailDto {

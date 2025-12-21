@@ -78,4 +78,3 @@ async fn balance_history_repo_save_and_find_latest_integration() {
     assert_eq!(latest.id(), "newer");
     assert_eq!(latest.current_balance(), 25.0);
 }
-

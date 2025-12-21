@@ -14,7 +14,9 @@ pub async fn get_all_accounts(
     repositories: State<'_, Repositories>,
     queries: State<'_, Queries>,
 ) -> Result<Vec<dtos::AccountDto>, CommandError> {
-    let providers = provider_map(&repositories).await.map_err(CommandError::from)?;
+    let providers = provider_map(&repositories)
+        .await
+        .map_err(CommandError::from)?;
 
     queries
         .account
@@ -40,7 +42,9 @@ pub async fn get_account_detail(
 
     use crate::application::dtos::AccountDetailDtoMapper;
 
-    let providers = provider_map(&repositories).await.map_err(CommandError::from)?;
+    let providers = provider_map(&repositories)
+        .await
+        .map_err(CommandError::from)?;
     let provider_name = providers
         .get(account.provider_id().as_str())
         .map(|p| p.name().to_string())
@@ -48,7 +52,7 @@ pub async fn get_account_detail(
 
     Ok(AccountDetailDtoMapper::new(&account, provider_name)
         .with_balance(None)
-        .to_dto())
+        .into_dto())
 }
 
 async fn provider_map(

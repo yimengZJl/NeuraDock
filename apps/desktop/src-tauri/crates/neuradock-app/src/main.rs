@@ -117,10 +117,7 @@ async fn main() {
             tracing::info!("🚀 Starting app state initialization...");
             let started_at = Instant::now();
             let init_result = rx.recv().map_err(|e| {
-                Box::new(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    e.to_string(),
-                )) as Box<dyn std::error::Error>
+                Box::new(std::io::Error::other(e.to_string())) as Box<dyn std::error::Error>
             })?;
             match init_result {
                 Ok(app_state) => {
@@ -140,10 +137,7 @@ async fn main() {
                 }
                 Err(message) => {
                     tracing::error!("❌ Failed to initialize app state: {}", message);
-                    return Err(Box::new(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        message,
-                    )));
+                    return Err(Box::new(std::io::Error::other(message)));
                 }
             }
 

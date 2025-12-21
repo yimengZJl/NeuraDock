@@ -79,4 +79,3 @@ pub async fn fetch_all_daily_summaries(
         .list_all_daily_summaries(&AccountId::from_string(account_id))
         .await
 }
-

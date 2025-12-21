@@ -25,16 +25,6 @@ pub struct CommandError {
 }
 
 impl CommandError {
-    /// Create a new CommandError with explicit fields
-    pub fn new(code: u16, message: String, severity: ErrorSeverity, recoverable: bool) -> Self {
-        Self {
-            code,
-            message,
-            severity,
-            recoverable,
-        }
-    }
-
     /// Create an error from an error code and message
     pub fn from_code(error_code: ErrorCode, message: impl Into<String>) -> Self {
         Self {

@@ -75,7 +75,7 @@ impl BalanceService {
             self.headless_browser,
             proxy_url,
         )
-            .map_err(|e| DomainError::Infrastructure(e.to_string()))?;
+        .map_err(|e| DomainError::Infrastructure(e.to_string()))?;
         let user_info = executor
             .fetch_balance_only(account_id, &provider)
             .await

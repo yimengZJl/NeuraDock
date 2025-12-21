@@ -2,6 +2,7 @@ use std::time::Duration;
 
 /// Centralized timeout and duration configuration
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct TimeoutConfig {
     /// WAF challenge wait time (default: 8 seconds)
     pub waf_wait: Duration,
@@ -35,6 +36,7 @@ impl Default for TimeoutConfig {
     }
 }
 
+#[allow(dead_code)]
 impl TimeoutConfig {
     /// Create a new timeout configuration with custom values
     pub fn new() -> Self {

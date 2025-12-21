@@ -71,7 +71,7 @@ impl KeyManager {
         }
 
         // Write salt to file
-        fs::write(&self.salt_path, &salt)
+        fs::write(&self.salt_path, salt)
             .map_err(|e| KeyManagerError::IoError(format!("Failed to write salt file: {}", e)))?;
 
         Ok(salt)

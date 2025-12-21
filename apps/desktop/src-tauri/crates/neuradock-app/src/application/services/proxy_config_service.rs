@@ -25,9 +25,7 @@ impl ProxyConfigService {
     ) -> Result<ProxyConfigDto, DomainError> {
         let mut config = self.repo.get().await?;
 
-        let proxy_type = input
-            .to_proxy_type()
-            .map_err(|e| DomainError::Validation(e))?;
+        let proxy_type = input.to_proxy_type().map_err(DomainError::Validation)?;
 
         config.update(input.enabled, proxy_type, input.host, input.port)?;
         self.repo.save(&config).await?;
@@ -35,4 +33,3 @@ impl ProxyConfigService {
         Ok(ProxyConfigDto::from(&config))
     }
 }
-

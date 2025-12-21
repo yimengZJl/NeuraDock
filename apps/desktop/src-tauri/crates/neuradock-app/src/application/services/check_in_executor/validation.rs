@@ -25,14 +25,12 @@ pub async fn load_and_validate_account(
 pub fn validate_check_in_eligibility(
     account: &Account,
     provider: &Provider,
-    account_id: &str,
     account_name: &str,
 ) -> Option<AccountCheckInResult> {
     // Check account eligibility
     if let Err(e) = CheckInDomainService::can_check_in(account) {
         warn!("[{}] Check-in validation failed: {}", account_name, e);
         return Some(AccountCheckInResult {
-            account_id: account_id.to_string(),
             account_name: account_name.to_string(),
             success: false,
             message: e.to_string(),
@@ -44,7 +42,6 @@ pub fn validate_check_in_eligibility(
     if let Err(e) = CheckInDomainService::validate_provider(provider) {
         log::error!("[{}] Provider validation failed: {}", account_name, e);
         return Some(AccountCheckInResult {
-            account_id: account_id.to_string(),
             account_name: account_name.to_string(),
             success: false,
             message: e.to_string(),

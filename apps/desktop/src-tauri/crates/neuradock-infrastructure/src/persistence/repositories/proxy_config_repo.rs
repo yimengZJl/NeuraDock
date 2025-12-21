@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::{Row, SqlitePool};
+use std::str::FromStr;
 use std::sync::Arc;
 
 use neuradock_domain::proxy_config::{ProxyConfig, ProxyConfigRepository, ProxyType};
@@ -157,7 +158,8 @@ mod tests {
         let pool = setup_test_db().await;
         let repo = SqliteProxyConfigRepository::new(Arc::new(pool));
 
-        let mut config = ProxyConfig::new(ProxyType::Socks5, "127.0.0.1".to_string(), 1080).unwrap();
+        let mut config =
+            ProxyConfig::new(ProxyType::Socks5, "127.0.0.1".to_string(), 1080).unwrap();
         repo.save(&config).await.unwrap();
 
         let loaded = repo.get().await.unwrap();

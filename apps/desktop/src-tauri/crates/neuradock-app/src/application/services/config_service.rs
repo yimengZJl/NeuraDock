@@ -40,16 +40,6 @@ impl LogLevel {
             LogLevel::Trace => "trace",
         }
     }
-
-    pub fn to_tracing_level(&self) -> tracing::Level {
-        match self {
-            LogLevel::Error => tracing::Level::ERROR,
-            LogLevel::Warn => tracing::Level::WARN,
-            LogLevel::Info => tracing::Level::INFO,
-            LogLevel::Debug => tracing::Level::DEBUG,
-            LogLevel::Trace => tracing::Level::TRACE,
-        }
-    }
 }
 
 /// Persistent configuration structure

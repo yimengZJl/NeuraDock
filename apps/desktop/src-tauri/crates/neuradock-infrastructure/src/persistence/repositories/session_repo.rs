@@ -15,7 +15,7 @@ struct SessionRow {
 }
 
 impl SessionRow {
-    fn to_session(self) -> Session {
+    fn into_session(self) -> Session {
         Session::restore(
             AccountId::from_string(&self.account_id),
             self.token,
@@ -79,7 +79,7 @@ impl SessionRepository for SqliteSessionRepository {
             )
             .await?;
 
-        Ok(row.map(|r| r.to_session()))
+        Ok(row.map(|r| r.into_session()))
     }
 
     async fn delete(&self, account_id: &AccountId) -> Result<(), DomainError> {
@@ -106,6 +106,6 @@ impl SessionRepository for SqliteSessionRepository {
             )
             .await?;
 
-        Ok(rows.into_iter().map(|r| r.to_session()).collect())
+        Ok(rows.into_iter().map(|r| r.into_session()).collect())
     }
 }

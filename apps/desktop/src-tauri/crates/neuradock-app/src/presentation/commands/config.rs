@@ -28,7 +28,8 @@ pub async fn set_log_level(level: String, state: State<'_, Services>) -> Result<
         }
     };
 
-    state.config
+    state
+        .config
         .set_log_level(log_level)
         .map_err(|e| CommandError::infrastructure(format!("Failed to save log level: {}", e)))?;
     Ok(())

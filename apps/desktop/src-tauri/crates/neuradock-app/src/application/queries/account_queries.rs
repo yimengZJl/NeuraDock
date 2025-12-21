@@ -43,82 +43,12 @@ impl AccountQueryService {
 
                 AccountDtoMapper::new(acc, provider_name)
                     .with_time(now)
-                    .to_dto()
+                    .into_dto()
             })
             .collect();
 
         Ok(dtos)
     }
-
-    /// Get a single account by ID
-    pub async fn get_account_by_id(
-        &self,
-        account_id: &str,
-        providers: &HashMap<String, Provider>,
-    ) -> Result<Option<AccountDto>, DomainError> {
-        use neuradock_domain::shared::AccountId;
-
-        let account_id = AccountId::from_string(account_id);
-        let account = self.account_repo.find_by_id(&account_id).await?;
-
-        use crate::application::dtos::AccountDtoMapper;
-
-        let now = Utc::now();
-        Ok(account.map(|acc| {
-            let provider_name = providers
-                .get(acc.provider_id().as_str())
-                .map(|p| p.name().to_string())
-                .unwrap_or_else(|| "Unknown".to_string());
-
-            AccountDtoMapper::new(&acc, provider_name)
-                .with_time(now)
-                .to_dto()
-        }))
-    }
-
-    /// Get enabled accounts only
-    pub async fn get_enabled_accounts(
-        &self,
-        providers: &HashMap<String, Provider>,
-    ) -> Result<Vec<AccountDto>, DomainError> {
-        self.get_all_accounts(true, providers).await
-    }
-
-    /// Get account summary statistics
-    pub async fn get_account_statistics(&self) -> Result<AccountStatistics, DomainError> {
-        let all_accounts = self.account_repo.find_all().await?;
-        let enabled_accounts = all_accounts.iter().filter(|a| a.is_enabled()).count();
-
-        let total_balance: f64 = all_accounts
-            .iter()
-            .filter_map(|a| a.current_balance())
-            .sum();
-
-        let online_accounts = all_accounts
-            .iter()
-            .filter(|a| a.is_session_valid() || !a.is_balance_stale(24))
-            .count();
-
-        Ok(AccountStatistics {
-            total_accounts: all_accounts.len(),
-            enabled_accounts,
-            disabled_accounts: all_accounts.len() - enabled_accounts,
-            online_accounts,
-            offline_accounts: all_accounts.len() - online_accounts,
-            total_balance,
-        })
-    }
-}
-
-/// Account statistics view model
-#[derive(Debug, Clone)]
-pub struct AccountStatistics {
-    pub total_accounts: usize,
-    pub enabled_accounts: usize,
-    pub disabled_accounts: usize,
-    pub online_accounts: usize,
-    pub offline_accounts: usize,
-    pub total_balance: f64,
 }
 
 #[cfg(test)]
@@ -222,25 +152,5 @@ mod tests {
         let result = service.get_all_accounts(true, &providers).await.unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].name, "Account 1");
-    }
-
-    #[tokio::test]
-    async fn test_get_account_statistics() {
-        let accounts = vec![
-            create_test_account("Account 1", true),
-            create_test_account("Account 2", false),
-            create_test_account("Account 3", true),
-        ];
-
-        let repo = Arc::new(MockAccountRepository {
-            accounts: accounts.clone(),
-        });
-
-        let service = AccountQueryService::new(repo);
-
-        let stats = service.get_account_statistics().await.unwrap();
-        assert_eq!(stats.total_accounts, 3);
-        assert_eq!(stats.enabled_accounts, 2);
-        assert_eq!(stats.disabled_accounts, 1);
     }
 }

@@ -20,7 +20,7 @@ struct BalanceHistoryRow {
 }
 
 impl BalanceHistoryRow {
-    fn to_record(self) -> BalanceHistoryRecord {
+    fn into_record(self) -> BalanceHistoryRecord {
         BalanceHistoryRecord::restore(
             self.id,
             AccountId::from_string(&self.account_id),
@@ -41,9 +41,12 @@ struct DailySummaryRow {
 }
 
 impl DailySummaryRow {
-    fn to_summary(self) -> Result<BalanceHistoryDailySummary, DomainError> {
+    fn try_into_summary(self) -> Result<BalanceHistoryDailySummary, DomainError> {
         let date = NaiveDate::parse_from_str(&self.check_in_date, "%Y-%m-%d").map_err(|e| {
-            DomainError::Validation(format!("Invalid check_in_date: {} ({})", self.check_in_date, e))
+            DomainError::Validation(format!(
+                "Invalid check_in_date: {} ({})",
+                self.check_in_date, e
+            ))
         })?;
 
         Ok(BalanceHistoryDailySummary::restore(
@@ -123,7 +126,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
             )
             .await?;
 
-        Ok(row.map(|r| r.to_record()))
+        Ok(row.map(|r| r.into_record()))
     }
 
     async fn find_latest_by_account_id_on_date(
@@ -155,7 +158,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
             )
             .await?;
 
-        Ok(row.map(|r| r.to_record()))
+        Ok(row.map(|r| r.into_record()))
     }
 
     async fn list_all_daily_summaries(
@@ -182,7 +185,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
             )
             .await?;
 
-        rows.into_iter().map(|r| r.to_summary()).collect()
+        rows.into_iter().map(|r| r.try_into_summary()).collect()
     }
 
     async fn list_daily_summaries_in_range(
@@ -224,7 +227,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
             )
             .await?;
 
-        rows.into_iter().map(|r| r.to_summary()).collect()
+        rows.into_iter().map(|r| r.try_into_summary()).collect()
     }
 
     async fn find_daily_summary(
@@ -263,7 +266,7 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
             )
             .await?;
 
-        row.map(|r| r.to_summary()).transpose()
+        row.map(|r| r.try_into_summary()).transpose()
     }
 
     async fn list_distinct_account_ids(&self) -> Result<Vec<AccountId>, DomainError> {
@@ -273,6 +276,9 @@ impl BalanceHistoryRepository for SqliteBalanceHistoryRepository {
             .await
             .map_err(|e| DomainError::Repository(format!("List distinct account ids: {e}")))?;
 
-        Ok(ids.into_iter().map(|id| AccountId::from_string(&id)).collect())
+        Ok(ids
+            .into_iter()
+            .map(|id| AccountId::from_string(&id))
+            .collect())
     }
 }

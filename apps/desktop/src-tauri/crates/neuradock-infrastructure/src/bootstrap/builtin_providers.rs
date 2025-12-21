@@ -58,7 +58,7 @@ pub async fn seed_builtin_providers(
         config
             .default_nodes
             .as_ref()
-            .map_or(false, |nodes| !nodes.is_empty())
+            .is_some_and(|nodes| !nodes.is_empty())
     });
 
     let mut base_urls_by_provider: HashMap<ProviderId, HashSet<String>> = HashMap::new();

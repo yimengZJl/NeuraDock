@@ -1,5 +1,5 @@
-mod proxy_config;
+mod config;
 mod repository;
 
-pub use proxy_config::*;
+pub use config::*;
 pub use repository::*;

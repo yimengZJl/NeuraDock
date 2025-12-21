@@ -8,6 +8,7 @@ use crate::presentation::state::Repositories;
 use neuradock_domain::independent_key::{
     IndependentApiKey, IndependentApiKeyConfig, IndependentKeyId, KeyProviderType,
 };
+use std::str::FromStr;
 
 #[tauri::command]
 #[specta::specta]
@@ -52,7 +53,7 @@ pub async fn create_independent_key(
     repositories: State<'_, Repositories>,
 ) -> Result<IndependentKeyDto, CommandError> {
     // Validate provider type
-    let provider_type = KeyProviderType::from_str(&input.provider_type).ok_or_else(|| {
+    let provider_type = KeyProviderType::from_str(&input.provider_type).map_err(|_| {
         CommandError::validation(format!("Invalid provider_type: {}", input.provider_type))
     })?;
 

@@ -92,10 +92,13 @@ impl CommandHandler<ExecuteCheckInCommand> for ExecuteCheckInCommandHandler {
         let proxy_url = proxy_config.proxy_url();
 
         // Create executor with proxy support
-        let executor =
-            CheckInExecutor::with_proxy(self.account_repo.clone(), self.headless_browser, proxy_url)
-                .to_infra_err()?
-                .with_waf_cookies_repo(self.waf_cookies_repo.clone());
+        let executor = CheckInExecutor::with_proxy(
+            self.account_repo.clone(),
+            self.headless_browser,
+            proxy_url,
+        )
+        .to_infra_err()?
+        .with_waf_cookies_repo(self.waf_cookies_repo.clone());
 
         // Execute check-in
         let result = executor
