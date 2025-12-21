@@ -8,7 +8,7 @@ pub use types::{CheckInResult, RetryConfig, UserInfo};
 
 use anyhow::{Context, Result};
 use log::{debug, warn};
-use reqwest::{Client, StatusCode};
+use reqwest::{Client, Proxy, StatusCode};
 use std::time::Duration;
 use tokio::time::sleep;
 
@@ -21,15 +21,36 @@ pub struct HttpClient {
 
 impl HttpClient {
     pub fn new() -> Result<Self> {
-        Self::with_retry_config(RetryConfig::default())
+        Self::with_retry_config_and_proxy(RetryConfig::default(), None)
     }
 
     pub fn with_retry_config(retry_config: RetryConfig) -> Result<Self> {
-        let client = Client::builder()
+        Self::with_retry_config_and_proxy(retry_config, None)
+    }
+
+    pub fn with_proxy(proxy_url: Option<String>) -> Result<Self> {
+        Self::with_retry_config_and_proxy(RetryConfig::default(), proxy_url)
+    }
+
+    pub fn with_retry_config_and_proxy(
+        retry_config: RetryConfig,
+        proxy_url: Option<String>,
+    ) -> Result<Self> {
+        let mut client_builder = Client::builder()
             .user_agent(USER_AGENT)
             .cookie_store(true)
             .timeout(Duration::from_secs(30))
-            .no_proxy()
+            // Always ignore environment/system proxy settings; use only app config.
+            .no_proxy();
+
+        // Apply proxy configuration if provided.
+        if let Some(url) = proxy_url {
+            debug!("🌐 Configuring HTTP client with proxy: {}", url);
+            let proxy = Proxy::all(&url).context("Failed to create proxy")?;
+            client_builder = client_builder.proxy(proxy);
+        }
+
+        let client = client_builder
             .build()
             .context("Failed to create HTTP client")?;
 

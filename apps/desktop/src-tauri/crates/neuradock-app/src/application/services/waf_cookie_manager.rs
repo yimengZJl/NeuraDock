@@ -15,9 +15,9 @@ pub struct WafCookieManager {
 
 impl WafCookieManager {
     /// Create a new WAF cookie manager
-    pub fn new(headless_browser: bool) -> Self {
+    pub fn new(headless_browser: bool, proxy_url: Option<String>) -> Self {
         Self {
-            waf_service: WafBypassService::new(headless_browser),
+            waf_service: WafBypassService::with_proxy(headless_browser, proxy_url),
             waf_cookies_repo: None,
         }
     }
@@ -183,7 +183,7 @@ mod tests {
 
     #[test]
     fn test_is_waf_challenge_error() {
-        let manager = WafCookieManager::new(true);
+        let manager = WafCookieManager::new(true, None);
 
         // Test WAF_CHALLENGE marker
         let error = anyhow::anyhow!("WAF_CHALLENGE detected");

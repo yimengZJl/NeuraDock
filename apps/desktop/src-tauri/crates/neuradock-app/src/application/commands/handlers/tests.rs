@@ -172,6 +172,7 @@ async fn test_update_account_command_handler() {
     let command = UpdateAccountCommand {
         account_id: account_id.as_str().to_string(),
         name: Some("Updated Name".to_string()),
+        provider_id: None,
         cookies: None,
         api_user: None,
         auto_checkin_enabled: Some(true),
@@ -277,6 +278,7 @@ async fn test_update_nonexistent_account_fails() {
     let command = UpdateAccountCommand {
         account_id: "nonexistent-id".to_string(),
         name: Some("New Name".to_string()),
+        provider_id: None,
         cookies: None,
         api_user: None,
         auto_checkin_enabled: None,

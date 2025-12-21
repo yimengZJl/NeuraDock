@@ -46,6 +46,8 @@ pub fn builder() -> Builder<tauri::Wry> {
             // Config commands
             get_log_level,
             set_log_level,
+            get_proxy_config,
+            update_proxy_config,
             // Notification commands
             create_notification_channel,
             update_notification_channel,

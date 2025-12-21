@@ -35,9 +35,7 @@ impl super::AutoCheckInScheduler {
             metadata.insert(
                 account_id_for_storage.clone(),
                 TaskMetadata {
-                    account_id: account_id_for_storage.clone(),
                     account_name: account_name_clone.clone(),
-                    started_at: chrono::Utc::now(),
                     last_execution: None,
                 },
             );

@@ -5,7 +5,6 @@ mod presentation;
 
 // Use external crates
 
-use presentation::commands::*;
 use presentation::ipc;
 use presentation::state::{AppState, CommandHandlers, Queries, Repositories, Services};
 use std::time::Instant;
@@ -134,7 +133,6 @@ async fn main() {
                     app.manage(services);
                     app.manage(queries);
                     app.manage(command_handlers);
-                    app.manage(app_state);
                     tracing::info!(
                         "✅ App state initialized successfully ({}ms)",
                         started_at.elapsed().as_millis()

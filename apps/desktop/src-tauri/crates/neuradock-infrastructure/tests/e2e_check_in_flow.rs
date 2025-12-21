@@ -8,13 +8,12 @@
 /// 5. Verify events are published
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 use neuradock_domain::account::{Account, AccountRepository, Credentials};
 use neuradock_domain::balance::BalanceRepository;
 use neuradock_domain::events::EventBus;
 use neuradock_domain::session::SessionRepository;
-use neuradock_domain::shared::{AccountId, ProviderId};
+use neuradock_domain::shared::ProviderId;
 use neuradock_infrastructure::events::InMemoryEventBus;
 use neuradock_infrastructure::persistence::repositories::{
     SqliteAccountRepository, SqliteBalanceRepository, SqliteSessionRepository,
@@ -28,7 +27,7 @@ async fn e2e_complete_check_in_flow() {
     // Setup: Database and Dependencies
     // ============================================================
     let (pool, encryption) = test_helpers::setup_in_memory_db().await;
-    let event_bus: Arc<dyn EventBus> = Arc::new(InMemoryEventBus::new());
+    let _event_bus: Arc<dyn EventBus> = Arc::new(InMemoryEventBus::new());
 
     let account_repo: Arc<dyn AccountRepository> = Arc::new(SqliteAccountRepository::new(
         Arc::new(pool.clone()),
@@ -36,7 +35,7 @@ async fn e2e_complete_check_in_flow() {
     ));
 
     let balance_repo = Arc::new(SqliteBalanceRepository::new(Arc::new(pool.clone())));
-    let session_repo = Arc::new(SqliteSessionRepository::new(Arc::new(pool.clone())));
+    let _session_repo = Arc::new(SqliteSessionRepository::new(Arc::new(pool.clone())));
 
     // ============================================================
     // Step 1: Create Account

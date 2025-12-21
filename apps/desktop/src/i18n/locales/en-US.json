@@ -381,7 +381,21 @@
     "logFolderDescription": "Collect detailed diagnostics by sharing this folder when reporting issues.",
     "opening": "Opening...",
     "logFolderOpened": "Log folder opened: {{path}}",
-    "failedToOpenLogs": "Failed to open log folder"
+    "failedToOpenLogs": "Failed to open log folder",
+    "network": "Network",
+    "proxyEnabled": "Enable Proxy",
+    "proxyDescription": "Configure proxy server for network requests (useful for accessing blocked services like AnyRouter)",
+    "proxyType": "Proxy Type",
+    "proxyTypeHttp": "HTTP/HTTPS",
+    "proxyTypeSocks5": "SOCKS5",
+    "proxyTypeHttpHint": "Compatible with most proxies (Clash, V2Ray, etc.)",
+    "proxyTypeSocks5Hint": "Lower-level protocol, more flexible",
+    "proxyHost": "Proxy Host",
+    "proxyPort": "Proxy Port",
+    "proxyValidationError": "Please enter valid proxy host and port when proxy is enabled",
+    "proxyLoadFailed": "Failed to load proxy configuration",
+    "proxySaveSuccess": "Proxy configuration saved successfully",
+    "proxySaveFailed": "Failed to save proxy configuration: {{message}}"
   },
   "common": {
     "loading": "Loading...",

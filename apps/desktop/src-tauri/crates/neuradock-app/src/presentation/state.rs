@@ -6,13 +6,15 @@ use crate::application::queries::{
     AccountQueryService, BalanceStatisticsQueryService, CheckInStreakQueries,
 };
 use crate::application::services::{
-    BalanceService, ClaudeConfigService, CodexConfigService, ConfigService, TokenService,
+    BalanceService, ClaudeConfigService, CodexConfigService, ConfigService,
+    ProviderModelsQueryService, ProxyConfigService, TokenService,
 };
 use neuradock_domain::account::AccountRepository;
 use neuradock_domain::check_in::{Provider, ProviderRepository};
 use neuradock_domain::custom_node::CustomProviderNodeRepository;
 use neuradock_domain::independent_key::IndependentKeyRepository;
 use neuradock_domain::notification::NotificationChannelRepository;
+use neuradock_domain::proxy_config::ProxyConfigRepository;
 use neuradock_domain::session::SessionRepository;
 use neuradock_domain::shared::DomainError;
 use neuradock_infrastructure::persistence::repositories::{
@@ -45,6 +47,7 @@ pub struct Repositories {
     pub custom_node: Arc<dyn CustomProviderNodeRepository>,
     pub independent_key: Arc<dyn IndependentKeyRepository>,
     pub provider: Arc<dyn ProviderRepository>,
+    pub proxy_config: Arc<dyn ProxyConfigRepository>,
     pub provider_models: Arc<SqliteProviderModelsRepository>,
     pub waf_cookies: Arc<SqliteWafCookiesRepository>,
 }
@@ -56,6 +59,8 @@ pub struct Services {
     pub codex_config: Arc<CodexConfigService>,
     pub config: Arc<ConfigService>,
     pub balance: Arc<BalanceService>,
+    pub proxy_config: Arc<ProxyConfigService>,
+    pub provider_models_query: Arc<ProviderModelsQueryService>,
 }
 
 #[derive(Clone)]

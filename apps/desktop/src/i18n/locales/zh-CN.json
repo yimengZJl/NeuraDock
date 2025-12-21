@@ -381,7 +381,21 @@
     "logFolderDescription": "排查问题或反馈 Bug 时，可一键打开此目录并分享日志。",
     "opening": "打开中...",
     "logFolderOpened": "日志文件夹已打开：{{path}}",
-    "failedToOpenLogs": "打开日志文件夹失败"
+    "failedToOpenLogs": "打开日志文件夹失败",
+    "network": "网络",
+    "proxyEnabled": "启用代理",
+    "proxyDescription": "为网络请求配置代理服务器（用于访问被屏蔽的服务，如 AnyRouter）",
+    "proxyType": "代理类型",
+    "proxyTypeHttp": "HTTP/HTTPS",
+    "proxyTypeSocks5": "SOCKS5",
+    "proxyTypeHttpHint": "兼容大多数代理（Clash、V2Ray 等）",
+    "proxyTypeSocks5Hint": "更底层的协议，更灵活",
+    "proxyHost": "代理主机",
+    "proxyPort": "代理端口",
+    "proxyValidationError": "启用代理时，请输入有效的代理主机和端口",
+    "proxyLoadFailed": "加载代理配置失败",
+    "proxySaveSuccess": "代理配置已保存",
+    "proxySaveFailed": "保存代理配置失败：{{message}}"
   },
   "common": {
     "loading": "加载中...",

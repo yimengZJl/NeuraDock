@@ -10,7 +10,8 @@ use crate::application::queries::{AccountQueryService, CheckInStreakQueries};
 use crate::application::queries::BalanceStatisticsQueryService;
 use crate::application::services::{
     AutoCheckInScheduler, BalanceHistoryService, BalanceService, ClaudeConfigService,
-    CodexConfigService, ConfigService, NotificationService, ProviderModelsService, TokenService,
+    CodexConfigService, ConfigService, NotificationService, ProviderModelsQueryService,
+    ProviderModelsService, ProxyConfigService, TokenService,
 };
 use crate::presentation::state::{
     AppState, CommandHandlers, Queries, Repositories, Services,
@@ -21,6 +22,7 @@ use neuradock_domain::custom_node::CustomProviderNodeRepository;
 use neuradock_domain::events::account_events::*;
 use neuradock_domain::independent_key::IndependentKeyRepository;
 use neuradock_domain::notification::NotificationChannelRepository;
+use neuradock_domain::proxy_config::ProxyConfigRepository;
 use neuradock_domain::session::SessionRepository;
 use neuradock_domain::token::TokenRepository;
 use neuradock_infrastructure::bootstrap::seed_builtin_providers;
@@ -30,7 +32,8 @@ use neuradock_infrastructure::persistence::{
     repositories::{
         SqliteAccountRepository, SqliteCustomProviderNodeRepository,
         SqliteIndependentKeyRepository, SqliteProviderModelsRepository, SqliteProviderRepository,
-        SqliteSessionRepository, SqliteTokenRepository, SqliteWafCookiesRepository,
+        SqliteProxyConfigRepository, SqliteSessionRepository, SqliteTokenRepository,
+        SqliteWafCookiesRepository,
     },
     Database,
 };
@@ -109,7 +112,6 @@ pub async fn build_app_state(
     );
 
     let pool = Arc::new(database.pool().clone());
-    let db = Arc::new(database);
 
     let account_repo = Arc::new(SqliteAccountRepository::new(
         pool.clone(),
@@ -130,6 +132,8 @@ pub async fn build_app_state(
         Arc::new(SqliteProviderRepository::new(pool.clone())) as Arc<dyn ProviderRepository>;
     let provider_models_repo = Arc::new(SqliteProviderModelsRepository::new(pool.clone()));
     let waf_cookies_repo = Arc::new(SqliteWafCookiesRepository::new(pool.clone()));
+    let proxy_config_repo = Arc::new(SqliteProxyConfigRepository::new(pool.clone()))
+        as Arc<dyn ProxyConfigRepository>;
 
     info!("🌱 Seeding built-in providers...");
     let started_at = Instant::now();
@@ -149,6 +153,7 @@ pub async fn build_app_state(
         token_repo.clone(),
         account_repo.clone(),
         provider_repo.clone(),
+        proxy_config_repo.clone(),
         waf_cookies_repo.clone(),
     )?;
     let claude_config_service = Arc::new(ClaudeConfigService::new());
@@ -162,12 +167,21 @@ pub async fn build_app_state(
     let provider_models_service = Arc::new(ProviderModelsService::new(
         provider_models_repo.clone(),
         waf_cookies_repo.clone(),
+        proxy_config_repo.clone(),
+    ));
+    let provider_models_query = Arc::new(ProviderModelsQueryService::new(
+        account_repo.clone(),
+        provider_repo.clone(),
+        provider_models_repo.clone(),
+        waf_cookies_repo.clone(),
+        proxy_config_repo.clone(),
     ));
     let balance_history_service = Arc::new(BalanceHistoryService::new(pool.clone()));
     let balance_service = Arc::new(BalanceService::new(
         account_repo.clone(),
         provider_repo.clone(),
         balance_history_service.clone(),
+        proxy_config_repo.clone(),
         true,
     ));
     let balance_statistics_queries = Arc::new(BalanceStatisticsQueryService::new(
@@ -178,7 +192,7 @@ pub async fn build_app_state(
 
     info!("📊 Initializing scheduler...");
     let started_at = Instant::now();
-    let scheduler = Arc::new(AutoCheckInScheduler::new(account_repo.clone()).await?);
+    let scheduler = Arc::new(AutoCheckInScheduler::new().await?);
     info!(
         "✓ Scheduler initialized ({}ms)",
         started_at.elapsed().as_millis()
@@ -277,6 +291,7 @@ pub async fn build_app_state(
             ExecuteCheckInCommandHandler::new(
                 account_repo.clone(),
                 provider_repo.clone(),
+                proxy_config_repo.clone(),
                 provider_models_service.clone(),
                 balance_history_service.clone(),
                 waf_cookies_repo.clone(),
@@ -288,6 +303,7 @@ pub async fn build_app_state(
             BatchExecuteCheckInCommandHandler::new(
                 account_repo.clone(),
                 provider_repo.clone(),
+                proxy_config_repo.clone(),
                 provider_models_service.clone(),
                 balance_history_service.clone(),
                 waf_cookies_repo.clone(),
@@ -326,6 +342,7 @@ pub async fn build_app_state(
             custom_node: custom_node_repo,
             independent_key: independent_key_repo,
             provider: provider_repo,
+            proxy_config: proxy_config_repo.clone(),
             provider_models: provider_models_repo,
             waf_cookies: waf_cookies_repo,
         },
@@ -335,6 +352,8 @@ pub async fn build_app_state(
             codex_config: codex_config_service,
             config: config_service,
             balance: balance_service,
+            proxy_config: Arc::new(ProxyConfigService::new(proxy_config_repo.clone())),
+            provider_models_query,
         },
         queries: Queries {
             account: account_queries,
@@ -365,12 +384,13 @@ fn build_token_service(
     token_repo: Arc<dyn TokenRepository>,
     account_repo: Arc<dyn AccountRepository>,
     provider_repo: Arc<dyn ProviderRepository>,
+    proxy_config_repo: Arc<dyn ProxyConfigRepository>,
     waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
 ) -> Result<Arc<TokenService>, Box<dyn std::error::Error>> {
     info!("🔧 Initializing token services...");
     let started_at = Instant::now();
     let service = Arc::new(
-        TokenService::new(token_repo, account_repo, provider_repo)
+        TokenService::new(token_repo, account_repo, provider_repo, proxy_config_repo)
             .map_err(|e| format!("Failed to initialize token service: {}", e))?
             .with_waf_cookies_repo(waf_cookies_repo),
     );

@@ -11,6 +11,7 @@ use crate::application::services::{
 use crate::application::ResultExt;
 use neuradock_domain::account::AccountRepository;
 use neuradock_domain::check_in::ProviderRepository;
+use neuradock_domain::proxy_config::ProxyConfigRepository;
 use neuradock_domain::shared::{AccountId, DomainError};
 use neuradock_infrastructure::persistence::repositories::SqliteWafCookiesRepository;
 
@@ -20,6 +21,7 @@ use super::shared;
 pub struct BatchExecuteCheckInCommandHandler {
     account_repo: Arc<dyn AccountRepository>,
     provider_repo: Arc<dyn ProviderRepository>,
+    proxy_config_repo: Arc<dyn ProxyConfigRepository>,
     notification_service: Option<Arc<NotificationService>>,
     provider_models_service: Arc<ProviderModelsService>,
     balance_history_service: Arc<BalanceHistoryService>,
@@ -31,6 +33,7 @@ impl BatchExecuteCheckInCommandHandler {
     pub fn new(
         account_repo: Arc<dyn AccountRepository>,
         provider_repo: Arc<dyn ProviderRepository>,
+        proxy_config_repo: Arc<dyn ProxyConfigRepository>,
         provider_models_service: Arc<ProviderModelsService>,
         balance_history_service: Arc<BalanceHistoryService>,
         waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
@@ -39,6 +42,7 @@ impl BatchExecuteCheckInCommandHandler {
         Self {
             account_repo,
             provider_repo,
+            proxy_config_repo,
             notification_service: None,
             provider_models_service,
             balance_history_service,
@@ -68,9 +72,14 @@ impl CommandHandler<BatchExecuteCheckInCommand> for BatchExecuteCheckInCommandHa
         let mut failed = 0;
         let mut results = Vec::new();
 
-        let executor = CheckInExecutor::new(self.account_repo.clone(), self.headless_browser)
-            .to_infra_err()?
-            .with_waf_cookies_repo(self.waf_cookies_repo.clone());
+        // Get proxy configuration
+        let proxy_config = self.proxy_config_repo.get().await?;
+        let proxy_url = proxy_config.proxy_url();
+
+        let executor =
+            CheckInExecutor::with_proxy(self.account_repo.clone(), self.headless_browser, proxy_url)
+                .to_infra_err()?
+                .with_waf_cookies_repo(self.waf_cookies_repo.clone());
 
         for account_id in cmd.account_ids {
             // Load account to get provider_id

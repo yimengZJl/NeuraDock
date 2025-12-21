@@ -26,6 +26,7 @@ pub struct CreateAccountResult {
 pub struct UpdateAccountCommand {
     pub account_id: String,
     pub name: Option<String>,
+    pub provider_id: Option<String>,
     pub cookies: Option<HashMap<String, String>>,
     pub api_user: Option<String>,
     pub auto_checkin_enabled: Option<bool>,

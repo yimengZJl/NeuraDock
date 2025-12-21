@@ -1,5 +1,4 @@
 use chrono::{Duration, Utc};
-use sqlx::SqlitePool;
 use std::sync::Arc;
 
 use neuradock_domain::balance::{Balance, BalanceRepository};

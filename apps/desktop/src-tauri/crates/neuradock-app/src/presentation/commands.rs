@@ -6,6 +6,7 @@ pub mod config;
 pub mod independent_key;
 pub mod notification;
 pub mod provider;
+pub mod proxy_config;
 pub mod system;
 pub mod token;
 
@@ -17,5 +18,6 @@ pub use config::*;
 pub use independent_key::*;
 pub use notification::*;
 pub use provider::*;
+pub use proxy_config::*;
 pub use system::*;
 pub use token::*;

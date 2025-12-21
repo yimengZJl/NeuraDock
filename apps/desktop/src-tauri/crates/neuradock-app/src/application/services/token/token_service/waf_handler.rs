@@ -1,19 +1,20 @@
 use anyhow::{Context, Result};
 use neuradock_domain::account::Account;
 use neuradock_domain::check_in::Provider;
+use neuradock_infrastructure::http::WafBypassService;
 use std::collections::HashMap;
 
 impl super::TokenService {
     /// Get fresh WAF cookies via browser bypass (skips cache)
     pub(super) async fn get_fresh_waf_cookies(
         &self,
+        waf_service: &WafBypassService,
         provider: &Provider,
         account: &Account,
     ) -> Result<HashMap<String, String>> {
         let login_url = provider.login_url();
 
-        let waf_cookies = self
-            .waf_service
+        let waf_cookies = waf_service
             .get_waf_cookies(&login_url, account.name())
             .await
             .context("Failed to get WAF cookies")?;

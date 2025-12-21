@@ -143,6 +143,15 @@ impl super::WafBypassService {
             .user_data_dir(&temp_dir) // Use unique user data directory
             .chrome_executable(&browser_path); // Use found browser
 
+        // Apply proxy if configured (Chrome flag supports http(s):// and socks5://).
+        if let Some(proxy_url) = self.proxy_url.as_deref() {
+            info!(
+                "[{}] Launching browser with proxy: {}",
+                account_name, proxy_url
+            );
+            builder = builder.arg(format!("--proxy-server={}", proxy_url));
+        }
+
         // Set headless mode
         if !self.headless {
             builder = builder.with_head();

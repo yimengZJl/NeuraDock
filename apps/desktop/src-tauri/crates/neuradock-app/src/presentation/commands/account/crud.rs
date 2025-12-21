@@ -45,6 +45,7 @@ pub async fn update_account(
     let command = UpdateAccountCommand {
         account_id: input.account_id,
         name: input.name,
+        provider_id: input.provider_id,
         cookies: input.cookies,
         api_user: input.api_user,
         auto_checkin_enabled: input.auto_checkin_enabled,

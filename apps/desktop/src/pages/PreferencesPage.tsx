@@ -2,7 +2,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
+import { useProxyConfig } from '@/hooks/useProxyConfig';
 import { useTranslation } from 'react-i18next';
 import {
   Info, Sun,
@@ -14,7 +18,8 @@ import {
   AlertTriangle,
   Scale,
   Settings,
-  HardDrive
+  HardDrive,
+  Globe
 } from 'lucide-react';
 import { useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
@@ -153,6 +158,7 @@ const SystemSettings = () => {
   const { t } = useTranslation();
   const [cacheAgeHours, setCacheAgeHours] = useState<number>(1);
   const [logLevel, setLogLevel] = useState<string>('info');
+  const { config: proxyConfig, isLoading: proxyLoading, isSaving: proxySaving, updateField, saveConfig } = useProxyConfig();
 
   useEffect(() => {
     const stored = localStorage.getItem('maxCacheAgeHours');
@@ -183,6 +189,22 @@ const SystemSettings = () => {
       toast.success(t('settings.logFolderOpened', { path: logPath }));
     } catch (error) {
       toast.error(t('settings.failedToOpenLogs') + ': ' + String(error));
+    }
+  };
+
+  const handleSaveProxy = async () => {
+    // Validate before saving
+    if (proxyConfig.enabled && (!proxyConfig.host || proxyConfig.port === 0)) {
+      toast.error(t('settings.proxyValidationError'));
+      return;
+    }
+    await saveConfig(proxyConfig);
+  };
+
+  const handleProxyEnabledChange = async (checked: boolean) => {
+    updateField('enabled', checked);
+    if (!checked) {
+      await saveConfig({ ...proxyConfig, enabled: false });
     }
   };
 
@@ -232,6 +254,113 @@ const SystemSettings = () => {
                    <span className="absolute left-[100%] -translate-x-1/2">24h</span>
                </div>
            </div>
+        </div>
+      </SettingsGroup>
+
+      {/* Network & Proxy */}
+      <SettingsGroup title={t('settings.network')}>
+        <div className="p-6 space-y-6">
+          {/* Proxy Enable/Disable */}
+          <div className="flex items-start justify-between">
+            <div className="flex gap-4">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm shrink-0">
+                <Globe className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-base font-medium text-foreground">
+                  {t('settings.proxyEnabled')}
+                </Label>
+                <p className="text-sm text-muted-foreground leading-snug max-w-[280px] md:max-w-md">
+                  {t('settings.proxyDescription')}
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={proxyConfig.enabled}
+              onCheckedChange={handleProxyEnabledChange}
+              disabled={proxyLoading}
+            />
+          </div>
+
+          {/* Proxy Configuration */}
+          {proxyConfig.enabled && (
+            <div className="space-y-4 pl-14 pt-2 border-l-2 border-primary/20 animate-in fade-in slide-in-from-top-2 duration-300">
+              {/* Proxy Type */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-foreground">
+                  {t('settings.proxyType')}
+                </Label>
+                <Select
+                  value={proxyConfig.proxy_type}
+                  onValueChange={(value) => updateField('proxy_type', value)}
+                  disabled={proxyLoading}
+                >
+                  <SelectTrigger className="w-full h-input text-sm border-border/50 bg-background/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="http">{t('settings.proxyTypeHttp')}</SelectItem>
+                    <SelectItem value="socks5">{t('settings.proxyTypeSocks5')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {proxyConfig.proxy_type === 'http'
+                    ? t('settings.proxyTypeHttpHint')
+                    : t('settings.proxyTypeSocks5Hint')}
+                </p>
+              </div>
+
+              {/* Host */}
+              <div className="space-y-2">
+                <Label htmlFor="proxy-host" className="text-sm font-medium text-foreground">
+                  {t('settings.proxyHost')}
+                </Label>
+                <Input
+                  id="proxy-host"
+                  type="text"
+                  placeholder="127.0.0.1"
+                  value={proxyConfig.host}
+                  onChange={(e) => updateField('host', e.target.value)}
+                  disabled={proxyLoading}
+                  className="h-input text-sm"
+                />
+              </div>
+
+              {/* Port */}
+              <div className="space-y-2">
+                <Label htmlFor="proxy-port" className="text-sm font-medium text-foreground">
+                  {t('settings.proxyPort')}
+                </Label>
+                <Input
+                  id="proxy-port"
+                  type="number"
+                  placeholder="7890"
+                  min="1"
+                  max="65535"
+                  value={proxyConfig.port || ''}
+                  onChange={(e) => updateField('port', parseInt(e.target.value) || 0)}
+                  disabled={proxyLoading}
+                  className="h-input text-sm"
+                />
+              </div>
+
+              {/* Example */}
+              {proxyConfig.host && proxyConfig.port > 0 && (
+                <div className="text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded-lg border border-border/30 font-mono">
+                  {proxyConfig.proxy_type}://{proxyConfig.host}:{proxyConfig.port}
+                </div>
+              )}
+
+              {/* Save Button */}
+              <Button
+                onClick={handleSaveProxy}
+                disabled={proxySaving || proxyLoading || !proxyConfig.host || proxyConfig.port === 0}
+                className="w-full h-input"
+              >
+                {proxySaving ? t('common.saving', { defaultValue: 'Saving...' }) : t('common.save', { defaultValue: 'Save' })}
+              </Button>
+            </div>
+          )}
         </div>
       </SettingsGroup>
 

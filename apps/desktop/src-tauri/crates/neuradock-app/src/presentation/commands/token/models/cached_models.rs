@@ -1,20 +1,18 @@
 use crate::presentation::error::CommandError;
 use tauri::State;
 
-use crate::presentation::state::Repositories;
+use crate::presentation::state::Services;
 #[tauri::command]
 #[specta::specta]
 pub async fn get_cached_provider_models(
     provider_id: String,
-    repositories: State<'_, Repositories>,
+    services: State<'_, Services>,
 ) -> Result<Vec<String>, CommandError> {
     log::info!("get_cached_provider_models: provider_id={}", provider_id);
 
-    let cached = repositories
-        .provider_models
-        .find_by_provider(&provider_id)
+    services
+        .provider_models_query
+        .get_cached(&provider_id)
         .await
-        .map_err(CommandError::from)?;
-
-    Ok(cached.map(|c| c.models).unwrap_or_default())
+        .map_err(CommandError::from)
 }

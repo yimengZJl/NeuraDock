@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use neuradock_domain::account::AccountRepository;
 use neuradock_domain::check_in::ProviderRepository;
+use neuradock_domain::proxy_config::ProxyConfigRepository;
 use neuradock_domain::shared::{AccountId, DomainError};
 
 use crate::application::dtos::BalanceDto;
@@ -11,6 +12,7 @@ pub struct BalanceService {
     account_repo: Arc<dyn AccountRepository>,
     provider_repo: Arc<dyn ProviderRepository>,
     balance_history_service: Arc<BalanceHistoryService>,
+    proxy_config_repo: Arc<dyn ProxyConfigRepository>,
     headless_browser: bool,
 }
 
@@ -19,12 +21,14 @@ impl BalanceService {
         account_repo: Arc<dyn AccountRepository>,
         provider_repo: Arc<dyn ProviderRepository>,
         balance_history_service: Arc<BalanceHistoryService>,
+        proxy_config_repo: Arc<dyn ProxyConfigRepository>,
         headless_browser: bool,
     ) -> Self {
         Self {
             account_repo,
             provider_repo,
             balance_history_service,
+            proxy_config_repo,
             headless_browser,
         }
     }
@@ -65,7 +69,12 @@ impl BalanceService {
                 DomainError::ProviderNotFound(account.provider_id().as_str().to_string())
             })?;
 
-        let executor = CheckInExecutor::new(self.account_repo.clone(), self.headless_browser)
+        let proxy_url = self.proxy_config_repo.get().await?.proxy_url();
+        let executor = CheckInExecutor::with_proxy(
+            self.account_repo.clone(),
+            self.headless_browser,
+            proxy_url,
+        )
             .map_err(|e| DomainError::Infrastructure(e.to_string()))?;
         let user_info = executor
             .fetch_balance_only(account_id, &provider)
@@ -95,4 +104,3 @@ impl BalanceService {
         Ok(balance_dto)
     }
 }
-

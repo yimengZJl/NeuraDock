@@ -1,5 +1,6 @@
 use log::{error, info};
 use neuradock_domain::check_in::Provider;
+use neuradock_domain::proxy_config::ProxyConfigRepository;
 use neuradock_infrastructure::http::token::TokenClient;
 use neuradock_infrastructure::persistence::repositories::{
     SqliteProviderModelsRepository, SqliteWafCookiesRepository,
@@ -11,16 +12,19 @@ use std::sync::Arc;
 pub struct ProviderModelsService {
     provider_models_repo: Arc<SqliteProviderModelsRepository>,
     waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
+    proxy_config_repo: Arc<dyn ProxyConfigRepository>,
 }
 
 impl ProviderModelsService {
     pub fn new(
         provider_models_repo: Arc<SqliteProviderModelsRepository>,
         waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
+        proxy_config_repo: Arc<dyn ProxyConfigRepository>,
     ) -> Self {
         Self {
             provider_models_repo,
             waf_cookies_repo,
+            proxy_config_repo,
         }
     }
 
@@ -76,8 +80,15 @@ impl ProviderModelsService {
             .collect::<Vec<_>>()
             .join("; ");
 
+        let proxy_url = self
+            .proxy_config_repo
+            .get()
+            .await
+            .ok()
+            .and_then(|cfg| cfg.proxy_url());
+
         // Create token client and fetch models
-        let client = match TokenClient::new() {
+        let client = match TokenClient::with_proxy(proxy_url) {
             Ok(c) => c,
             Err(e) => {
                 error!("Failed to create token client: {}", e);

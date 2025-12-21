@@ -147,6 +147,10 @@ impl Account {
         Ok(())
     }
 
+    pub fn update_provider_id(&mut self, provider_id: ProviderId) {
+        self.provider_id = provider_id;
+    }
+
     pub fn toggle(&mut self, enabled: bool) {
         self.enabled = enabled;
     }

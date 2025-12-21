@@ -37,6 +37,7 @@ impl_domain_event!(AccountCreated);
 pub struct AccountUpdated {
     pub account_id: AccountId,
     pub name: Option<String>,
+    pub provider_updated: bool,
     pub credentials_updated: bool,
     pub auto_checkin_config_updated: bool,
     pub occurred_at: DateTime<Utc>,

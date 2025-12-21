@@ -14,11 +14,19 @@ use types::REQUIRED_WAF_COOKIES;
 
 pub struct WafBypassService {
     headless: bool,
+    proxy_url: Option<String>,
 }
 
 impl WafBypassService {
     pub fn new(headless: bool) -> Self {
-        Self { headless }
+        Self {
+            headless,
+            proxy_url: None,
+        }
+    }
+
+    pub fn with_proxy(headless: bool, proxy_url: Option<String>) -> Self {
+        Self { headless, proxy_url }
     }
 
     /// Get WAF cookies using chromiumoxide (pure Rust)

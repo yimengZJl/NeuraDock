@@ -29,3 +29,7 @@ pub use token_dto::*;
 // Independent Key DTOs
 mod independent_key_dto;
 pub use independent_key_dto::*;
+
+// Proxy Config DTOs
+mod proxy_config_dto;
+pub use proxy_config_dto::*;

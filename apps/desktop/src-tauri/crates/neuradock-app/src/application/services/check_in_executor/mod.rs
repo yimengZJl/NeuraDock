@@ -28,8 +28,16 @@ pub struct CheckInExecutor {
 
 impl CheckInExecutor {
     pub fn new(account_repo: Arc<dyn AccountRepository>, headless_browser: bool) -> Result<Self> {
-        let http_client = HttpClient::new()?;
-        let waf_manager = WafCookieManager::new(headless_browser);
+        Self::with_proxy(account_repo, headless_browser, None)
+    }
+
+    pub fn with_proxy(
+        account_repo: Arc<dyn AccountRepository>,
+        headless_browser: bool,
+        proxy_url: Option<String>,
+    ) -> Result<Self> {
+        let http_client = HttpClient::with_proxy(proxy_url.clone())?;
+        let waf_manager = WafCookieManager::new(headless_browser, proxy_url);
 
         Ok(Self {
             http_client,

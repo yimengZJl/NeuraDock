@@ -9,7 +9,7 @@ use neuradock_domain::account::{Account, AccountRepository, Credentials};
 use neuradock_domain::events::account_events::AccountUpdated;
 use neuradock_domain::events::EventBus;
 use neuradock_domain::session::SessionTokenExtractor;
-use neuradock_domain::shared::{AccountId, DomainError};
+use neuradock_domain::shared::{AccountId, DomainError, ProviderId};
 
 /// Update account command handler
 pub struct UpdateAccountCommandHandler {
@@ -46,6 +46,7 @@ impl CommandHandler<UpdateAccountCommand> for UpdateAccountCommandHandler {
             .ok_or_else(|| DomainError::AccountNotFound(cmd.account_id.clone()))?;
 
         let mut name_updated = None;
+        let mut provider_updated = false;
         let mut credentials_updated = false;
         let mut auto_checkin_config_updated = false;
 
@@ -55,7 +56,13 @@ impl CommandHandler<UpdateAccountCommand> for UpdateAccountCommandHandler {
             name_updated = Some(name);
         }
 
-        // 3. Update credentials if provided
+        // 3. Update provider if provided
+        if let Some(provider_id) = cmd.provider_id {
+            account.update_provider_id(ProviderId::from_string(&provider_id));
+            provider_updated = true;
+        }
+
+        // 4. Update credentials if provided
         if let Some(cookies) = cmd.cookies {
             let api_user = cmd
                 .api_user
@@ -77,7 +84,7 @@ impl CommandHandler<UpdateAccountCommand> for UpdateAccountCommandHandler {
             );
         }
 
-        // 4. Update auto check-in configuration if provided
+        // 5. Update auto check-in configuration if provided
         if let Some(enabled) = cmd.auto_checkin_enabled {
             let hour = cmd.auto_checkin_hour.unwrap_or(account.auto_checkin_hour());
             let minute = cmd
@@ -87,20 +94,21 @@ impl CommandHandler<UpdateAccountCommand> for UpdateAccountCommandHandler {
             auto_checkin_config_updated = true;
         }
 
-        // 5. Update check-in interval if provided
+        // 6. Update check-in interval if provided
         if let Some(interval_hours) = cmd.check_in_interval_hours {
             account.set_check_in_interval_hours(interval_hours)?;
         }
 
-        // 6. Save updated account
+        // 7. Save updated account
         self.account_repo.save(&account).await?;
 
         info!("Account updated successfully: {}", account.name());
 
-        // 6. Publish domain event
+        // 8. Publish domain event
         let event = AccountUpdated {
             account_id,
             name: name_updated,
+            provider_updated,
             credentials_updated,
             auto_checkin_config_updated,
             occurred_at: Utc::now(),

@@ -35,7 +35,7 @@ impl super::TokenService {
             anyhow::bail!("Account session expired, please re-login");
         }
 
-        let session_token = account
+        let _session_token = account
             .session_token()
             .context("No session token available")?;
 
@@ -113,6 +113,10 @@ impl super::TokenService {
             Some(api_user)
         };
 
+        let proxy_url = self.load_proxy_url().await;
+        let http_client = self.build_token_client(proxy_url.clone())?;
+        let waf_service = self.build_waf_service(proxy_url);
+
         log::info!(
             "Fetching tokens from API: url={}{}, has_api_user={}",
             base_url,
@@ -120,8 +124,7 @@ impl super::TokenService {
             api_user_opt.is_some()
         );
 
-        let response = self
-            .http_client
+        let response = http_client
             .fetch_tokens(FetchTokensRequest {
                 base_url: &base_url,
                 token_api_path: &token_api_path,
@@ -151,7 +154,9 @@ impl super::TokenService {
                 }
 
                 // Get fresh WAF cookies via browser bypass
-                let waf_cookies = self.get_fresh_waf_cookies(&provider, &account).await?;
+                let waf_cookies = self
+                    .get_fresh_waf_cookies(&waf_service, &provider, &account)
+                    .await?;
 
                 // Merge new WAF cookies with existing cookies
                 cookies_map.extend(waf_cookies);
@@ -163,7 +168,7 @@ impl super::TokenService {
                 );
 
                 // Retry with updated cookies
-                self.http_client
+                http_client
                     .fetch_tokens(FetchTokensRequest {
                         base_url: &base_url,
                         token_api_path: &token_api_path,

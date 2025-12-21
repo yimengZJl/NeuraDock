@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use neuradock_domain::account::AccountRepository;
 use neuradock_domain::check_in::{Provider, ProviderRepository};
+use neuradock_domain::proxy_config::ProxyConfigRepository;
 use neuradock_domain::shared::ProviderId;
 use neuradock_domain::token::TokenRepository;
 use neuradock_infrastructure::http::token::TokenClient;
@@ -19,8 +20,7 @@ pub struct TokenService {
     pub(super) token_repo: Arc<dyn TokenRepository>,
     pub(super) account_repo: Arc<dyn AccountRepository>,
     pub(super) provider_repo: Arc<dyn ProviderRepository>,
-    pub(super) http_client: TokenClient,
-    pub(super) waf_service: WafBypassService,
+    pub(super) proxy_config_repo: Arc<dyn ProxyConfigRepository>,
     pub(super) waf_cookies_repo: Option<Arc<SqliteWafCookiesRepository>>,
 }
 
@@ -29,13 +29,13 @@ impl TokenService {
         token_repo: Arc<dyn TokenRepository>,
         account_repo: Arc<dyn AccountRepository>,
         provider_repo: Arc<dyn ProviderRepository>,
+        proxy_config_repo: Arc<dyn ProxyConfigRepository>,
     ) -> Result<Self> {
         Ok(Self {
             token_repo,
             account_repo,
             provider_repo,
-            http_client: TokenClient::new()?,
-            waf_service: WafBypassService::new(true), // headless by default
+            proxy_config_repo,
             waf_cookies_repo: None,
         })
     }
@@ -61,5 +61,21 @@ impl TokenService {
             .map(|(k, v)| format!("{}={}", k, v))
             .collect::<Vec<_>>()
             .join("; ")
+    }
+
+    pub(super) async fn load_proxy_url(&self) -> Option<String> {
+        self.proxy_config_repo
+            .get()
+            .await
+            .ok()
+            .and_then(|cfg| cfg.proxy_url())
+    }
+
+    pub(super) fn build_token_client(&self, proxy_url: Option<String>) -> Result<TokenClient> {
+        TokenClient::with_proxy(proxy_url)
+    }
+
+    pub(super) fn build_waf_service(&self, proxy_url: Option<String>) -> WafBypassService {
+        WafBypassService::with_proxy(true, proxy_url)
     }
 }

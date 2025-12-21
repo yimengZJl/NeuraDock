@@ -84,16 +84,16 @@ impl EventHandler<AccountCreated> for SchedulerReloadEventHandler {
 impl EventHandler<AccountUpdated> for SchedulerReloadEventHandler {
     async fn handle(&self, event: &AccountUpdated) -> Result<(), DomainError> {
         info!(
-            "🔔 [EVENT] AccountUpdated: {} - auto_checkin_config_updated: {}",
-            event.account_id, event.auto_checkin_config_updated
+            "🔔 [EVENT] AccountUpdated: {} - provider_updated: {}, auto_checkin_config_updated: {}",
+            event.account_id, event.provider_updated, event.auto_checkin_config_updated
         );
 
-        // Reload if auto check-in config was updated
-        if event.auto_checkin_config_updated {
-            info!("🔄 Reloading scheduler due to auto check-in config update");
+        // Reload if auto check-in config or provider was updated (provider impacts scheduled task behavior).
+        if event.auto_checkin_config_updated || event.provider_updated {
+            info!("🔄 Reloading scheduler due to account update");
             self.reload_schedules().await?;
         } else {
-            info!("⏭️  Auto check-in config not updated, skipping scheduler reload");
+            info!("⏭️  No scheduler-impacting changes, skipping reload");
         }
 
         Ok(())

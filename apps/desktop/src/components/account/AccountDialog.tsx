@@ -67,9 +67,13 @@ export function AccountDialog({
           : '{"session": ""}';
         const cookiesChanged = values.cookies_json !== originalCookiesJson;
 
+        // Check if provider was changed
+        const providerChanged = values.provider_id !== defaultValues?.provider_id;
+
         const input: UpdateAccountInput = {
           account_id: accountId,
           name: values.name,
+          provider_id: providerChanged ? values.provider_id : null,
           cookies: cookiesChanged ? cookies : null, // Only send cookies if changed
           api_user: values.api_user || null,
           auto_checkin_enabled: values.auto_checkin_enabled ?? null,

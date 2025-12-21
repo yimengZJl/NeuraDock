@@ -6,9 +6,7 @@ use std::sync::Arc;
 /// Task metadata for health monitoring
 #[derive(Debug, Clone)]
 pub(super) struct TaskMetadata {
-    pub account_id: AccountId,
     pub account_name: String,
-    pub started_at: chrono::DateTime<chrono::Utc>,
     pub last_execution: Option<chrono::DateTime<chrono::Utc>>,
 }
 

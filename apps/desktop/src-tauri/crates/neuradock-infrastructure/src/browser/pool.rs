@@ -122,7 +122,6 @@ impl BrowserPool {
 
         Ok(PooledBrowser {
             browser,
-            pool: self.pool.clone(),
             _permit: permit,
         })
     }
@@ -171,7 +170,6 @@ impl BrowserPool {
 /// Pooled browser with automatic return to pool
 pub struct PooledBrowser {
     browser: Arc<Browser>,
-    pool: Arc<Mutex<Vec<BrowserInstance>>>,
     _permit: tokio::sync::OwnedSemaphorePermit,
 }
 

@@ -12,7 +12,7 @@ use std::sync::Arc;
 use neuradock_domain::account::{Account, AccountRepository, Credentials};
 use neuradock_domain::balance::BalanceRepository;
 use neuradock_domain::session::SessionRepository;
-use neuradock_domain::shared::{AccountId, DomainError, ProviderId};
+use neuradock_domain::shared::{AccountId, ProviderId};
 use neuradock_infrastructure::persistence::repositories::{
     SqliteAccountRepository, SqliteBalanceRepository, SqliteSessionRepository,
 };

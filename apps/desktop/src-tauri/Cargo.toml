@@ -49,7 +49,7 @@ dirs = "5.0"
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "chrono", "uuid"] }
 
 # HTTP client
-reqwest = { version = "0.12", features = ["json", "cookies", "rustls-tls", "gzip"] }
+reqwest = { version = "0.12", features = ["json", "cookies", "rustls-tls", "gzip", "socks"] }
 
 # Encryption
 aes-gcm = "0.10"
