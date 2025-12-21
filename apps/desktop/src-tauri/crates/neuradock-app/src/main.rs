@@ -8,8 +8,13 @@ mod presentation;
 use presentation::ipc;
 use presentation::state::{AppState, CommandHandlers, Queries, Repositories, Services};
 use std::time::Instant;
-use tauri::{Manager, WindowEvent};
+use tauri::{LogicalSize, Manager, Size, WindowEvent};
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
+
+const DEFAULT_WIDTH: f64 = 1200.0;
+const DEFAULT_HEIGHT: f64 = 800.0;
+const MIN_WIDTH: f64 = 800.0;
+const MIN_HEIGHT: f64 = 600.0;
 
 fn install_panic_hook() {
     std::panic::set_hook(Box::new(|info| {
@@ -56,9 +61,24 @@ async fn main() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .on_window_event(|window, event| match event {
-            WindowEvent::Resized(_) | WindowEvent::Moved(_) => {
-                if let Err(e) = window.app_handle().save_window_state(StateFlags::all()) {
-                    tracing::warn!("Failed to save window state: {}", e);
+            WindowEvent::Resized(size) => {
+                let width = size.width as f64;
+                let height = size.height as f64;
+
+                if width >= MIN_WIDTH && height >= MIN_HEIGHT {
+                    if let Err(e) = window.app_handle().save_window_state(StateFlags::all()) {
+                        tracing::warn!("Failed to save window state: {}", e);
+                    }
+                } else {
+                    tracing::debug!(
+                        "Skipping window-state save for invalid size: {}x{}",
+                        width, height
+                    );
+                }
+            }
+            WindowEvent::Moved(_) => {
+                if let Err(e) = window.app_handle().save_window_state(StateFlags::POSITION) {
+                    tracing::warn!("Failed to save window position: {}", e);
                 }
             }
             WindowEvent::CloseRequested { .. } => {
@@ -71,6 +91,31 @@ async fn main() {
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             let handle = app.handle().clone();
+
+            if let Some(main_window) = handle.get_webview_window("main") {
+                if let Ok(size) = main_window.outer_size() {
+                    let width = size.width as f64;
+                    let height = size.height as f64;
+
+                    if width < MIN_WIDTH || height < MIN_HEIGHT {
+                        tracing::warn!(
+                            "Restoring window to default size because persisted size {}x{} is below minimum",
+                            width, height
+                        );
+                        if let Err(e) = main_window.set_size(Size::Logical(LogicalSize::new(
+                            DEFAULT_WIDTH,
+                            DEFAULT_HEIGHT,
+                        ))) {
+                            tracing::warn!("Failed to reset window size: {}", e);
+                        } else if let Err(e) = main_window
+                            .app_handle()
+                            .save_window_state(StateFlags::all())
+                        {
+                            tracing::warn!("Failed to persist default window size: {}", e);
+                        }
+                    }
+                }
+            }
 
             // Initialize full logging system with file output
             let log_dir = handle

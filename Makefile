@@ -36,6 +36,7 @@ FRONTEND_CACHE_DIRS := \
 	install doctor \
 	dev dev-debug dev-trace dev-warn kill \
 	bindings \
+	release \
 	build build-frontend build-backend \
 	package package-universal package-arch package-all-macos \
 	test test-frontend test-backend \
@@ -91,6 +92,11 @@ bindings: ## Generate TypeScript bindings (tauri-specta)
 	@echo "🔗 Generating TS bindings..."
 	@$(CARGO) run $(CARGO_MANIFEST) -p neuradock-app --bin export_ts_bindings
 	@echo "✅ Generated $(DESKTOP_DIR)/src/lib/tauri.ts"
+
+release: clean ## Clean artifacts and produce release build (tauri:build)
+	@echo "🧹 Cleaned artifacts. Starting release build..."
+	@$(NPM_DESKTOP) run tauri:build
+	@echo "✅ Release build complete"
 
 build: build-frontend build-backend ## Build frontend + backend (Release)
 	@echo "✅ Build complete"

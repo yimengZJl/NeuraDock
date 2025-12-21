@@ -5,6 +5,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   clearScreen: false,
+  base: './',  // 使用相对路径，确保 Tauri 生产构建正常
   server: {
     port: 1420,
     strictPort: true,
@@ -20,15 +21,23 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (!id.includes('node_modules')) return;
+          const normalizedId = id.split(path.sep).join('/');
+          if (!normalizedId.includes('node_modules')) return;
 
-          if (id.includes('react-dom') || id.includes('/react/')) return 'react';
-          if (id.includes('react-router')) return 'router';
-          if (id.includes('@tanstack')) return 'tanstack';
-          if (id.includes('@radix-ui')) return 'radix';
-          if (id.includes('framer-motion')) return 'motion';
-          if (id.includes('recharts') || id.includes('/d3-')) return 'charts';
-          if (id.includes('lucide-react') || id.includes('@tabler/icons-react')) return 'icons';
+          const reactPackages = [
+            '/node_modules/react/',
+            '/node_modules/react-dom/',
+            '/node_modules/scheduler/',
+            '/node_modules/use-sync-external-store/',
+          ];
+
+          if (reactPackages.some((pkg) => normalizedId.includes(pkg))) return 'react';
+          if (normalizedId.includes('react-router')) return 'router';
+          if (normalizedId.includes('@tanstack')) return 'tanstack';
+          if (normalizedId.includes('@radix-ui')) return 'radix';
+          if (normalizedId.includes('framer-motion')) return 'motion';
+          if (normalizedId.includes('recharts') || normalizedId.includes('/d3-')) return 'charts';
+          if (normalizedId.includes('lucide-react') || normalizedId.includes('@tabler/icons-react')) return 'icons';
 
           return 'vendor';
         },
