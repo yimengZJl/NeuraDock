@@ -1,18 +1,13 @@
+use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::{FromRow, SqlitePool};
 use std::sync::Arc;
 
+use neuradock_domain::provider_models::{ProviderModels, ProviderModelsRepository};
 use neuradock_domain::shared::DomainError;
 
 use crate::persistence::unit_of_work::RepositoryErrorMapper;
 use crate::persistence::SqliteRepositoryBase;
-
-#[derive(Debug, Clone)]
-pub struct ProviderModels {
-    pub provider_id: String,
-    pub models: Vec<String>,
-    pub fetched_at: DateTime<Utc>,
-}
 
 #[derive(Debug, FromRow)]
 struct ProviderModelsRow {
@@ -48,9 +43,12 @@ impl SqliteProviderModelsRepository {
             fetched_at,
         })
     }
+}
 
+#[async_trait]
+impl ProviderModelsRepository for SqliteProviderModelsRepository {
     /// Save or update provider models
-    pub async fn save(&self, provider_id: &str, models: &[String]) -> Result<(), DomainError> {
+    async fn save(&self, provider_id: &str, models: &[String]) -> Result<(), DomainError> {
         let models_json = serde_json::to_string(models)
             .map_err(|e| DomainError::Validation(format!("Failed to serialize models: {}", e)))?;
         let now = Utc::now().to_rfc3339();
@@ -75,7 +73,7 @@ impl SqliteProviderModelsRepository {
     }
 
     /// Find models by provider ID
-    pub async fn find_by_provider(
+    async fn find_by_provider(
         &self,
         provider_id: &str,
     ) -> Result<Option<ProviderModels>, DomainError> {
@@ -98,7 +96,7 @@ impl SqliteProviderModelsRepository {
     }
 
     /// Check if provider models are stale (older than specified hours)
-    pub async fn is_stale(
+    async fn is_stale(
         &self,
         provider_id: &str,
         max_age_hours: i64,
@@ -115,7 +113,7 @@ impl SqliteProviderModelsRepository {
     }
 
     /// Delete models for a provider
-    pub async fn delete_by_provider(&self, provider_id: &str) -> Result<(), DomainError> {
+    async fn delete_by_provider(&self, provider_id: &str) -> Result<(), DomainError> {
         sqlx::query("DELETE FROM provider_models WHERE provider_id = ?")
             .bind(provider_id)
             .execute(self.base.pool())

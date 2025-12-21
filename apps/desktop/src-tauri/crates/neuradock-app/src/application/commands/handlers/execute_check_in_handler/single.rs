@@ -12,7 +12,7 @@ use neuradock_domain::account::AccountRepository;
 use neuradock_domain::check_in::ProviderRepository;
 use neuradock_domain::proxy_config::ProxyConfigRepository;
 use neuradock_domain::shared::{AccountId, DomainError};
-use neuradock_infrastructure::persistence::repositories::SqliteWafCookiesRepository;
+use neuradock_domain::waf_cookies::WafCookiesRepository;
 
 use super::shared;
 
@@ -24,7 +24,7 @@ pub struct ExecuteCheckInCommandHandler {
     notification_service: Option<Arc<NotificationService>>,
     provider_models_service: Arc<ProviderModelsService>,
     balance_history_service: Arc<BalanceHistoryService>,
-    waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
+    waf_cookies_repo: Arc<dyn WafCookiesRepository>,
     headless_browser: bool,
 }
 
@@ -35,7 +35,7 @@ impl ExecuteCheckInCommandHandler {
         proxy_config_repo: Arc<dyn ProxyConfigRepository>,
         provider_models_service: Arc<ProviderModelsService>,
         balance_history_service: Arc<BalanceHistoryService>,
-        waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
+        waf_cookies_repo: Arc<dyn WafCookiesRepository>,
         headless_browser: bool,
     ) -> Self {
         Self {

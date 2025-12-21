@@ -4,8 +4,8 @@ use std::sync::Arc;
 use tracing::instrument;
 
 use neuradock_domain::{account::AccountRepository, check_in::Provider, shared::AccountId};
+use neuradock_domain::waf_cookies::WafCookiesRepository;
 use neuradock_infrastructure::http::{CheckInResult, HttpClient, UserInfo};
-use neuradock_infrastructure::persistence::repositories::SqliteWafCookiesRepository;
 
 use crate::application::services::user_info_service::UserInfoService;
 use crate::application::services::waf_cookie_manager::WafCookieManager;
@@ -46,7 +46,7 @@ impl CheckInExecutor {
     }
 
     /// Set WAF cookies repository for caching
-    pub fn with_waf_cookies_repo(mut self, repo: Arc<SqliteWafCookiesRepository>) -> Self {
+    pub fn with_waf_cookies_repo(mut self, repo: Arc<dyn WafCookiesRepository>) -> Self {
         self.waf_manager = self.waf_manager.with_cookies_repo(repo);
         self
     }

@@ -3,18 +3,17 @@ use std::sync::Arc;
 
 use neuradock_domain::account::AccountRepository;
 use neuradock_domain::check_in::ProviderRepository;
+use neuradock_domain::provider_models::ProviderModelsRepository;
 use neuradock_domain::proxy_config::ProxyConfigRepository;
 use neuradock_domain::shared::{AccountId, DomainError, ProviderId};
+use neuradock_domain::waf_cookies::WafCookiesRepository;
 use neuradock_infrastructure::http::{token::TokenClient, WafBypassService};
-use neuradock_infrastructure::persistence::repositories::{
-    SqliteProviderModelsRepository, SqliteWafCookiesRepository,
-};
 
 pub struct ProviderModelsQueryService {
     account_repo: Arc<dyn AccountRepository>,
     provider_repo: Arc<dyn ProviderRepository>,
-    provider_models_repo: Arc<SqliteProviderModelsRepository>,
-    waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
+    provider_models_repo: Arc<dyn ProviderModelsRepository>,
+    waf_cookies_repo: Arc<dyn WafCookiesRepository>,
     proxy_config_repo: Arc<dyn ProxyConfigRepository>,
 }
 
@@ -22,8 +21,8 @@ impl ProviderModelsQueryService {
     pub fn new(
         account_repo: Arc<dyn AccountRepository>,
         provider_repo: Arc<dyn ProviderRepository>,
-        provider_models_repo: Arc<SqliteProviderModelsRepository>,
-        waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
+        provider_models_repo: Arc<dyn ProviderModelsRepository>,
+        waf_cookies_repo: Arc<dyn WafCookiesRepository>,
         proxy_config_repo: Arc<dyn ProxyConfigRepository>,
     ) -> Self {
         Self {
@@ -218,7 +217,7 @@ impl ProviderModelsQueryService {
             api_user,
             &account_id,
             &provider_id,
-            &self.waf_cookies_repo,
+            self.waf_cookies_repo.as_ref(),
             cookies,
         )
         .await?;
@@ -249,7 +248,7 @@ async fn fetch_models_with_waf_retry(
     api_user: &str,
     account_id: &str,
     provider_id: &str,
-    waf_cookies_repo: &SqliteWafCookiesRepository,
+    waf_cookies_repo: &dyn WafCookiesRepository,
     mut cookies: HashMap<String, String>,
 ) -> Result<Vec<String>, DomainError> {
     let cookie_string = build_cookie_string(&cookies);

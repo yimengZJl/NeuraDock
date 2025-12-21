@@ -4,13 +4,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use neuradock_domain::check_in::Provider;
+use neuradock_domain::waf_cookies::WafCookiesRepository;
 use neuradock_infrastructure::http::WafBypassService;
-use neuradock_infrastructure::persistence::repositories::SqliteWafCookiesRepository;
 
 /// Service for managing WAF cookies with caching support
 pub struct WafCookieManager {
     waf_service: WafBypassService,
-    waf_cookies_repo: Option<Arc<SqliteWafCookiesRepository>>,
+    waf_cookies_repo: Option<Arc<dyn WafCookiesRepository>>,
 }
 
 impl WafCookieManager {
@@ -23,7 +23,7 @@ impl WafCookieManager {
     }
 
     /// Set WAF cookies repository for caching
-    pub fn with_cookies_repo(mut self, repo: Arc<SqliteWafCookiesRepository>) -> Self {
+    pub fn with_cookies_repo(mut self, repo: Arc<dyn WafCookiesRepository>) -> Self {
         self.waf_cookies_repo = Some(repo);
         self
     }

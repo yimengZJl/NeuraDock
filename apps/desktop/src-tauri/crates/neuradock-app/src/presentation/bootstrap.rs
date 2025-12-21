@@ -21,9 +21,11 @@ use neuradock_domain::custom_node::CustomProviderNodeRepository;
 use neuradock_domain::events::account_events::*;
 use neuradock_domain::independent_key::IndependentKeyRepository;
 use neuradock_domain::notification::NotificationChannelRepository;
+use neuradock_domain::provider_models::ProviderModelsRepository;
 use neuradock_domain::proxy_config::ProxyConfigRepository;
 use neuradock_domain::session::SessionRepository;
 use neuradock_domain::token::TokenRepository;
+use neuradock_domain::waf_cookies::WafCookiesRepository;
 use neuradock_infrastructure::bootstrap::seed_builtin_providers;
 use neuradock_infrastructure::events::InMemoryEventBus;
 use neuradock_infrastructure::notification::SqliteNotificationChannelRepository;
@@ -129,8 +131,10 @@ pub async fn build_app_state(
     )) as Arc<dyn IndependentKeyRepository>;
     let provider_repo =
         Arc::new(SqliteProviderRepository::new(pool.clone())) as Arc<dyn ProviderRepository>;
-    let provider_models_repo = Arc::new(SqliteProviderModelsRepository::new(pool.clone()));
-    let waf_cookies_repo = Arc::new(SqliteWafCookiesRepository::new(pool.clone()));
+    let provider_models_repo = Arc::new(SqliteProviderModelsRepository::new(pool.clone()))
+        as Arc<dyn ProviderModelsRepository>;
+    let waf_cookies_repo = Arc::new(SqliteWafCookiesRepository::new(pool.clone()))
+        as Arc<dyn WafCookiesRepository>;
     let proxy_config_repo =
         Arc::new(SqliteProxyConfigRepository::new(pool.clone())) as Arc<dyn ProxyConfigRepository>;
     let balance_history_repo = Arc::new(SqliteBalanceHistoryRepository::new(pool.clone()))
@@ -387,7 +391,7 @@ fn build_token_service(
     account_repo: Arc<dyn AccountRepository>,
     provider_repo: Arc<dyn ProviderRepository>,
     proxy_config_repo: Arc<dyn ProxyConfigRepository>,
-    waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
+    waf_cookies_repo: Arc<dyn WafCookiesRepository>,
 ) -> Result<Arc<TokenService>, Box<dyn std::error::Error>> {
     info!("🔧 Initializing token services...");
     let started_at = Instant::now();

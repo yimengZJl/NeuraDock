@@ -12,16 +12,16 @@ use neuradock_domain::check_in::{Provider, ProviderRepository};
 use neuradock_domain::proxy_config::ProxyConfigRepository;
 use neuradock_domain::shared::ProviderId;
 use neuradock_domain::token::TokenRepository;
+use neuradock_domain::waf_cookies::WafCookiesRepository;
 use neuradock_infrastructure::http::token::TokenClient;
 use neuradock_infrastructure::http::WafBypassService;
-use neuradock_infrastructure::persistence::repositories::SqliteWafCookiesRepository;
 
 pub struct TokenService {
     pub(super) token_repo: Arc<dyn TokenRepository>,
     pub(super) account_repo: Arc<dyn AccountRepository>,
     pub(super) provider_repo: Arc<dyn ProviderRepository>,
     pub(super) proxy_config_repo: Arc<dyn ProxyConfigRepository>,
-    pub(super) waf_cookies_repo: Option<Arc<SqliteWafCookiesRepository>>,
+    pub(super) waf_cookies_repo: Option<Arc<dyn WafCookiesRepository>>,
 }
 
 impl TokenService {
@@ -41,7 +41,7 @@ impl TokenService {
     }
 
     /// Set WAF cookies repository for caching
-    pub fn with_waf_cookies_repo(mut self, repo: Arc<SqliteWafCookiesRepository>) -> Self {
+    pub fn with_waf_cookies_repo(mut self, repo: Arc<dyn WafCookiesRepository>) -> Self {
         self.waf_cookies_repo = Some(repo);
         self
     }

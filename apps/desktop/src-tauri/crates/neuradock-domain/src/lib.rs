@@ -9,10 +9,12 @@ pub mod custom_node;
 pub mod events;
 pub mod independent_key;
 pub mod notification;
+pub mod provider_models;
 pub mod proxy_config;
 pub mod session;
 pub mod shared;
 pub mod token;
+pub mod waf_cookies;
 
 // Re-exports for convenience
 pub use events::DomainEvent;

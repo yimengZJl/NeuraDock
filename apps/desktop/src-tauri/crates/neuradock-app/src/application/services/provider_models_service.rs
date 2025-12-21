@@ -1,24 +1,23 @@
 use log::{error, info};
 use neuradock_domain::check_in::Provider;
+use neuradock_domain::provider_models::ProviderModelsRepository;
 use neuradock_domain::proxy_config::ProxyConfigRepository;
+use neuradock_domain::waf_cookies::WafCookiesRepository;
 use neuradock_infrastructure::http::token::TokenClient;
-use neuradock_infrastructure::persistence::repositories::{
-    SqliteProviderModelsRepository, SqliteWafCookiesRepository,
-};
 use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Service for fetching and saving provider models
 pub struct ProviderModelsService {
-    provider_models_repo: Arc<SqliteProviderModelsRepository>,
-    waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
+    provider_models_repo: Arc<dyn ProviderModelsRepository>,
+    waf_cookies_repo: Arc<dyn WafCookiesRepository>,
     proxy_config_repo: Arc<dyn ProxyConfigRepository>,
 }
 
 impl ProviderModelsService {
     pub fn new(
-        provider_models_repo: Arc<SqliteProviderModelsRepository>,
-        waf_cookies_repo: Arc<SqliteWafCookiesRepository>,
+        provider_models_repo: Arc<dyn ProviderModelsRepository>,
+        waf_cookies_repo: Arc<dyn WafCookiesRepository>,
         proxy_config_repo: Arc<dyn ProxyConfigRepository>,
     ) -> Self {
         Self {

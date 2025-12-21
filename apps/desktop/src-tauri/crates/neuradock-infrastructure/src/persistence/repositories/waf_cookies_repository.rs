@@ -1,29 +1,17 @@
+use async_trait::async_trait;
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{FromRow, SqlitePool};
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use neuradock_domain::shared::DomainError;
+use neuradock_domain::waf_cookies::{WafCookies, WafCookiesRepository};
 
 use crate::persistence::unit_of_work::RepositoryErrorMapper;
 use crate::persistence::SqliteRepositoryBase;
 
 /// WAF cookies cache duration (24 hours)
 const WAF_CACHE_HOURS: i64 = 24;
-
-#[derive(Debug, Clone)]
-pub struct WafCookies {
-    pub provider_id: String,
-    pub cookies: HashMap<String, String>,
-    pub fetched_at: DateTime<Utc>,
-    pub expires_at: DateTime<Utc>,
-}
-
-impl WafCookies {
-    pub fn is_valid(&self) -> bool {
-        Utc::now() < self.expires_at
-    }
-}
 
 #[derive(Debug, FromRow)]
 struct WafCookiesRow {
@@ -65,9 +53,12 @@ impl SqliteWafCookiesRepository {
             expires_at,
         })
     }
+}
 
+#[async_trait]
+impl WafCookiesRepository for SqliteWafCookiesRepository {
     /// Save or update WAF cookies for a provider
-    pub async fn save(
+    async fn save(
         &self,
         provider_id: &str,
         cookies: &HashMap<String, String>,
@@ -106,7 +97,7 @@ impl SqliteWafCookiesRepository {
     }
 
     /// Get valid (non-expired) WAF cookies for a provider
-    pub async fn get_valid(&self, provider_id: &str) -> Result<Option<WafCookies>, DomainError> {
+    async fn get_valid(&self, provider_id: &str) -> Result<Option<WafCookies>, DomainError> {
         let row = sqlx::query_as::<_, WafCookiesRow>(
             r#"
             SELECT id, provider_id, cookies, fetched_at, expires_at
@@ -142,7 +133,7 @@ impl SqliteWafCookiesRepository {
     }
 
     /// Delete WAF cookies for a provider
-    pub async fn delete(&self, provider_id: &str) -> Result<(), DomainError> {
+    async fn delete(&self, provider_id: &str) -> Result<(), DomainError> {
         sqlx::query("DELETE FROM waf_cookies WHERE provider_id = ?")
             .bind(provider_id)
             .execute(self.base.pool())
@@ -153,7 +144,7 @@ impl SqliteWafCookiesRepository {
     }
 
     /// Clean up all expired WAF cookies
-    pub async fn cleanup_expired(&self) -> Result<u64, DomainError> {
+    async fn cleanup_expired(&self) -> Result<u64, DomainError> {
         let now = Utc::now().to_rfc3339();
 
         let result = sqlx::query("DELETE FROM waf_cookies WHERE expires_at < ?")
