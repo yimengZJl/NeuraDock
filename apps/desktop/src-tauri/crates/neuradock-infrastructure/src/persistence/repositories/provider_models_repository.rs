@@ -96,11 +96,7 @@ impl ProviderModelsRepository for SqliteProviderModelsRepository {
     }
 
     /// Check if provider models are stale (older than specified hours)
-    async fn is_stale(
-        &self,
-        provider_id: &str,
-        max_age_hours: i64,
-    ) -> Result<bool, DomainError> {
+    async fn is_stale(&self, provider_id: &str, max_age_hours: i64) -> Result<bool, DomainError> {
         let models = self.find_by_provider(provider_id).await?;
 
         match models {

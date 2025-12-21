@@ -21,7 +21,7 @@ pub struct CheckInResult {
 pub struct Balance {
     pub current_balance: f64, // Current balance from API (来自API的当前余额)
     pub total_consumed: f64,  // Total historical consumption from API (来自API的历史消耗)
-    pub total_quota: f64,    // Total quota (总额度) = current_balance + total_consumed
+    pub total_quota: f64,     // Total quota (总额度) = current_balance + total_consumed
 }
 
 impl Balance {

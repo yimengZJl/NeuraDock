@@ -3,8 +3,8 @@ use log::info;
 use std::sync::Arc;
 use tracing::instrument;
 
-use neuradock_domain::{account::AccountRepository, check_in::Provider, shared::AccountId};
 use neuradock_domain::waf_cookies::WafCookiesRepository;
+use neuradock_domain::{account::AccountRepository, check_in::Provider, shared::AccountId};
 use neuradock_infrastructure::http::{CheckInResult, HttpClient, UserInfo};
 
 use crate::application::services::user_info_service::UserInfoService;

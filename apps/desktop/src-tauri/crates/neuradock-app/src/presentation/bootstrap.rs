@@ -133,8 +133,8 @@ pub async fn build_app_state(
         Arc::new(SqliteProviderRepository::new(pool.clone())) as Arc<dyn ProviderRepository>;
     let provider_models_repo = Arc::new(SqliteProviderModelsRepository::new(pool.clone()))
         as Arc<dyn ProviderModelsRepository>;
-    let waf_cookies_repo = Arc::new(SqliteWafCookiesRepository::new(pool.clone()))
-        as Arc<dyn WafCookiesRepository>;
+    let waf_cookies_repo =
+        Arc::new(SqliteWafCookiesRepository::new(pool.clone())) as Arc<dyn WafCookiesRepository>;
     let proxy_config_repo =
         Arc::new(SqliteProxyConfigRepository::new(pool.clone())) as Arc<dyn ProxyConfigRepository>;
     let balance_history_repo = Arc::new(SqliteBalanceHistoryRepository::new(pool.clone()))
