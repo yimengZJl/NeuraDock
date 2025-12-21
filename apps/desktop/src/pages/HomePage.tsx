@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import { Users, DollarSign, TrendingUp, Wallet, Activity, Zap, Server } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccounts } from '@/hooks/useAccounts';
@@ -22,6 +23,22 @@ export function HomePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  const shouldAnimate = useMemo(() => {
+    try {
+      return sessionStorage.getItem('neuradock-booted') === '1';
+    } catch {
+      return true;
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('neuradock-booted', '1');
+    } catch {
+      // ignore
+    }
+  }, []);
+
   if (isLoading || statsLoading) {
     return (
       <PageContainer>
@@ -44,7 +61,7 @@ export function HomePage() {
         {/* Bento Grid Overview */}
         <motion.div
           variants={container}
-          initial="hidden"
+          initial={shouldAnimate ? 'hidden' : false}
           animate="show"
         >
           <BentoGrid>
@@ -128,7 +145,7 @@ export function HomePage() {
         {statistics && statistics.providers.length > 0 && (
           <motion.div
             variants={container}
-            initial="hidden"
+            initial={shouldAnimate ? 'hidden' : false}
             animate="show"
             className="mt-8"
           >

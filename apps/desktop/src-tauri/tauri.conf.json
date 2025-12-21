@@ -28,7 +28,9 @@
         "height": 800,
         "minWidth": 800,
         "minHeight": 600,
-        "titleBarStyle": "Overlay"
+        "titleBarStyle": "Overlay",
+        "backgroundColor": "#F5F5F5",
+        "visible": false
       }
     ]
   }
