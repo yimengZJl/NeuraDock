@@ -167,6 +167,7 @@ clean-db: ## Remove local sqlite db files (*.db)
 
 purge: clean clean-db ## Deep clean (artifacts + deps + db)
 	@echo "🧹 Purging dependencies..."
+	@find . -name "node_modules" -type d -prune -exec rm -rf {} + 2>/dev/null || true
 	@rm -rf $(DEPS_DIRS) 2>/dev/null || true
 	@rm -f "$(DESKTOP_DIR)/package-lock.json" "package-lock.json" 2>/dev/null || true
 	@echo "✅ Done"
