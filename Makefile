@@ -99,7 +99,7 @@ bindings: ## Generate TypeScript bindings (tauri-specta)
 	@$(CARGO) run $(CARGO_MANIFEST) -p neuradock-app --bin export_ts_bindings
 	@echo "✅ Generated $(DESKTOP_DIR)/src/lib/tauri.ts"
 
-release: clean ## Clean artifacts and produce release build (tauri:build)
+release: clean install ## Clean artifacts and produce release build (tauri:build)
 	@echo "🧹 Cleaned artifacts. Starting release build..."
 	@$(NPM_DESKTOP) run tauri:build
 	@echo "✅ Release build complete"
@@ -113,15 +113,15 @@ build-frontend: ## Build frontend (runs bindings via npm script)
 build-backend: ## Build backend (Release)
 	@$(CARGO) build $(CARGO_MANIFEST) --release --workspace
 
-package: ## Build and package app (tauri build)
+package: install ## Build and package app (tauri build)
 	@$(NPM_DESKTOP) run tauri:build
 
-package-universal: ## macOS: package universal binary
+package-universal: install ## macOS: package universal binary
 	@rustup target add x86_64-apple-darwin 2>/dev/null || true
 	@rustup target add aarch64-apple-darwin 2>/dev/null || true
 	@$(NPM_DESKTOP) run tauri:build -- --target universal-apple-darwin
 
-package-arch: ## macOS: package specific arch (ARCH=...)
+package-arch: install ## macOS: package specific arch (ARCH=...)
 	@if [ -z "$(ARCH)" ]; then \
 		echo "❌ Missing ARCH. Example: make package-arch ARCH=x86_64-apple-darwin"; \
 		exit 1; \
