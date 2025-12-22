@@ -52,7 +52,13 @@ help: ## Show this help
 
 install: ## Install frontend dependencies
 	@echo "📦 Installing frontend dependencies..."
-	@NODE_ENV=development $(NPM_DESKTOP) install --legacy-peer-deps
+	@if [ -f "$(DESKTOP_DIR)/package-lock.json" ]; then \
+		echo "🔒 Using lockfile ($(DESKTOP_DIR)/package-lock.json)"; \
+		NODE_ENV=development $(NPM_DESKTOP) ci --legacy-peer-deps; \
+	else \
+		echo "⚠️  No lockfile found; falling back to npm install"; \
+		NODE_ENV=development $(NPM_DESKTOP) install --legacy-peer-deps; \
+	fi
 	@echo "✅ Done"
 
 doctor: ## Check dev environment (node/rust/sqlx)
